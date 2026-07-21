@@ -24,6 +24,19 @@ export const Colors = {
   },
 } as const;
 
+export const Colors_Sales = {
+  textPrimary: '#000000',
+  background: '#10B981',
+  topButton: '#96D5B1',
+  inputBG: '#FFFFFF'
+
+
+} as const;
+export const Colors_Buy = {} as const;
+export const Colors_Udharo = {} as const;
+export const Colors_DashBoard = {} as const;
+export const Colors_Ai = {} as const;
+
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
 export const Fonts = Platform.select({
