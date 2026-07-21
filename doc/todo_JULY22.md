@@ -21,5 +21,7 @@
 
 
 For today sanjita will only work in /src/app/(tabs)/udharo.tsx,sales.tsx,purchase.tsx and /src/feature/sales,udharo,purchase
+<br>
 And
+<br>
 Rijan will work in respective dashboard,sales,udharo,purchase Hooks & dataLayer in (tabs) and features/.../hooks and features/.../data
