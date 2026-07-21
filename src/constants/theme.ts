@@ -13,8 +13,7 @@ export const Colors = {
     background: '#ffffff',
     backgroundElement: '#F0F0F3',
     backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-  },
+    textSecondary: '#60646C',  },
   dark: {
     text: '#ffffff',
     background: '#000000',
@@ -24,18 +23,36 @@ export const Colors = {
   },
 } as const;
 
-export const Colors_Sales = {
+export const Colors_SalesPage = {
   textPrimary: '#000000',
+  textSecondary: '#FFFFFF',
   background: '#10B981',
-  topButton: '#96D5B1',
-  inputBG: '#FFFFFF'
-
-
+  topBtn: '#96D5B1',
+  inputBG: '#FFFFFF',
+  enterBtn: '#2BBB8B',
+  confirnBtn: '#2BB989',
+  topConfirmDetailsBtn: '#95D4B1',
+  font_size: {
+    inputLabelSize: 24,
+    inputPlaceHolder: 20,
+    SubHeading: 26,
+    details: 20,
+    iconDetails: 15,
+  },
 } as const;
+
 export const Colors_Buy = {} as const;
 export const Colors_Udharo = {} as const;
 export const Colors_DashBoard = {} as const;
 export const Colors_Ai = {} as const;
+export const Colors_NavBar = {
+  selected: {
+    sales: "#17E52F",
+    buy: '#FFD600',
+    udharo: '#FF4245',
+    dashBoard: '#1F1F1F',
+  }
+} as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
