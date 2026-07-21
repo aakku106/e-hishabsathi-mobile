@@ -1,6 +1,5 @@
-import React from 'react';
-import { Tabs } from 'expo-router';
+import { Tabs } from "expo-router";
 
 export default function TabsLayout() {
-	return <Tabs />;
+  return <Tabs />;
 }
