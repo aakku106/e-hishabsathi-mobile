@@ -10,7 +10,8 @@
 
 ---
 
-# NOTE: track.ts and t.ts are to be ignored and never to write on, their task was to track folders in git, nothing else
+# > [!WARNING]
+> : track.ts and t.ts are to be ignored and never to write on, their task was to track folders in git, nothing else
 
 # 1. Overview
 
