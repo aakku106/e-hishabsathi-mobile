@@ -3,62 +3,52 @@ import {
   TouchableOpacity,
   Text,
   StyleSheet,
-  View,
   GestureResponderEvent,
+  StyleProp,
+  ViewStyle,
+  TextStyle,
 } from 'react-native';
 
 interface SalesButtonProps {
   onPress?: (event: GestureResponderEvent) => void;
   title?: string;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
 }
 
 export const SalesButton: React.FC<SalesButtonProps> = ({
   onPress,
   title = 'SALES',
+  style,
+  textStyle,
 }) => {
   return (
-    <View style={styles.container}>
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={onPress}
-        style={styles.button}
-      >
-        <Text style={styles.text}>{title}</Text>
-      </TouchableOpacity>
-    </View>
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={onPress}
+      style={[styles.button, style]}
+    >
+      <Text style={[styles.text, textStyle]}>{title}</Text>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  // Outer container to demonstrate background placement
-  container: {
-    backgroundColor: '#38b28b', // Base background color matching the image
-    padding: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   button: {
     paddingVertical: 18,
     paddingHorizontal: 60,
-    borderRadius: 9999, // Full pill shape (stadium border)
+    borderRadius: 9999, // Pill/stadium shape
 
-    // Fill color (lighter, semi-transparent teal/mint)
-    backgroundColor: 'rgba(128, 212, 183, 0.85)',
-
-    // Light top/left highlights for inner inset effect
+    // Default manual colors (easy to swap later)
+    backgroundColor: '#80d4b7',
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.45)',
+    borderColor: 'rgba(255, 255, 255, 0.5)',
 
-    // Shadow details for depth (iOS)
+    // Shadows & depth
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
-
-    // Android elevation
     elevation: 4,
 
     alignItems: 'center',
@@ -68,7 +58,7 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontSize: 28,
     fontWeight: '600',
-    letterSpacing: 2, // Spacing out "SALES" text
+    letterSpacing: 2,
     textAlign: 'center',
   },
 });
