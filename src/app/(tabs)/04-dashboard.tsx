@@ -1,9 +1,9 @@
 import { StyleSheet, Text, View } from "react-native";
 
-export default function InventoryRoute() {
+export default function DashboardRoute() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Inventory</Text>
+      <Text style={styles.text}>Dashboard</Text>
     </View>
   );
 }
