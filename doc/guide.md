@@ -6,7 +6,7 @@
 >
 > **Architecture:** Feature-Based, Offline-First
 >
-> **Version:** v1.0
+> **Version:** v0.0.1-alpla.1
 
 ---
 
