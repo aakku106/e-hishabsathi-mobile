@@ -16,7 +16,9 @@
 - Prepare Schema for DB,
 - Write Go code that intract with PostgressDB using sqlc.
 
-# NOTE: look [[./guide0.0.1-alpha.1.md]] to know basic structure of project for FrontEnd.
+> [!NOTE]
+> look [[./guide0.0.1-alpha.1.md]] to know basic structure of project for FrontEnd.
+
 
 For today sanjita will only work in /src/app/(tabs)/udharo.tsx,sales.tsx,purchase.tsx and /src/feature/sales,udharo,purchase
 And
