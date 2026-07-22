@@ -1,3 +1,4 @@
+import UdharoScreen from "@/features/udharo/UdharoScreen";
 import { Colors_UdharoPage } from "@/shared/constants/colors";
 import { FontWeight } from "@/shared/constants/typography";
 import { StyleSheet, Text, View } from "react-native";
@@ -6,6 +7,7 @@ export default function UdharoRoute() {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Udharo</Text>
+      <UdharoScreen/>
     </View>
   );
 }
