@@ -69,7 +69,7 @@ export default function DashboardOverview() {
             placeholder="Select period"
             maxSelectable={1}
             onSelect={(selected) => setPeriod(selected as DropdownOption)}
-            bgColor={Colors_DashboardPage.topBtn}
+            bgColor={Colors_DashboardPage.background}
             textColor={Colors_DashboardPage.textPrimary}
             dropdownBgColor={Colors_DashboardPage.background}
             dropdownTextColor={Colors_DashboardPage.textPrimary}
