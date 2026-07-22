@@ -56,7 +56,7 @@ export default function DashboardOverview() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}>
+      showsVerticalScrollIndicator={true}>
       <View style={styles.hero}>
         <View style={styles.pill}>
           <Text style={styles.pillText}>DashBoard</Text>
@@ -80,8 +80,13 @@ export default function DashboardOverview() {
         </View>
 
         <View style={styles.cardGrid}>
-          {stats.map((stat) => (
+          {stats.map((stat, idx) => (
             <View key={stat.label} style={styles.statCard}>
+              {idx === 0 && (
+                <View style={styles.statBadge}>
+                  <Text style={styles.statBadgeText}>10%↑</Text>
+                </View>
+              )}
               <Text style={styles.statLabel}>{stat.label}</Text>
               <Text style={styles.statValue}>{stat.value}</Text>
 
@@ -109,16 +114,6 @@ export default function DashboardOverview() {
           ))}
         </View>
       </View>
-
-      <View style={styles.separator} />
-
-      <View style={styles.spacerPanel}>
-        <View style={styles.centerBadge}>
-          <Text style={styles.centerBadgeText}>10%↑</Text>
-        </View>
-      </View>
-
-      <View style={styles.separator} />
 
       <View style={styles.chartSection}>
         <View style={styles.chartHeader}>
@@ -253,6 +248,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     backgroundColor: Colors_DashboardPage.background,
     borderRadius: Radius.sm,
+    position: "relative",
     borderLeftWidth: 0,
     borderRightWidth: 0,
     borderTopWidth: 0,
@@ -315,6 +311,21 @@ const styles = StyleSheet.create({
     borderRadius: Radius.sm,
     paddingHorizontal: 8,
     paddingVertical: 2,
+  },
+  statBadge: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    backgroundColor: "#D9F6D0",
+    borderRadius: Radius.sm,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    zIndex: 2,
+  },
+  statBadgeText: {
+    color: Colors_DashboardPage.greenPrimary,
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
   },
   centerBadgeText: {
     color: Colors_DashboardPage.greenPrimary,
