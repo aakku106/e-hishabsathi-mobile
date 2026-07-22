@@ -42,18 +42,11 @@ export default function UdharoScreen() {
       >
         <View style={styles.header}>
           <View>
-            <Text style={styles.kicker}>Debt tracking</Text>
+            {/* <Text style={styles.kicker}>Debt tracking</Text> */}
             <Text style={styles.title}>Udharo</Text>
+            
           </View>
 
-          <View style={styles.badge}>
-            <MaterialCommunityIcons
-              name="circle-multiple"
-              size={18}
-              color={Colors_UdharoPage.textPrimary}
-            />
-            <Text style={styles.badgeText}>Live balance</Text>
-          </View>
         </View>
 
         <View style={styles.formCard}>
@@ -67,6 +60,16 @@ export default function UdharoScreen() {
             placeholderColor="rgba(31,31,31,0.35)"
             containerStyle={styles.inputContainer}
           />
+
+          {/* <LabeledInput
+            label="Due date"
+            placeholder="Select date"
+            labelColor={Colors_UdharoPage.textPrimary}
+            inputBgColor={Colors_UdharoPage.inputBG}
+            borderColor={Colors_UdharoPage.border}
+            placeholderColor="rgba(31,31,31,0.35)"
+            containerStyle={styles.inputContainer}
+          /> */}
 
           <LabeledInput
             label="By who"
@@ -83,6 +86,23 @@ export default function UdharoScreen() {
             style={styles.primaryButton}
             textStyle={styles.primaryButtonText}
           />
+        </View>
+
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Outstanding</Text>
+            <Text style={styles.summaryValue}>Rs. 73,500</Text>
+          </View>
+          {/* <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Due soon</Text>
+            <Text style={styles.summaryValue}>2 accounts</Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Overdue</Text>
+            <Text style={styles.summaryValue}>1 account</Text>
+          </View> */}
         </View>
 
         <View style={styles.section}>
@@ -126,12 +146,10 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacing.lg,
     paddingBottom: Spacing["3xl"],
+    gap: Spacing.lg,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Spacing.lg,
+    gap: Spacing.sm,
   },
   kicker: {
     color: Colors_UdharoPage.textSecondary,
@@ -146,9 +164,16 @@ const styles = StyleSheet.create({
     fontWeight: Typography_UdharoPage.title.fontWeight,
     lineHeight: Typography_UdharoPage.title.lineHeight,
     letterSpacing: Typography_UdharoPage.title.letterSpacing,
-    marginTop: 2,
+  },
+  subtitle: {
+    color: Colors_UdharoPage.textSecondary,
+    fontSize: FontSize.lg,
+    lineHeight: 22,
+    opacity: 0.9,
+    maxWidth: 320,
   },
   badge: {
+    alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: Spacing.md,
@@ -168,10 +193,10 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderWidth: BorderWidth.base,
     borderColor: Colors_UdharoPage.border,
-    marginBottom: Spacing.lg,
+    gap: Spacing.sm,
   },
   inputContainer: {
-    marginBottom: Spacing.md,
+    marginBottom: 0,
   },
   primaryButton: {
     width: "100%",
@@ -185,14 +210,46 @@ const styles = StyleSheet.create({
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semibold,
   },
+  summaryCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors_UdharoPage.surface,
+    borderRadius: Radius.xl,
+    borderWidth: BorderWidth.base,
+    borderColor: Colors_UdharoPage.border,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+  },
+  summaryItem: {
+    flex: 1,
+    alignItems: "center",
+    gap: Spacing.xxs,
+  },
+  summaryLabel: {
+    color: Colors_UdharoPage.textSecondary,
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semibold,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  summaryValue: {
+    color: Colors_UdharoPage.textSecondary,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+    textAlign: "center",
+  },
+  summaryDivider: {
+    width: BorderWidth.thin,
+    alignSelf: "stretch",
+    backgroundColor: Colors_UdharoPage.border,
+  },
   section: {
-    marginTop: Spacing.sm,
+    gap: Spacing.md,
   },
   sectionHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.md,
   },
   sectionTitle: {
     color: Colors_UdharoPage.textSecondary,
