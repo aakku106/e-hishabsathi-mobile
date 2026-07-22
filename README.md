@@ -95,27 +95,27 @@ The project uses page-specific constants instead of a single light/dark theme.
 Import the token set that matches the screen you are building and use it directly in styles.
 
 ```tsx
-import { StyleSheet, Text, View } from 'react-native';
-import { Colors_SalesPage } from '@/shared/constants/colors';
-import { FontSize, FontWeight } from '@/shared/constants/typography';
-import { Radius } from '@/shared/constants/radius';
-import { Spacing } from '@/shared/constants/spacing';
+import { StyleSheet, Text, View } from "react-native";
+import { Colors_SalesPage } from "@/shared/constants/colors";
+import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { Radius } from "@/shared/constants/radius";
+import { Spacing } from "@/shared/constants/spacing";
 
 const styles = StyleSheet.create({
-   container: {
-      flex: 1,
-      backgroundColor: Colors_SalesPage.background,
-      padding: Spacing.lg,
-   },
-   title: {
-      color: Colors_SalesPage.textPrimary,
-      fontSize: FontSize['3xl'],
-      fontWeight: FontWeight.semibold,
-   },
-   card: {
-      borderRadius: Radius.lg,
-      backgroundColor: Colors_SalesPage.surface,
-   },
+  container: {
+    flex: 1,
+    backgroundColor: Colors_SalesPage.background,
+    padding: Spacing.lg,
+  },
+  title: {
+    color: Colors_SalesPage.textPrimary,
+    fontSize: FontSize["3xl"],
+    fontWeight: FontWeight.semibold,
+  },
+  card: {
+    borderRadius: Radius.lg,
+    backgroundColor: Colors_SalesPage.surface,
+  },
 });
 ```
 
@@ -204,4 +204,3 @@ More detailed architecture notes live in [doc/guide0.0.1-alpha.1.md](doc/guide0.
 ## Project Status
 
 This repository is still in active frontend setup work. The current focus is establishing the shared structure, constants, screens, and architecture conventions that future feature work will build on.
-
