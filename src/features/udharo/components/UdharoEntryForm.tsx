@@ -80,12 +80,12 @@ export default function UdharoEntryForm() {
             >
               <View style={styles.entryContent}>
                 <Text style={styles.entryName}>{entry.name}</Text>
-                <Text style={styles.entryDue}>{entry.due}</Text>
+                {/* <Text style={styles.entryDue}>{entry.due}</Text> */}
               </View>
 
               <View style={styles.entryRight}>
                 <Text style={styles.entryAmount}>{entry.amount}</Text>
-                <Text style={styles.entryStatus}>{entry.status}</Text>
+                {/* <Text style={styles.entryStatus}>{entry.status}</Text> */}
               </View>
             </View>
           ))}
