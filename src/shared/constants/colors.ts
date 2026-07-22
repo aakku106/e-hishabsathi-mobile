@@ -62,16 +62,13 @@ export const Colors_UdharoPage = {
 } as const;
 
 export const Colors_DashboardPage = {
-  textPrimary: "#FFFFFF",
-  textSecondary: "#D1D5DB",
-  background: "#1F1F1F",
-  surface: "#2E3135",
-  surfaceAlt: "#3A3D42",
-  topBtn: "#2E3135",
-  inputBG: "#212225",
-  enterBtn: "#17E52F",
-  confirnBtn: "#13C924",
-  topConfirmDetailsBtn: "#3A3D42",
+  textPrimary: "#000000",
+  textSecondary: "#3f3f3f",
+  textTernary: "#565656",
+  background: "#ffffff",
+  greenPrimary: "#06cc5c",
+  redPrimary: "#e53636",
+  topBtn: "#cfefca",
   border: "#4B5563",
   font_size: {
     inputLabelSize: 24,
