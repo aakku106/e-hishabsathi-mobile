@@ -4,10 +4,15 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import TopButton from "@/shared/components/Button/TopButton";
 import LabeledInput from "@/shared/components/Input/LabledInput";
 import { Colors_UdharoPage } from "@/shared/constants/colors";
+import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 
+import { useUdharoEntries } from "../hooks/useUdharoEntries";
+
 export default function UdharoEntryForm() {
+  const udharoEntries = useUdharoEntries();
+
   return (
     <ScrollView
       contentContainerStyle={styles.content}
@@ -57,6 +62,31 @@ export default function UdharoEntryForm() {
           size={24}
           color={Colors_UdharoPage.textPrimary}
         />
+      </View>
+
+      <View style={styles.listSection}>
+        <Text style={styles.sectionTitle}>Recent entries</Text>
+
+        <View style={styles.listCard}>
+          {udharoEntries.map((entry, index) => (
+            <View
+              key={`${entry.name}-${index}`}
+              style={[
+                styles.entryRow,
+                index !== udharoEntries.length - 1 && styles.entryDivider,
+              ]}>
+              <View style={styles.entryContent}>
+                <Text style={styles.entryName}>{entry.name}</Text>
+                <Text style={styles.entryDue}>{entry.due}</Text>
+              </View>
+
+              <View style={styles.entryRight}>
+                <Text style={styles.entryAmount}>{entry.amount}</Text>
+                <Text style={styles.entryStatus}>{entry.status}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
       </View>
     </ScrollView>
   );
@@ -125,5 +155,60 @@ const styles = StyleSheet.create({
     color: Colors_UdharoPage.textPrimary,
     fontSize: FontSize["2xl"],
     fontWeight: FontWeight.bold,
+  },
+  listSection: {
+    marginTop: Spacing["4xl"],
+    gap: Spacing.md,
+  },
+  sectionTitle: {
+    color: Colors_UdharoPage.textPrimary,
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.bold,
+  },
+  listCard: {
+    backgroundColor: Colors_UdharoPage.surface,
+    borderRadius: Radius.xl,
+    borderWidth: BorderWidth.base,
+    borderColor: Colors_UdharoPage.border,
+    overflow: "hidden",
+  },
+  entryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+  },
+  entryDivider: {
+    borderBottomWidth: BorderWidth.thin,
+    borderBottomColor: Colors_UdharoPage.border,
+  },
+  entryContent: {
+    flex: 1,
+  },
+  entryName: {
+    color: Colors_UdharoPage.textSecondary,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
+  },
+  entryDue: {
+    color: Colors_UdharoPage.textSecondary,
+    fontSize: FontSize.sm,
+    marginTop: 2,
+  },
+  entryRight: {
+    alignItems: "flex-end",
+  },
+  entryAmount: {
+    color: Colors_UdharoPage.textSecondary,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
+  },
+  entryStatus: {
+    color: Colors_UdharoPage.textSecondary,
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semibold,
+    marginTop: 2,
+    textTransform: "uppercase",
   },
 });
