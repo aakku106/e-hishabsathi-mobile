@@ -1,6 +1,13 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import { Colors_DashboardPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
@@ -16,27 +23,57 @@ type ToggleProps = {
   active: string;
   left: string;
   right: string;
+  onChange?: (value: string) => void;
 };
 
-function Toggle({ active, left, right }: ToggleProps) {
-  const leftActive = active === left;
+function Toggle({ active, left, right, onChange }: ToggleProps) {
+  const progress = useRef(new Animated.Value(active === left ? 0 : 1)).current;
+
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: active === left ? 0 : 1,
+      duration: 260,
+      useNativeDriver: true,
+    }).start();
+  }, [active, left, progress]);
+
+  // toggle width matches styles.toggle (196)
+  const translateX = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 98],
+  });
 
   return (
     <View style={styles.toggle}>
-      <View
-        style={[
-          styles.toggleFill,
-          leftActive ? styles.toggleFillLeft : styles.toggleFillRight,
-        ]}
+      <Animated.View
+        style={[styles.toggleFill, { transform: [{ translateX }], width: 98 }]}
       />
-      <Text
-        style={[styles.toggleLabel, leftActive && styles.toggleLabelActive]}>
-        {left}
-      </Text>
-      <Text
-        style={[styles.toggleLabel, !leftActive && styles.toggleLabelActive]}>
-        {right}
-      </Text>
+
+      <TouchableOpacity
+        style={styles.toggleHalf}
+        activeOpacity={0.8}
+        onPress={() => onChange?.(left)}>
+        <Text
+          style={[
+            styles.toggleLabel,
+            active === left && styles.toggleLabelActive,
+          ]}>
+          {left}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.toggleHalf}
+        activeOpacity={0.8}
+        onPress={() => onChange?.(right)}>
+        <Text
+          style={[
+            styles.toggleLabel,
+            active === right && styles.toggleLabelActive,
+          ]}>
+          {right}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -51,6 +88,13 @@ export default function DashboardOverview() {
   ];
 
   const [period, setPeriod] = useState<DropdownOption>(periodOptions[0]);
+
+  // UI toggle states
+  const [incomeMode, setIncomeMode] = useState<string>("Income");
+  const [trendMode, setTrendMode] = useState<string>("Month");
+
+  const chartFade = useRef(new Animated.Value(1)).current;
+  const trendFade = useRef(new Animated.Value(1)).current;
 
   return (
     <ScrollView
@@ -114,9 +158,27 @@ export default function DashboardOverview() {
 
       <View style={styles.chartSection}>
         <View style={styles.chartHeader}>
-          <Toggle active="Income" left="Income" right="Spend" />
+          <Toggle
+            active={incomeMode}
+            left="Income"
+            right="Spend"
+            onChange={(v) => {
+              Animated.timing(chartFade, {
+                toValue: 0,
+                duration: 180,
+                useNativeDriver: true,
+              }).start(() => {
+                setIncomeMode(v);
+                Animated.timing(chartFade, {
+                  toValue: 1,
+                  duration: 220,
+                  useNativeDriver: true,
+                }).start();
+              });
+            }}
+          />
 
-          {/* AI icon placeholder - replace with provided SVG later */}
+          {/* AI icon placeholder - replace with provided SVG later (figma ma xa need to export, ask @aakku106 for svg) */}
           <View
             style={styles.floatingButton}
             accessible
@@ -126,33 +188,59 @@ export default function DashboardOverview() {
         </View>
 
         <View style={styles.barChartWrap}>
-          <View style={styles.axisLabels}>
+          <Animated.View style={[styles.axisLabels, { opacity: chartFade }]}>
             <Text style={styles.axisLabel}>Rs. 30,000</Text>
             <Text style={styles.axisLabel}>Rs. 20,000</Text>
             <Text style={styles.axisLabel}>Rs. 10,000</Text>
             <Text style={styles.axisLabel}>Rs. 5,000</Text>
             <Text style={styles.axisLabel}>Rs.0</Text>
-          </View>
+          </Animated.View>
 
-          <View style={styles.barArea}>
-            {bars.map((bar) => (
-              <View key={bar.label} style={styles.barColumn}>
-                <View
-                  style={[styles.bar, { height: Math.max(0, bar.value) * 7 }]}
-                />
-                <Text style={styles.barLabel}>{bar.label}</Text>
-              </View>
-            ))}
-          </View>
+          <Animated.View style={[styles.barArea, { opacity: chartFade }]}>
+            {bars.map((bar) => {
+              const value =
+                incomeMode === "Income" ?
+                  bar.value
+                : Math.round(bar.value * 0.6);
+              return (
+                <View key={bar.label} style={styles.barColumn}>
+                  <View
+                    style={[styles.bar, { height: Math.max(0, value) * 7 }]}
+                  />
+                  <Text style={styles.barLabel}>{bar.label}</Text>
+                </View>
+              );
+            })}
+          </Animated.View>
         </View>
       </View>
 
       <View style={styles.separator} />
 
       <View style={styles.trendSection}>
-        <Toggle active="Month" left="Month" right="Year" />
+        <View style={{ alignItems: "center" }}>
+          <Toggle
+            active={trendMode}
+            left="Month"
+            right="Year"
+            onChange={(v) => {
+              Animated.timing(trendFade, {
+                toValue: 0,
+                duration: 160,
+                useNativeDriver: true,
+              }).start(() => {
+                setTrendMode(v);
+                Animated.timing(trendFade, {
+                  toValue: 1,
+                  duration: 200,
+                  useNativeDriver: true,
+                }).start();
+              });
+            }}
+          />
+        </View>
 
-        <View style={styles.trendCard}>
+        <Animated.View style={[styles.trendCard, { opacity: trendFade }]}>
           <View style={styles.trendTopRow}>
             <View style={styles.trendValuePill}>
               <Text style={styles.trendValueText}>Rs. 34,430</Text>
@@ -161,7 +249,10 @@ export default function DashboardOverview() {
 
           <View style={styles.trendChart}>
             {trend.map((point, index) => {
-              const heights = [52, 72, 82, 60, 58, 24, 48];
+              const heights =
+                trendMode === "Month" ?
+                  [52, 72, 82, 60, 58, 24, 48]
+                : [32, 42, 62, 40, 38, 14, 28];
               return (
                 <View key={point.label} style={styles.trendColumn}>
                   <View style={[styles.trendDot, { height: heights[index] }]} />
@@ -170,7 +261,7 @@ export default function DashboardOverview() {
               );
             })}
           </View>
-        </View>
+        </Animated.View>
       </View>
 
       <View style={styles.bottomGear}>
@@ -342,6 +433,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     overflow: "hidden",
     position: "relative",
+  },
+  toggleHalf: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   toggleFill: {
     position: "absolute",
