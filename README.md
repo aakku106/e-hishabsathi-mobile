@@ -2,6 +2,8 @@
 
 Frontend for the e-HishabSathi mobile app, built with React Native and Expo.
 
+Current version: `0.0.1-alpha.1`
+
 ## What this README is for
 
 This file is the entry point for the frontend project. Keep it high-level and use the more detailed docs below for implementation guidance.
