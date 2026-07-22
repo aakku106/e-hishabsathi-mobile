@@ -21,6 +21,170 @@ export const Fonts = Platform.select({
   },
 });
 
+export const Typography_SalesPage = {
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    lineHeight: 34,
+    letterSpacing: 1,
+  },
+  subtitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    lineHeight: 26,
+    letterSpacing: 0.25,
+  },
+  body: {
+    fontSize: 16,
+    fontWeight: "400",
+    lineHeight: 24,
+    letterSpacing: 0.25,
+  },
+  button: {
+    fontSize: 28,
+    fontWeight: "600",
+    lineHeight: 34,
+    letterSpacing: 2,
+  },
+} as const;
+
+export const Typography_PurchasesPage = {
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    lineHeight: 34,
+    letterSpacing: 1,
+  },
+  subtitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    lineHeight: 26,
+    letterSpacing: 0.25,
+  },
+  body: {
+    fontSize: 16,
+    fontWeight: "400",
+    lineHeight: 24,
+    letterSpacing: 0.25,
+  },
+  button: {
+    fontSize: 24,
+    fontWeight: "600",
+    lineHeight: 30,
+    letterSpacing: 1.5,
+  },
+} as const;
+
+export const Typography_BuyPage = Typography_PurchasesPage;
+
+export const Typography_UdharoPage = {
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    lineHeight: 34,
+    letterSpacing: 1,
+  },
+  subtitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    lineHeight: 26,
+    letterSpacing: 0.25,
+  },
+  body: {
+    fontSize: 16,
+    fontWeight: "400",
+    lineHeight: 24,
+    letterSpacing: 0.25,
+  },
+  button: {
+    fontSize: 24,
+    fontWeight: "600",
+    lineHeight: 30,
+    letterSpacing: 1.5,
+  },
+} as const;
+
+export const Typography_DashboardPage = {
+  title: {
+    fontSize: 30,
+    fontWeight: "700",
+    lineHeight: 36,
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    lineHeight: 24,
+    letterSpacing: 0.25,
+  },
+  body: {
+    fontSize: 15,
+    fontWeight: "400",
+    lineHeight: 22,
+    letterSpacing: 0.2,
+  },
+  button: {
+    fontSize: 22,
+    fontWeight: "600",
+    lineHeight: 28,
+    letterSpacing: 1,
+  },
+} as const;
+
+export const Typography_SettingsPage = {
+  title: {
+    fontSize: 26,
+    fontWeight: "700",
+    lineHeight: 32,
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    lineHeight: 24,
+    letterSpacing: 0.25,
+  },
+  body: {
+    fontSize: 15,
+    fontWeight: "400",
+    lineHeight: 22,
+    letterSpacing: 0.2,
+  },
+  button: {
+    fontSize: 22,
+    fontWeight: "600",
+    lineHeight: 28,
+    letterSpacing: 1,
+  },
+} as const;
+
+export const Typography_AiPage = {
+  title: {
+    fontSize: 26,
+    fontWeight: "700",
+    lineHeight: 32,
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    lineHeight: 24,
+    letterSpacing: 0.25,
+  },
+  body: {
+    fontSize: 15,
+    fontWeight: "400",
+    lineHeight: 22,
+    letterSpacing: 0.2,
+  },
+  button: {
+    fontSize: 22,
+    fontWeight: "600",
+    lineHeight: 28,
+    letterSpacing: 1,
+  },
+} as const;
+
 export const FontSize = {
   xs: 10,
   sm: 12,
