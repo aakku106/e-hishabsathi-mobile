@@ -1,56 +1,207 @@
-# Welcome to your Expo app 👋
+# e-HishabSathi Mobile Frontend
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Frontend for the e-HishabSathi mobile app, built with React Native and Expo. The app follows a feature-based, offline-first architecture and uses Expo Router for navigation.
 
-## Get started
+## Project Overview
 
-1. Install dependencies
+This codebase is organized around business areas instead of a single global UI theme. The main goal is to keep the frontend scalable, easy to extend, and simple to work on as new business modules are added.
 
-   ```bash
-   npm install
-   ```
+Core ideas:
 
-2. Start the app
+- Feature-based structure for sales, purchases, udharo, dashboard, settings, and future modules.
+- Offline-first data flow with SQLite as the local source of truth.
+- Shared UI and shared constants live in one place and are reused across features.
+- Routing stays thin and mostly delegates to feature screens.
 
-   ```bash
-   npx expo start
-   ```
+## Tech Stack
 
-In the output, you'll find options to open the app in a
+- Expo
+- React Native
+- Expo Router
+- TypeScript
+- SQLite for local storage
+- Zustand for state
+- TanStack Query for async data coordination
+- React Hook Form for forms
+- Zod for validation
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Current App Areas
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+The current tab structure includes:
 
-## Get a fresh project
+- Sales
+- Purchases
+- Udharo
+- Dashboard
+- Settings
 
-When you're ready, run:
+Additional work areas already exist under `src/features/` for analytics, business, inventory, purchase, sales, settings, tax, and udharo.
 
-```bash
-npm run reset-project
+## Folder Structure
+
+The important folders in this frontend are:
+
+- `src/app/` for Expo Router routes and layouts.
+- `src/features/` for business modules.
+- `src/shared/` for reusable components, hooks, constants, theme helpers, and utilities.
+- `src/database/` for SQLite setup, schema, migrations, and seeds.
+- `src/services/` for future integrations such as sync, export, notifications, and AI.
+- `src/providers/` for React providers.
+- `src/store/` for UI and app state.
+- `src/config/` for environment and app configuration.
+- `src/lib/` for initialized third-party libraries.
+
+### Example structure
+
+```text
+src/
+   app/
+   features/
+   shared/
+   database/
+   services/
+   providers/
+   store/
+   config/
+   lib/
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Routing
 
-### Other setup steps
+Expo Router handles navigation through the `src/app/` folder.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Route groups in the current app include:
 
-## Learn more
+- `(auth)` for authentication flows.
+- `(tabs)` for the main tab navigation.
 
-To learn more about developing your project with Expo, look at the following resources:
+Keep route files minimal. A route should ideally only render or re-export a screen component.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Shared Constants
 
-## Join the community
+The project uses page-specific constants instead of a single light/dark theme.
 
-Join our community of developers creating universal apps.
+### Constants files
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- `src/shared/constants/colors.ts` for page color maps.
+- `src/shared/constants/typography.ts` for font families, font sizes, weights, and page typography presets.
+- `src/shared/constants/spacing.ts` for spacing scale and layout sizes.
+- `src/shared/constants/radius.ts` for border radius and border widths.
+- `src/shared/constants/routes.ts` for route names.
+- `src/shared/constants/businessTypes.ts` for business type values.
+
+### Usage pattern
+
+Import the token set that matches the screen you are building and use it directly in styles.
+
+```tsx
+import { StyleSheet, Text, View } from 'react-native';
+import { Colors_SalesPage } from '@/shared/constants/colors';
+import { FontSize, FontWeight } from '@/shared/constants/typography';
+import { Radius } from '@/shared/constants/radius';
+import { Spacing } from '@/shared/constants/spacing';
+
+const styles = StyleSheet.create({
+   container: {
+      flex: 1,
+      backgroundColor: Colors_SalesPage.background,
+      padding: Spacing.lg,
+   },
+   title: {
+      color: Colors_SalesPage.textPrimary,
+      fontSize: FontSize['3xl'],
+      fontWeight: FontWeight.semibold,
+   },
+   card: {
+      borderRadius: Radius.lg,
+      backgroundColor: Colors_SalesPage.surface,
+   },
+});
+```
+
+### Current token sets
+
+- `Colors_SalesPage` and `Typography_SalesPage`
+- `Colors_PurchasesPage` and `Typography_PurchasesPage`
+- `Colors_BuyPage` and `Typography_BuyPage`
+- `Colors_UdharoPage` and `Typography_UdharoPage`
+- `Colors_DashboardPage` and `Typography_DashboardPage`
+- `Colors_SettingsPage` and `Typography_SettingsPage`
+- `Colors_AiPage` and `Typography_AiPage`
+
+## Component Styling
+
+Reusable components should stay flexible and accept style overrides when needed.
+
+For example, shared button components can define sensible defaults but still allow screens to override colors, spacing, and text styling from page constants.
+
+## Data Architecture
+
+The frontend is designed to keep UI and data responsibilities separate.
+
+The intended flow is:
+
+```text
+Route
+   -> Feature Screen
+   -> Feature Hook
+   -> Feature Data Layer
+   -> SQLite
+```
+
+Screens should not talk directly to SQLite.
+
+## Business Rules
+
+- Keep business features isolated from one another.
+- Put reusable UI in `src/shared/components/` only when more than one feature needs it.
+- Keep business-specific logic inside the owning feature.
+- Avoid hardcoding colors, spacing, and typography in screens when a token exists.
+- Use SQLite for business data instead of duplicating it in global UI state.
+
+## Design System Direction
+
+The app does not use a generic light/dark visual theme as the main design model. Instead, each page or business section can define its own visual identity through constants.
+
+That means:
+
+- Sales can have one palette.
+- Purchases can have another palette.
+- Udharo, Dashboard, Settings, and future modules can each have their own look.
+
+## Build and Run
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Start the app:
+
+```bash
+npx expo start
+```
+
+Useful Expo resources:
+
+- Development build
+- iOS simulator
+- Android emulator
+- Expo Go
+
+## Development Notes
+
+- Keep route files thin.
+- Keep feature folders self-contained.
+- Extend the shared constants files instead of scattering raw values.
+- Add new business modules under `src/features/` and wire them through `src/app/`.
+
+## Reference Architecture
+
+More detailed architecture notes live in [doc/guide0.0.1-alpha.1.md](doc/guide0.0.1-alpha.1.md).
+
+## Project Status
+
+This repository is still in active frontend setup work. The current focus is establishing the shared structure, constants, screens, and architecture conventions that future feature work will build on.
+
