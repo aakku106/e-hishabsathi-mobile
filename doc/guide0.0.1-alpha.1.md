@@ -127,31 +127,33 @@ Example
 ```
 app/
 
-    _layout.tsx
+      _layout.tsx
 
-    (auth)/
+      (auth)/
 
-        login.tsx
+            login.tsx
 
-        onboarding.tsx
+            onboarding.tsx
 
-    (tabs)/
+      (tabs)/
 
-        index.tsx
+            01-sales.tsx
 
-        sales.tsx
+            02-purchases.tsx
 
-        purchases.tsx
+            03-udharo.tsx
 
-        inventory.tsx
+            04-dashboard.tsx
 
-        credit.tsx
+            05-settings.tsx
+```
 
-        tax.tsx
+Route files must stay thin and only re-export the feature screen.
 
-        analytics.tsx
+Example
 
-        settings.tsx
+```tsx
+export { default } from "@/features/udharo/UdharoScreen";
 ```
 
 ---
@@ -180,21 +182,31 @@ Example
 ```
 features/
 
-    sales/
+      udharo/
 
-        components/
+            components/
 
-        hooks/
+            hooks/
 
-        data/
+            data/
 
-        utils/
+            UdharoScreen.tsx
 
-        validation.ts
+      sales/
 
-        types.ts
+            components/
 
-        SalesScreen.tsx
+            hooks/
+
+            data/
+
+            utils/
+
+            validation.ts
+
+            types.ts
+
+            SalesScreen.tsx
 ```
 
 ---
@@ -250,12 +262,29 @@ Responsibilities
 - Data mapping
 - Business data access
 
+During UI work, this folder can also expose temporary mock records.
+Screens must still consume the data through a feature hook.
+
 Example
 
 ```
-sales.local.ts
+udharo.mock.ts
 
-sales.repository.ts
+udharo.repository.ts
+```
+
+Udharo example flow
+
+```tsx
+UdharoScreen
+
+↓
+
+useUdharoEntries()
+
+↓
+
+udharo.mock.ts
 ```
 
 No screen should execute SQL directly.
@@ -783,4 +812,4 @@ This layered architecture ensures a clean separation between navigation, present
 
 ---
 
-Last modified on 2026-07-22 03:30 by Adarasha Gaihre (@aakku106)
+Last modified on 2026-07-22 013:40 PM by Rijan Mohan Shrestha (tofu-10)
