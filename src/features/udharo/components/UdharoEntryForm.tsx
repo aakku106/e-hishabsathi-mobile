@@ -64,6 +64,8 @@ export default function UdharoEntryForm() {
         />
       </View>
 
+      <View style={styles.scrollRevealSpacer} />
+
       <View style={styles.listSection}>
         <Text style={styles.sectionTitle}>Recent entries</Text>
 
@@ -74,7 +76,8 @@ export default function UdharoEntryForm() {
               style={[
                 styles.entryRow,
                 index !== udharoEntries.length - 1 && styles.entryDivider,
-              ]}>
+              ]}
+            >
               <View style={styles.entryContent}>
                 <Text style={styles.entryName}>{entry.name}</Text>
                 <Text style={styles.entryDue}>{entry.due}</Text>
@@ -155,6 +158,9 @@ const styles = StyleSheet.create({
     color: Colors_UdharoPage.textPrimary,
     fontSize: FontSize["2xl"],
     fontWeight: FontWeight.bold,
+  },
+  scrollRevealSpacer: {
+    height: Spacing["4xl"],
   },
   listSection: {
     marginTop: Spacing["4xl"],
