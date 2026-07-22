@@ -44,9 +44,7 @@ export default function UdharoScreen() {
           <View>
             {/* <Text style={styles.kicker}>Debt tracking</Text> */}
             <Text style={styles.title}>Udharo</Text>
-            
           </View>
-
         </View>
 
         <View style={styles.formCard}>
