@@ -109,21 +109,19 @@ export default function DashboardOverview() {
         </View>
       </View>
 
+      <View style={styles.separator} />
+      <View style={styles.separatorGap} />
+
       <View style={styles.chartSection}>
         <View style={styles.chartHeader}>
           <Toggle active="Income" left="Income" right="Spend" />
-          <View style={styles.floatingButton}>
-            <MaterialCommunityIcons
-              name={"sparkles" as any}
-              size={24}
-              color="#D8F827"
-            />
-            <MaterialCommunityIcons
-              name="star-four-points"
-              size={22}
-              color="#FFFFFF"
-              style={styles.floatingStar}
-            />
+
+          {/* AI icon placeholder - replace with provided SVG later */}
+          <View
+            style={styles.floatingButton}
+            accessible
+            accessibilityLabel="AI action placeholder">
+            <View style={styles.floatingIconPlaceholder} />
           </View>
         </View>
 
@@ -331,8 +329,9 @@ const styles = StyleSheet.create({
   },
   chartHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
+    position: "relative",
   },
   toggle: {
     width: 196,
@@ -379,11 +378,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 4,
+    position: "absolute",
+    right: Spacing.lg,
+    top: -10,
   },
   floatingStar: {
     position: "absolute",
     bottom: 16,
     right: 14,
+  },
+  floatingIconPlaceholder: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: "#D8F82733",
+  },
+  separatorGap: {
+    height: 48,
   },
   barChartWrap: {
     flexDirection: "row",
