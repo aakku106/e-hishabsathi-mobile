@@ -95,6 +95,17 @@ export default function DashboardOverview() {
 
   const chartFade = useRef(new Animated.Value(1)).current;
   const trendFade = useRef(new Animated.Value(1)).current;
+  const BAR_CHART_HEIGHT = 220;
+  const maxBarValue = Math.max(...bars.map((b) => b.value), 1);
+  const formatRs = (v: number) =>
+    `Rs. ${v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+  const axisTicks = [
+    Math.round(maxBarValue),
+    Math.round(maxBarValue * 0.66),
+    Math.round(maxBarValue * 0.33),
+    Math.round(maxBarValue * 0.16),
+    0,
+  ];
 
   return (
     <ScrollView
@@ -188,25 +199,35 @@ export default function DashboardOverview() {
         </View>
 
         <View style={styles.barChartWrap}>
-          <Animated.View style={[styles.axisLabels, { opacity: chartFade }]}>
-            <Text style={styles.axisLabel}>Rs. 30,000</Text>
-            <Text style={styles.axisLabel}>Rs. 20,000</Text>
-            <Text style={styles.axisLabel}>Rs. 10,000</Text>
-            <Text style={styles.axisLabel}>Rs. 5,000</Text>
-            <Text style={styles.axisLabel}>Rs.0</Text>
+          <Animated.View
+            style={[
+              styles.axisLabels,
+              { opacity: chartFade, height: BAR_CHART_HEIGHT },
+            ]}>
+            {axisTicks.map((t) => (
+              <Text key={t} style={styles.axisLabel}>
+                {formatRs(t)}
+              </Text>
+            ))}
           </Animated.View>
 
-          <Animated.View style={[styles.barArea, { opacity: chartFade }]}>
+          <Animated.View
+            style={[
+              styles.barArea,
+              { opacity: chartFade, height: BAR_CHART_HEIGHT },
+            ]}>
             {bars.map((bar) => {
-              const value =
+              const rawValue =
                 incomeMode === "Income" ?
                   bar.value
                 : Math.round(bar.value * 0.6);
+              const height = Math.max(
+                6,
+                Math.round((rawValue / maxBarValue) * (BAR_CHART_HEIGHT - 24)),
+              );
               return (
                 <View key={bar.label} style={styles.barColumn}>
-                  <View
-                    style={[styles.bar, { height: Math.max(0, value) * 7 }]}
-                  />
+                  <View style={[styles.bar, { height }]} />
                   <Text style={styles.barLabel}>{bar.label}</Text>
                 </View>
               );
@@ -520,19 +541,25 @@ const styles = StyleSheet.create({
   barColumn: {
     alignItems: "center",
     justifyContent: "flex-end",
-    width: 28,
+    width: 40,
     gap: Spacing.xs,
   },
   bar: {
-    width: 18,
+    width: 28,
     borderRadius: Radius.pill,
     backgroundColor: Colors_DashboardPage.greenPrimary,
     minHeight: 6,
+    shadowColor: "#2ECC71",
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   barLabel: {
     color: Colors_DashboardPage.greenPrimary,
-    fontSize: FontSize.xs,
+    fontSize: FontSize.sm,
     fontWeight: FontWeight.bold,
+    textAlign: "center",
   },
   trendSection: {
     gap: Spacing.md,
