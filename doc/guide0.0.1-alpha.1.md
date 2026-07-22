@@ -603,20 +603,20 @@ Only initialization should exist here.
 
 # 5. Recommended Libraries
 
-| Library | Purpose |
-|----------|----------|
-| Expo Router | File-based navigation |
-| expo-sqlite | Local SQLite database |
-| React Hook Form | Form state management |
-| Zod | Form validation |
-| Zustand | Lightweight global state |
-| TanStack Query | Future server synchronization |
-| Day.js | Date utilities |
-| React Native Reanimated | Animations |
-| React Native Gesture Handler | Gesture support |
-| @gorhom/bottom-sheet | Bottom sheet component |
-| react-native-gifted-charts | Business charts |
-| @expo/vector-icons | Icons |
+| Library                      | Purpose                       |
+| ---------------------------- | ----------------------------- |
+| Expo Router                  | File-based navigation         |
+| expo-sqlite                  | Local SQLite database         |
+| React Hook Form              | Form state management         |
+| Zod                          | Form validation               |
+| Zustand                      | Lightweight global state      |
+| TanStack Query               | Future server synchronization |
+| Day.js                       | Date utilities                |
+| React Native Reanimated      | Animations                    |
+| React Native Gesture Handler | Gesture support               |
+| @gorhom/bottom-sheet         | Bottom sheet component        |
+| react-native-gifted-charts   | Business charts               |
+| @expo/vector-icons           | Icons                         |
 
 ---
 
