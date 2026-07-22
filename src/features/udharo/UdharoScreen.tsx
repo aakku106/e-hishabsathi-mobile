@@ -1,12 +1,5 @@
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Colors_UdharoPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
@@ -17,6 +10,7 @@ import {
   Typography_UdharoPage,
 } from "@/shared/constants/typography";
 import TopButton from "@/shared/components/Button/TopButton";
+import LabeledInput from "@/shared/components/Input/LabledInput";
 
 const recentEntries = [
   {
@@ -63,26 +57,26 @@ export default function UdharoScreen() {
         </View>
 
         <View style={styles.formCard}>
-          <Text style={styles.formLabel}>Udharo amount</Text>
-          <View style={styles.inputBox}>
-            <Text style={styles.inputPrefix}>Rs.</Text>
-            <TextInput
-              placeholder="0.00"
-              placeholderTextColor="rgba(31,31,31,0.35)"
-              style={styles.input}
-              keyboardType="numeric"
-            />
-          </View>
+          <LabeledInput
+            label="Udharo amount"
+            placeholder="0.00"
+            keyboardType="numeric"
+            labelColor={Colors_UdharoPage.textPrimary}
+            inputBgColor={Colors_UdharoPage.inputBG}
+            borderColor={Colors_UdharoPage.border}
+            placeholderColor="rgba(31,31,31,0.35)"
+            containerStyle={styles.inputContainer}
+          />
 
-          <Text style={styles.formLabel}>By who</Text>
-          <View style={styles.inputBox}>
-            <Ionicons name="person-outline" size={18} color="#7a7a7a" />
-            <TextInput
-              placeholder="Enter person name"
-              placeholderTextColor="rgba(31,31,31,0.35)"
-              style={styles.input}
-            />
-          </View>
+          <LabeledInput
+            label="By who"
+            placeholder="Enter person name"
+            labelColor={Colors_UdharoPage.textPrimary}
+            inputBgColor={Colors_UdharoPage.inputBG}
+            borderColor={Colors_UdharoPage.border}
+            placeholderColor="rgba(31,31,31,0.35)"
+            containerStyle={styles.inputContainer}
+          />
 
           <TopButton
             title="Save udharo"
@@ -176,34 +170,8 @@ const styles = StyleSheet.create({
     borderColor: Colors_UdharoPage.border,
     marginBottom: Spacing.lg,
   },
-  formLabel: {
-    color: Colors_UdharoPage.textPrimary,
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semibold,
-    marginBottom: Spacing.sm,
-  },
-  inputBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors_UdharoPage.surfaceAlt,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderWidth: BorderWidth.thin,
-    borderColor: Colors_UdharoPage.border,
+  inputContainer: {
     marginBottom: Spacing.md,
-  },
-  inputPrefix: {
-    color: Colors_UdharoPage.textPrimary,
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.semibold,
-    marginRight: Spacing.sm,
-  },
-  input: {
-    flex: 1,
-    color: Colors_UdharoPage.textPrimary,
-    fontSize: FontSize.lg,
-    paddingVertical: 0,
   },
   primaryButton: {
     width: "100%",
