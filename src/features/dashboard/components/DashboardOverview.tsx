@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { Colors_DashboardPage } from "@/shared/constants/colors";
@@ -6,6 +7,9 @@ import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 
+import Dropdown, {
+  DropdownOption,
+} from "@/shared/components/DatePicker/DropDown";
 import { useDashboardData } from "../hooks/useDashboardData";
 
 type ToggleProps = {
@@ -26,13 +30,11 @@ function Toggle({ active, left, right }: ToggleProps) {
         ]}
       />
       <Text
-        style={[styles.toggleLabel, leftActive && styles.toggleLabelActive]}
-      >
+        style={[styles.toggleLabel, leftActive && styles.toggleLabelActive]}>
         {left}
       </Text>
       <Text
-        style={[styles.toggleLabel, !leftActive && styles.toggleLabelActive]}
-      >
+        style={[styles.toggleLabel, !leftActive && styles.toggleLabelActive]}>
         {right}
       </Text>
     </View>
@@ -41,24 +43,39 @@ function Toggle({ active, left, right }: ToggleProps) {
 
 export default function DashboardOverview() {
   const { stats, bars, trend } = useDashboardData();
+  const periodOptions: DropdownOption[] = [
+    { label: "Today", value: "today" },
+    { label: "Week", value: "week" },
+    { label: "Month", value: "month" },
+    { label: "Year", value: "year" },
+  ];
+
+  const [period, setPeriod] = useState<DropdownOption>(periodOptions[0]);
 
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+      showsVerticalScrollIndicator={false}>
       <View style={styles.hero}>
         <View style={styles.pill}>
           <Text style={styles.pillText}>DashBoard</Text>
         </View>
 
         <View style={styles.todayRow}>
-          <Text style={styles.todayText}>Today</Text>
-          <MaterialCommunityIcons
-            name="chevron-down"
-            size={20}
-            color={Colors_DashboardPage.textPrimary}
+          <Dropdown
+            options={periodOptions}
+            defaultValue={periodOptions[0]}
+            placeholder="Select period"
+            maxSelectable={1}
+            onSelect={(selected) => setPeriod(selected as DropdownOption)}
+            bgColor={Colors_DashboardPage.topBtn}
+            textColor={Colors_DashboardPage.textPrimary}
+            dropdownBgColor={Colors_DashboardPage.background}
+            dropdownTextColor={Colors_DashboardPage.textPrimary}
+            borderColor={Colors_DashboardPage.border}
+            buttonStyle={{ minWidth: 120 }}
+            textStyle={{ fontWeight: FontWeight.bold }}
           />
         </View>
 
@@ -72,19 +89,17 @@ export default function DashboardOverview() {
                 <View
                   style={[
                     styles.changeBadge,
-                    stat.changeType === "up"
-                      ? styles.changeBadgeUp
-                      : styles.changeBadgeDown,
-                  ]}
-                >
+                    stat.changeType === "up" ?
+                      styles.changeBadgeUp
+                    : styles.changeBadgeDown,
+                  ]}>
                   <Text
                     style={[
                       styles.changeText,
-                      stat.changeType === "up"
-                        ? styles.changeTextUp
-                        : styles.changeTextDown,
-                    ]}
-                  >
+                      stat.changeType === "up" ?
+                        styles.changeTextUp
+                      : styles.changeTextDown,
+                    ]}>
                     {stat.change}
                     {stat.changeType === "up" ? "↑" : "↓"}
                   </Text>
@@ -109,7 +124,11 @@ export default function DashboardOverview() {
         <View style={styles.chartHeader}>
           <Toggle active="Income" left="Income" right="Spend" />
           <View style={styles.floatingButton}>
-            <MaterialCommunityIcons name="sparkles" size={24} color="#D8F827" />
+            <MaterialCommunityIcons
+              name={"sparkles" as any}
+              size={24}
+              color="#D8F827"
+            />
             <MaterialCommunityIcons
               name="star-four-points"
               size={22}
