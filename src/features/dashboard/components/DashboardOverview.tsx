@@ -73,7 +73,6 @@ export default function DashboardOverview() {
             textColor={Colors_DashboardPage.textPrimary}
             dropdownBgColor={Colors_DashboardPage.background}
             dropdownTextColor={Colors_DashboardPage.textPrimary}
-            borderColor={Colors_DashboardPage.border}
             buttonStyle={{ minWidth: 120 }}
             textStyle={{ fontWeight: FontWeight.bold }}
           />
