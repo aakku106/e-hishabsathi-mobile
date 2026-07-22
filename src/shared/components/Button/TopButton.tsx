@@ -1,24 +1,33 @@
-import React from 'react';
+import React from "react";
 import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
   GestureResponderEvent,
   StyleProp,
-  ViewStyle,
+  StyleSheet,
+  Text,
   TextStyle,
-} from 'react-native';
+  TouchableOpacity,
+  ViewStyle,
+} from "react-native";
 
-interface SalesButtonProps {
+import { Colors_SalesPage } from "@/shared/constants/colors";
+import { BorderWidth, Radius } from "@/shared/constants/radius";
+import { Spacing } from "@/shared/constants/spacing";
+import {
+  FontSize,
+  FontWeight,
+  LetterSpacing,
+} from "@/shared/constants/typography";
+
+interface TopButtonProps {
   onPress?: (event: GestureResponderEvent) => void;
   title?: string;
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
 }
 
-export const SalesButton: React.FC<SalesButtonProps> = ({
+export const TopButton: React.FC<TopButtonProps> = ({
   onPress,
-  title = 'SALES',
+  title = "",
   style,
   textStyle,
 }) => {
@@ -26,8 +35,7 @@ export const SalesButton: React.FC<SalesButtonProps> = ({
     <TouchableOpacity
       activeOpacity={0.85}
       onPress={onPress}
-      style={[styles.button, style]}
-    >
+      style={[styles.button, style]}>
       <Text style={[styles.text, textStyle]}>{title}</Text>
     </TouchableOpacity>
   );
@@ -35,32 +43,28 @@ export const SalesButton: React.FC<SalesButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    paddingVertical: 18,
-    paddingHorizontal: 60,
-    borderRadius: 9999, // Pill/stadium shape
-
-    // Default manual colors (easy to swap later)
-    backgroundColor: '#80d4b7',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-
-    // Shadows & depth
-    shadowColor: '#000',
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing["3xl"],
+    borderRadius: Radius.pill,
+    backgroundColor: Colors_SalesPage.topBtn,
+    borderWidth: BorderWidth.base,
+    borderColor: "rgba(255, 255, 255, 0.5)",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
     elevation: 4,
 
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   text: {
-    color: '#000000',
-    fontSize: 28,
-    fontWeight: '600',
-    letterSpacing: 2,
-    textAlign: 'center',
+    color: Colors_SalesPage.textPrimary,
+    fontSize: FontSize["3xl"],
+    fontWeight: FontWeight.semibold,
+    letterSpacing: LetterSpacing.wider,
+    textAlign: "center",
   },
 });
 
-export default SalesButton;
+export default TopButton;
