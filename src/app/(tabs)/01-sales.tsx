@@ -5,8 +5,8 @@ import { StyleSheet, Text, View } from "react-native";
 export default function SalesRoute() {
   return (
     <View style={styles.container}>
-      <TopButton title="I want Food" />
-      <Text style={styles.text}>Sales</Text>
+      {/* <TopButton title="I want Food" />
+      <Text style={styles.text}>Sales</Text> */}
     </View>
   );
 }

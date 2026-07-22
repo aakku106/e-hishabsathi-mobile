@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 export default function BusinessTypeRoute() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Business Type</Text>
+      {/* <Text style={styles.text}>Business Type</Text> */}
     </View>
   );
 }

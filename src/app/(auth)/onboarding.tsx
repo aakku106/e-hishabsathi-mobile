@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 export default function OnboardingRoute() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Onboarding</Text>
+      {/* <Text style={styles.text}>Onboarding</Text> */}
     </View>
   );
 }
