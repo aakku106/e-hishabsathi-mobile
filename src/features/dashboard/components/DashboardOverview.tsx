@@ -80,13 +80,8 @@ export default function DashboardOverview() {
         </View>
 
         <View style={styles.cardGrid}>
-          {stats.map((stat, idx) => (
+          {stats.map((stat) => (
             <View key={stat.label} style={styles.statCard}>
-              {idx === 0 && (
-                <View style={styles.statBadge}>
-                  <Text style={styles.statBadgeText}>10%↑</Text>
-                </View>
-              )}
               <Text style={styles.statLabel}>{stat.label}</Text>
               <Text style={styles.statValue}>{stat.value}</Text>
 
