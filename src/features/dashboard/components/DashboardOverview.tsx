@@ -95,6 +95,34 @@ export default function DashboardOverview() {
 
   const chartFade = useRef(new Animated.Value(1)).current;
   const trendFade = useRef(new Animated.Value(1)).current;
+  // Animated heights for each bar
+  const barHeightsRef = useRef<Animated.Value[]>(
+    bars.map((b) => new Animated.Value(Math.max(6, b.value * 7))),
+  );
+
+  // Keep bar animated values in sync if bars array length changes
+  useEffect(() => {
+    if (barHeightsRef.current.length !== bars.length) {
+      barHeightsRef.current = bars.map(
+        (b) => new Animated.Value(Math.max(6, b.value * 7)),
+      );
+    }
+  }, [bars]);
+
+  // Animate bars when incomeMode changes
+  useEffect(() => {
+    const animations = bars.map((bar, i) => {
+      const target =
+        (incomeMode === "Income" ? bar.value : Math.round(bar.value * 0.6)) * 7;
+      return Animated.timing(barHeightsRef.current[i], {
+        toValue: Math.max(6, target),
+        duration: 360,
+        useNativeDriver: false,
+      });
+    });
+
+    Animated.parallel(animations).start();
+  }, [incomeMode, bars]);
 
   return (
     <ScrollView
@@ -197,15 +225,13 @@ export default function DashboardOverview() {
           </Animated.View>
 
           <Animated.View style={[styles.barArea, { opacity: chartFade }]}>
-            {bars.map((bar) => {
-              const value =
-                incomeMode === "Income" ?
-                  bar.value
-                : Math.round(bar.value * 0.6);
+            {bars.map((bar, index) => {
+              const animatedHeight =
+                barHeightsRef.current[index] || new Animated.Value(6);
               return (
                 <View key={bar.label} style={styles.barColumn}>
-                  <View
-                    style={[styles.bar, { height: Math.max(0, value) * 7 }]}
+                  <Animated.View
+                    style={[styles.bar, { height: animatedHeight }]}
                   />
                   <Text style={styles.barLabel}>{bar.label}</Text>
                 </View>
