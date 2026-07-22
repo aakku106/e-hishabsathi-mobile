@@ -14,6 +14,7 @@ import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 
+import AIOverlay from "@/features/ai/components/AIOverlay";
 import Dropdown, {
   DropdownOption,
 } from "@/shared/components/DatePicker/DropDown";
@@ -92,6 +93,7 @@ export default function DashboardOverview() {
   // UI toggle states
   const [incomeMode, setIncomeMode] = useState<string>("Income");
   const [trendMode, setTrendMode] = useState<string>("Month");
+  const [showAI, setShowAI] = useState(false);
 
   const chartFade = useRef(new Animated.Value(1)).current;
   const trendFade = useRef(new Animated.Value(1)).current;
@@ -207,12 +209,14 @@ export default function DashboardOverview() {
           />
 
           {/* AI icon placeholder - replace with provided SVG later (figma ma xa need to export, ask @aakku106 for svg) */}
-          <View
+          <TouchableOpacity
             style={styles.floatingButton}
             accessible
-            accessibilityLabel="AI action placeholder">
+            accessibilityLabel="Open AI assistant"
+            activeOpacity={0.85}
+            onPress={() => setShowAI(true)}>
             <View style={styles.floatingIconPlaceholder} />
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.barChartWrap}>
@@ -293,6 +297,9 @@ export default function DashboardOverview() {
       <View style={styles.bottomGear}>
         <MaterialCommunityIcons name="cog-outline" size={34} color="#E5E7EB" />
       </View>
+      {showAI && (
+        <AIOverlay visible={showAI} onClose={() => setShowAI(false)} />
+      )}
     </ScrollView>
   );
 }
