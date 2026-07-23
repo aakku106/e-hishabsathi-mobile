@@ -1,88 +1,5 @@
 # e-HishabSathi: Backend Architecture & Project Structure
 
-## 1. System Overview
-
-**e-HishabSathi** is a distributed Business Operating System tailored for micro, small, and medium-scale PAN/VAT businesses in Nepal. The platform simplifies business logging, automates localized business intelligence, generates digital customer bills, and streamlines tax compliance filing.
-
-### Key Architectural Highlights
-
-- **Distributed Microservices Topology**: Powered by Go (`Chi` router) and organized within a single high-performance monorepo using Go Workspaces (`go.work`).
-- **Hybrid Data Isolation Model**: Network-backed operational records are continuously aggregated on cloud infrastructure, while sensitive customer credit ledgers (`Udaaro`) remain strictly stored in local edge SQLite databases on merchant devices.
-- **Asynchronous Task Processing**: High-throughput background tasks (EOD calculations, PDF document generation, and Phase 2 RPA tax submissions) are offloaded to an `Asynq` queue cluster backed by Redis.
-- **Just-In-Time (JIT) Escrow Payment Gateway**: Direct dynamic QR payments route tax liabilities to government revenue accounts via national payment switches without maintaining public wallet balances.
-
----
-
-## 2. High-Level Architecture Diagram
-
-````text
-                        ┌─────────────────────────┐
-                        │      Mobile App         │
-                        │ (Local SQLite + Edge)   │
-                        └────────────┬────────────┘
-                                     │
-                                     ▼
-                        ┌─────────────────────────┐
-                        │    CDN / Edge Cache     │
-                        └────────────┬────────────┘
-                                     │
-                                     ▼
-                        ┌─────────────────────────┐
-                        │      Reverse Proxy      │
-                        │   (NGINX / TLS Term)    │
-                        └────────────┬────────────┘
-                                     │
-                                     ▼
-                        ┌─────────────────────────┐
-                        │       API Gateway       │
-                        │  (Auth & Rate Limiting) │
-                        └────────────┬────────────┘
-                                     │
-         ┌───────────────────────────┼───────────────────────────┐
-         │                           │                           │
-         ▼                           ▼                           ▼
-┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
-│ Inventory/Sales │         │  Tax Compliance │         │ Digital Receipts│
-│    Service      │         │     Service     │         │     Service     │
-└────────┬────────┘         └────────┬────────┘         └────────┬────────┘
-         │                           │                           │
-         └───────────────────────────┼───────────────────────────┘
-                                     │
-                                     ▼
-                      ┌─────────────────────────────┐
-                      │    Redis Cache & Queue      │
-                      │       (Asynq Engine)        │
-                      └──────────────┬──────────────┘
-                                     │
-                                     ▼
-                      ┌─────────────────────────────┐
-                      │     Worker Daemon Pool      │
-                      │      (W1, W2, W3 Tasks)     │
-                      └──────────────┬──────────────┘
-                                     │
-         ┌───────────────────────────┼───────────────────────────┐
-         │                           │                           │
-         ▼                           ▼                           ▼
-┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
-│ Primary DB R/W  │         │ Object Store S3 │         │ Data Warehouse  │
-│  (PostgreSQL)   │         │ (Certificates)  │         │ (Analytics OLAP)│
-└─────────────────┘         └─────────────────┘         └─────────────────┘
-
-3. Technology Stack Matrix
-Component Technology / Library Purpose
-Primary Language Go (1.22+) High-concurrency, memory-efficient distributed processing.
-HTTP Framework go-chi/chi/v5 Lightweight, standard net/http-compliant routing engine.
-Task Queue hilury/asynq Redis-backed asynchronous task scheduling, retries, and worker pools.
-In-Memory Cache Redis Session state, rate limiting, and queue broker.
-Primary Relational DB PostgreSQL Transactional store (OLTP) for merchant inventories, daily syncs, and tax logs.
-Local Edge DB SQLite On-device private store for consumer credit records (Udaaro).
-Object Storage AWS S3 / LocalStack Persistent storage for generated tax manifests, receipts, and certificates.
-Content Delivery Cloudflare / AWS CloudFront Edge distribution for public digital bill web portals.
-4. Repository Monorepo Structure
-The project utilizes Go Workspaces (go.work) to manage independent modules with their own go.mod files inside a unified monorepo.
-e-hishabsathi/
-# e-HishabSathi: Backend Architecture & Project Structure
-
 ## 1. System overview
 
 **e-HishabSathi** is a distributed Business Operating System for micro, small, and medium-scale PAN/VAT businesses in Nepal. It simplifies business logging, automates localized business intelligence, generates digital customer bills, and streamlines tax compliance filing.
@@ -150,7 +67,7 @@ e-hishabsathi/
 │ Primary DB R/W  │         │ Object Store S3 │         │ Data Warehouse  │
 │  (PostgreSQL)   │         │ (Certificates)  │         │ (Analytics OLAP)│
 └─────────────────┘         └─────────────────┘         └─────────────────┘
-````
+```
 
 ## 3. Technology stack
 
@@ -238,4 +155,5 @@ Workers:
 
 ---
 
-If you want, I can also add a Mermaid diagram or split this into a shorter executive summary plus a developer reference.
+Created By Adarasha Gaihre (@aakku106) on 2026-07-23 13:53
+Last edited by same .
