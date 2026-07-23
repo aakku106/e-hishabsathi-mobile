@@ -243,20 +243,3 @@ Tracks specific debt accumulation and repayment events. This data is **never** s
 | `transaction_date` | Date    | Not Null                          | Date the event occurred.                               |
 | `notes`            | Text    | Nullable                          | Memo (e.g., "Took 2 packs of sugar").                  |
 | `is_cleared`       | Boolean | Default `FALSE`                   | Marks if the specific debt log is fully settled.       |
-
-| `address` | String(255) | Nullable | Neighborhood or landmark. |
-| `created_at` | Timestamp | Not Null | Local creation time. |
-
-#### `local_udaaro_ledger`
-
-Tracks specific debt accumulation and repayment events. This data is **never** sent to the cloud backend.
-
-| Attribute          | Type    | Constraints                       | Description                                            |
-| :----------------- | :------ | :-------------------------------- | :----------------------------------------------------- |
-| `id`               | UUID    | Primary Key                       | Generated locally on the device.                       |
-| `customer_id`      | UUID    | FK -> `local_udaaro_customers.id` | Local customer reference.                              |
-| `transaction_type` | Enum    | Not Null                          | `CREDIT_GIVEN` (Borrow) or `PAYMENT_RECEIVED` (Repay). |
-| `amount`           | Decimal | `> 0`                             | Transaction value.                                     |
-| `transaction_date` | Date    | Not Null                          | Date the event occurred.                               |
-| `notes`            | Text    | Nullable                          | Memo (e.g., "Took 2 packs of sugar").                  |
-| `is_cleared`       | Boolean | Default `FALSE`                   | Marks if the specific debt log is fully settled.       |
