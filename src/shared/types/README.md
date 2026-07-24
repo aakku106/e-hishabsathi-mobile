@@ -4,9 +4,6 @@
 
 Not yet implemented — this folder only contains a `t.ts` git-tracking placeholder.
 
-> [!NOTE]
-> On disk this folder is currently named `" types"` (with a leading space) rather than `types`. Until it's renamed, `@/shared/types/...` imports will not resolve — double-check the real path when adding the first file here.
-
 ## Intended purpose
 
 Global TypeScript interfaces used by two or more features. Feature-specific types (e.g. `Sale`, `SaleItem`, `CreateSaleRequest`) stay in that feature's own `types.ts` — only promote a type here once a second feature needs it too.

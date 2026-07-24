@@ -15,9 +15,6 @@ This folder never contains SQL, screens, or feature-specific business logic. See
 | [types/](./types/README.md) | Global TypeScript interfaces shared by multiple features | Not yet implemented |
 | [utils/](./utils/README.md) | Reusable helper functions (currency, date, formatting, logging, validation) | Not yet implemented |
 
-> [!NOTE]
-> The `types/` folder is currently named `" types"` on disk (with a leading space) instead of `types`. It still works with editors/tools, but `@/shared/types` imports will not resolve until it's renamed. See [types/README.md](./types/README.md).
-
 ### How to use shared/ code
 
 Import with the `@/shared/...` path alias, same as everywhere else in the app:
