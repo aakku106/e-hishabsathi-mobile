@@ -20,6 +20,7 @@ export const Colors_SalesPage = {
 } as const;
 
 export const Colors_PurchasesPage = {
+
   textprimary: "#1F1F1F",
   textsecondary: "#4A4A4A",
   background: "#F59E0B",
@@ -31,10 +32,12 @@ export const Colors_PurchasesPage = {
   confirnBtn: "#ECA834",
   topConfirmDetailsBtn: "#FFEFA3",
   border: "#F59E0B",
+
   font_size: {
     inputLabelSize: 24,
     inputPlaceHolder: 20,
     SubHeading: 26,
+
     details: 20,
     iconDetails: 15,
   },
