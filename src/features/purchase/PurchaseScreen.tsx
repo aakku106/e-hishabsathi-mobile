@@ -9,8 +9,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { LabeledInput } from "@/shared/components/Input/LabledInput";
 import { TopButton } from "@/shared/components/Button/TopButton";
+import { LabeledInput } from "@/shared/components/Input/LabledInput";
 import { Colors_BuyPage } from "@/shared/constants/colors";
 import { Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
@@ -38,21 +38,18 @@ export default function PurchaseScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.heroCard}>
-            <Text style={styles.formHeaderLabel}>BUY</Text>
-
-            {/* <Text style={styles.heroTitle}>Add a new buy</Text>
-            <Text style={styles.heroSubtitle}>
-              Capture quantity, product, and price
-            </Text> */}
+          <View style={styles.headerCard}>
+            <View style={styles.headerInnerCard}>
+              <View style={styles.headerTitleWrap}>
+                <View style={styles.headerTitleGlow} />
+              </View>
+              <View style={styles.titleSlot}>
+                <Text style={styles.headerTitle}>BUY</Text>
+              </View>
+            </View>
           </View>
 
           <View style={styles.formCard}>
-            <View style={styles.formHeader}>
-              {/* <Text style={styles.formHeaderLabel}>BUY</Text> */}
-              {/* <Text style={styles.formHeaderHint}>Quick details</Text> */}
-            </View>
-
             <View style={styles.form}>
               <LabeledInput
                 label="Quantity"
@@ -65,6 +62,7 @@ export default function PurchaseScreen() {
                 borderColor={colors.border}
                 placeholderColor={colors.textSecondary}
                 inputStyle={styles.inputText}
+                containerStyle={styles.field}
               />
               <LabeledInput
                 label="Product"
@@ -77,6 +75,7 @@ export default function PurchaseScreen() {
                 borderColor={colors.border}
                 placeholderColor={colors.textSecondary}
                 inputStyle={styles.inputText}
+                containerStyle={styles.field}
               />
               <LabeledInput
                 label="Price"
@@ -90,12 +89,13 @@ export default function PurchaseScreen() {
                 borderColor={colors.border}
                 placeholderColor={colors.textSecondary}
                 inputStyle={styles.inputText}
+                containerStyle={styles.field}
               />
             </View>
           </View>
 
           <TopButton
-            title="Enter"
+            title="Enter Values"
             onPress={() => undefined}
             style={styles.submitButton}
             textStyle={styles.submitText}
@@ -107,8 +107,13 @@ export default function PurchaseScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
-  flex: { flex: 1 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  flex: {
+    flex: 1,
+  },
   content: {
     flexGrow: 1,
     paddingHorizontal: Spacing.xl,
@@ -116,95 +121,97 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.xl,
     gap: Spacing.xl,
   },
-  heroCard: {
-    backgroundColor: colors.surface,
+  headerCard: {
+    alignSelf: "center",
+    width: "100%",
+    maxWidth: 480,
+    shadowColor: "#1F1F1F",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 18,
+    elevation: 4,
+  },
+  headerInnerCard: {
+    backgroundColor: colors.topBtn,
     borderRadius: Radius.xl,
     paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.xl,
+    paddingVertical: Spacing["2xl"],
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.35)",
   },
-  heroEyebrow: {
-    color: colors.textPrimary,
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
-    letterSpacing: LetterSpacing.wide,
-    textTransform: "uppercase",
-    marginBottom: Spacing.xs,
-  },
-  heroTitle: {
-    color: colors.textPrimary,
-    fontSize: FontSize["3xl"],
-    fontWeight: FontWeight.bold,
-    marginBottom: Spacing.xs,
-  },
-  heroSubtitle: {
-    color: colors.textSecondary,
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.regular,
-    lineHeight: 24,
-  },
-  formCard: {
-    backgroundColor: "rgba(255,255,255,0.42)",
-    borderRadius: Radius.xl,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.5)",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 14,
-    elevation: 3,
-  },
-  formHeader: {
-    flexDirection: "row",
+  headerTitleWrap: {
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: Spacing.lg,
+    justifyContent: "center",
+    marginBottom: Spacing.xs,
   },
-  formHeaderLabel: {
+  headerTitleGlow: {
+  
+  
+    borderRadius: 999,
+    backgroundColor: colors.enterBtn,
+    opacity: 0.55,
+  },
+  titleSlot: {
+    alignItems: "center",
+    justifyContent: "center",
+    height: 8,
+    
+    
+  },
+  headerTitle: {
     color: colors.textPrimary,
-    fontSize: FontSize.xl,
+    fontSize: FontSize["4xl"],
     fontWeight: FontWeight.bold,
-    letterSpacing: LetterSpacing.wide,
+    letterSpacing: LetterSpacing.wider,
     textAlign: "center",
   },
-  formHeaderHint: {
-    color: colors.textSecondary,
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semibold,
+  formCard: {
+    backgroundColor: colors.surface,
+    borderRadius: Radius.xl,
+    padding: Spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: "#1F1F1F",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 4,
+    alignSelf: "center",
+    width: "100%",
+    maxWidth: 480,
   },
-  form: { gap: Spacing.lg },
+  form: {
+    gap: Spacing.lg,
+  },
+  field: {
+    gap: Spacing.xs,
+  },
   inputText: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.regular,
     color: colors.textPrimary,
   },
   submitButton: {
-    alignSelf: "center",
     width: "100%",
-    maxWidth: 420,
+    maxWidth: 480,
+    alignSelf: "center",
     paddingVertical: Spacing.lg,
     borderRadius: Radius.pill,
     backgroundColor: colors.enterBtn,
     borderColor: colors.border,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.16,
-    shadowRadius: 10,
+    shadowColor: "#1F1F1F",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
     elevation: 4,
   },
   submitText: {
     color: colors.textPrimary,
     fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
-    letterSpacing: LetterSpacing.wide,
+    letterSpacing: LetterSpacing.wider,
+    textAlign: "center",
   },
 });

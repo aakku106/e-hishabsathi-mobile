@@ -20,21 +20,26 @@ export const Colors_SalesPage = {
 } as const;
 
 export const Colors_PurchasesPage = {
-  textPrimary: "#1F1F1F",
-  textSecondary: "#4A4A4A",
-  background: "#f4b852",
-  surface: "#bfb686",
-  surfaceAlt: "#D7C800",
-  topBtn: "#E0D59A",
+  textPrimary: "#1E1E1E",
+  textSecondary: "#555555",
+  background: "#EFCB68",
+  surface: "#FDF7E3",
+  surfaceAlt: "#F5E6A4",
+
+  topBtn: "#F8E9AE",
+
   inputBG: "#FFFFFF",
-  enterBtn: "#C6B400",
-  confirnBtn: "#B09F00",
+
+  enterBtn: "#f2c144",
+  confirnBtn: "#9A7209",
   topConfirmDetailsBtn: "#E0D59A",
-  border: "#E8DFA7",
+
+  border: "#E9D58D",
   font_size: {
     inputLabelSize: 24,
     inputPlaceHolder: 20,
     SubHeading: 26,
+
     details: 20,
     iconDetails: 15,
   },
