@@ -20,21 +20,19 @@ export const Colors_SalesPage = {
 } as const;
 
 export const Colors_PurchasesPage = {
-  textPrimary: "#1E1E1E",
-  textSecondary: "#555555",
-  background: "#EFCB68",
-  surface: "#FDF7E3",
-  surfaceAlt: "#F5E6A4",
 
-  topBtn: "#F8E9AE",
-
+  textprimary: "#1F1F1F",
+  textsecondary: "#4A4A4A",
+  background: "#F59E0B",
+  surface: "#FFF3A0",
+  surfaceAlt: "#FFE45A",
+  topBtn: "#D8CE8E",
   inputBG: "#FFFFFF",
+  enterBtn: "#ECA834",
+  confirnBtn: "#ECA834",
+  topConfirmDetailsBtn: "#FFEFA3",
+  border: "#F59E0B",
 
-  enterBtn: "#f2c144",
-  confirnBtn: "#9A7209",
-  topConfirmDetailsBtn: "#E0D59A",
-
-  border: "#E9D58D",
   font_size: {
     inputLabelSize: 24,
     inputPlaceHolder: 20,
@@ -44,8 +42,6 @@ export const Colors_PurchasesPage = {
     iconDetails: 15,
   },
 } as const;
-
-export const Colors_BuyPage = Colors_PurchasesPage;
 
 export const Colors_UdharoPage = {
   textPrimary: "#1F1F1F",
@@ -69,16 +65,13 @@ export const Colors_UdharoPage = {
 } as const;
 
 export const Colors_DashboardPage = {
-  textPrimary: "#FFFFFF",
-  textSecondary: "#D1D5DB",
-  background: "#1F1F1F",
-  surface: "#2E3135",
-  surfaceAlt: "#3A3D42",
-  topBtn: "#2E3135",
-  inputBG: "#212225",
-  enterBtn: "#17E52F",
-  confirnBtn: "#13C924",
-  topConfirmDetailsBtn: "#3A3D42",
+  textPrimary: "#000000",
+  textSecondary: "#3f3f3f",
+  textTernary: "#565656",
+  background: "#ffffff",
+  greenPrimary: "#06cc5c",
+  redPrimary: "#e53636",
+  topBtn: "#cfefca",
   border: "#4B5563",
   font_size: {
     inputLabelSize: 24,
@@ -139,4 +132,12 @@ export const Colors_NavBar = {
     dashBoard: "#1F1F1F",
     settings: "#2563EB",
   },
+} as const;
+
+export const Colors_LoginPage = {
+  signInBtn: "#212121",
+  primaryBg: "#ffffff",
+  primaryText: "#212121",
+  secondaryText: "#424242",
+  ternaryText: "#9e9e9e",
 } as const;

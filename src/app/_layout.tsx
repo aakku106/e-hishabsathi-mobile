@@ -8,7 +8,7 @@ export default function RootLayout() {
     <QueryProvider>
       <SQLiteProvider>
         <ThemeProvider>
-          <Stack />
+          <Stack screenOptions={{ headerShown: false }} />
         </ThemeProvider>
       </SQLiteProvider>
     </QueryProvider>
