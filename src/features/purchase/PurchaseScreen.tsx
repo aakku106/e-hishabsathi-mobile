@@ -11,7 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { TopButton } from "@/shared/components/Button/TopButton";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
-import { Colors_BuyPage } from "@/shared/constants/colors";
+import { Colors_PurchasesPage } from "@/shared/constants/colors";
 import { Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import {
@@ -20,7 +20,7 @@ import {
   LetterSpacing,
 } from "@/shared/constants/typography";
 
-const colors = Colors_BuyPage;
+const colors = Colors_PurchasesPage;
 
 export default function PurchaseScreen() {
   const [quantity, setQuantity] = useState("");

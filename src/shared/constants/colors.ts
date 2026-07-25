@@ -21,8 +21,8 @@ export const Colors_SalesPage = {
 
 export const Colors_PurchasesPage = {
 
-  textprimary: "#1F1F1F",
-  textsecondary: "#4A4A4A",
+  textPrimary: "#1F1F1F",
+  textSecondary: "#4A4A4A",
   background: "#F59E0B",
   surface: "#FFF3A0",
   surfaceAlt: "#FFE45A",
