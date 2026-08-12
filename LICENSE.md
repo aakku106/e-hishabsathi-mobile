@@ -56,10 +56,7 @@ For commercial licensing inquiries, please contact the repository owner:
 
 ## License Texts
 
-### GNU AFFERO GENERAL PUBLIC LICENSE Version 3
+For full legal definitions and terms, please refer to the dedicated license files in this repository:
 
-[PASTE FULL AGPLv3 TEXT HERE - Available at gnu.org/licenses/agpl-3.0.txt]
-
-### POLYFORM NONCOMMERCIAL LICENSE 1.0.0
-
-[PASTE FULL POLYFORM NC TEXT HERE - Available at polyformproject.org/licenses/noncommercial/1.0.0/]
+- **GNU Affero General Public License v3.0:** See [`./LICENSES/AGPL-3.0.txt`](./LICENSES/AGPL-3.0-only.txt) _(or online at [gnu.org/licenses/agpl-3.0.txt](https://www.gnu.org/licenses/agpl-3.0.txt))_
+- **PolyForm Noncommercial License 1.0.0:** See [`./LICENSES/PolyForm-Noncommercial-1.0.0.txt`](./LICENSES/PolyForm-Noncommercial-1.0.0.txt) _(or online at [polyformproject.org](https://polyformproject.org/licenses/noncommercial/1.0.0/))_
