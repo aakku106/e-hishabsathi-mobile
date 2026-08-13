@@ -1,5 +1,7 @@
 import { getDatabase } from "@/database/sqlite";
 import { mapCamelCase } from "@/database/helpers";
+import { ENTITY_TYPE, enqueueRecord } from "@/database/edge";
+import { generateUuid } from "@/shared/utils/uuid";
 
 import type {
   CreatePurchaseEntryInput,
@@ -34,14 +36,31 @@ export async function createPurchaseEntry(
   const db = getDatabase();
   if (!db) throw new Error("Database is not ready yet");
 
-  await db.runAsync(
-    `INSERT INTO purchase_entries (product, quantity, price, amount, purchased_at)
-     VALUES (?, ?, ?, ?, datetime('now'))`,
-    input.product,
-    input.quantity,
-    input.price,
-    input.amount,
-  );
+  const clientUuid = generateUuid();
+
+  await db.withTransactionAsync(async () => {
+    await db.runAsync(
+      `INSERT INTO purchase_entries (product, quantity, price, amount, client_uuid, purchased_at)
+       VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+      input.product,
+      input.quantity,
+      input.price,
+      input.amount,
+      clientUuid,
+    );
+
+    await enqueueRecord({
+      clientEntryId: clientUuid,
+      entityType: ENTITY_TYPE.PURCHASE_BATCH,
+      payloadJson: JSON.stringify({
+        product: input.product,
+        quantity: input.quantity,
+        price: input.price,
+        amount: input.amount,
+      }),
+      entryDate: new Date().toISOString().slice(0, 10),
+    });
+  });
 }
 
 export async function deletePurchaseEntry(id: number): Promise<void> {

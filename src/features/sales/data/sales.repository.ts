@@ -1,5 +1,7 @@
 import { getDatabase } from "@/database/sqlite";
 import { mapCamelCase } from "@/database/helpers";
+import { ENTITY_TYPE, enqueueRecord } from "@/database/edge";
+import { generateUuid } from "@/shared/utils/uuid";
 
 import { SALES_ENTRIES } from "./sales.mock";
 import type {
@@ -55,19 +57,41 @@ export async function createSalesEntry(
   const db = getDatabase();
   if (!db) throw new Error("Database is not ready yet");
 
-  await db.runAsync(
-    `INSERT INTO sales_entries (product, quantity, price, amount, customer, cost_price, extra_detail, extra_value, color, sold_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
-    input.product,
-    input.quantity,
-    input.price,
-    input.amount,
-    input.customer ?? null,
-    input.costPrice ?? null,
-    input.extraDetail ?? null,
-    input.extraValue ?? null,
-    input.color ?? null,
-  );
+  const clientUuid = generateUuid();
+
+  await db.withTransactionAsync(async () => {
+    await db.runAsync(
+      `INSERT INTO sales_entries (product, quantity, price, amount, customer, cost_price, extra_detail, extra_value, color, client_uuid, sold_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+      input.product,
+      input.quantity,
+      input.price,
+      input.amount,
+      input.customer ?? null,
+      input.costPrice ?? null,
+      input.extraDetail ?? null,
+      input.extraValue ?? null,
+      input.color ?? null,
+      clientUuid,
+    );
+
+    await enqueueRecord({
+      clientEntryId: clientUuid,
+      entityType: ENTITY_TYPE.BATCH_SALE_ITEM,
+      payloadJson: JSON.stringify({
+        product: input.product,
+        quantity: input.quantity,
+        price: input.price,
+        amount: input.amount,
+        customer: input.customer ?? null,
+        costPrice: input.costPrice ?? null,
+        extraDetail: input.extraDetail ?? null,
+        extraValue: input.extraValue ?? null,
+        color: input.color ?? null,
+      }),
+      entryDate: new Date().toISOString().slice(0, 10),
+    });
+  });
 }
 
 export async function deleteSalesEntry(id: number): Promise<void> {
