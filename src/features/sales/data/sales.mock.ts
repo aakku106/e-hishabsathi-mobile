@@ -1,10 +1,14 @@
-export type SalesEntry = {
+import type { SalesEntry } from "../types";
+
+export type { SalesEntry };
+
+export type SalesEntryMock = {
   product: string;
   quantity: number;
   amount: number;
 };
 
-export const SALES_ENTRIES: SalesEntry[] = [
+export const SALES_ENTRIES: SalesEntryMock[] = [
   {
     product: "Pant",
     quantity: 1,
@@ -18,6 +22,6 @@ export const SALES_ENTRIES: SalesEntry[] = [
   {
     product: "Kurtha",
     quantity: 4,
-    amount:670 ,
+    amount: 670,
   },
 ];

@@ -10,10 +10,9 @@ import {
   ViewStyle,
 } from "react-native";
 
-import { Colors_SalesPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
-import { FontWeight } from "@/shared/constants/typography";
+import { FontSize, FontWeight } from "@/shared/constants/typography";
 
 interface LabeledInputProps extends TextInputProps {
   label: string;
@@ -36,10 +35,10 @@ export const LabeledInput: React.FC<LabeledInputProps> = ({
   inputContainerStyle,
   labelStyle,
   inputStyle,
-  labelColor = Colors_SalesPage.textPrimary,
-  inputBgColor = Colors_SalesPage.inputBG,
-  borderColor = Colors_SalesPage.border,
-  placeholderColor = "#9CA3AF", // Default muted placeholder
+  labelColor = "#0F172A",
+  inputBgColor = "#FFFFFF",
+  borderColor = "#E2E8F0",
+  placeholderColor = "#94A3B8",
   keyboardType = "default",
   ...props
 }) => {
@@ -58,7 +57,7 @@ export const LabeledInput: React.FC<LabeledInputProps> = ({
           inputContainerStyle,
         ]}>
         <TextInput
-          style={[styles.input, inputStyle]}
+          style={[styles.input, { color: "#0F172A" }, inputStyle]}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -77,45 +76,23 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   label: {
-    fontSize: Colors_SalesPage.font_size.inputLabelSize, // 24
-    fontWeight: FontWeight.bold,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
+    letterSpacing: 0.2,
   },
   inputWrapper: {
-    borderRadius: Radius.lg, // 16
-    borderWidth: BorderWidth.base,
+    borderRadius: Radius.md,
+    borderWidth: BorderWidth.thin,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
-    // Soft shadow like in the design
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
+    minHeight: 52,
+    justifyContent: "center",
   },
   input: {
-    fontSize: Colors_SalesPage.font_size.inputPlaceHolder, // 20
+    fontSize: FontSize.lg,
     fontWeight: FontWeight.regular,
-    color: "#000000",
-    padding: 0, // Eliminates default Android padding
+    padding: 0,
   },
 });
 
 export default LabeledInput;
-
-/* HOW TO USE THIS
-// Example on Sales Page
-<LabeledInput
-  label="Quantity"
-  placeholder="Enter Quantity"
-  labelColor={Colors_SalesPage.textPrimary}
-  inputBgColor={Colors_SalesPage.inputBG}
-/>
-
-// Example on Udharo Page
-<LabeledInput
-  label="Amount"
-  placeholder="Enter Amount"
-  labelColor={Colors_UdharoPage.textPrimary}
-  borderColor={Colors_UdharoPage.border}
-/>
-*/

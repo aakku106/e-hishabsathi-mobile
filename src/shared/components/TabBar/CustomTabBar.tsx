@@ -1,36 +1,16 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-
-type TabRoute = {
-  key: string;
-  name: string;
-};
-
-type TabBarState = {
-  index: number;
-  routes: TabRoute[];
-};
-
-type TabDescriptor = {
-  options: {
-    tabBarLabel?: string | ((props: any) => React.ReactNode);
-    title?: string;
-  };
-};
-
-type TabBarNavigation = {
-  emit: (event: {
-    type: string;
-    target: string;
-    canPreventDefault: boolean;
-  }) => { defaultPrevented: boolean };
-  navigate: (name: string) => void;
-};
 
 import { Colors_NavBar } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Layout, Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+
+type TabRoute = {
+  key: string;
+  name: string;
+};
 
 // Mapping route names to the keys used in Colors_NavBar.selected
 const ROUTE_COLOR_MAP: Record<string, keyof typeof Colors_NavBar.selected> = {
@@ -41,20 +21,36 @@ const ROUTE_COLOR_MAP: Record<string, keyof typeof Colors_NavBar.selected> = {
   "05-settings": "settings",
 };
 
-// Placeholder SVG slot component — swap with your actual SVG icons/paths from assets <figma bata import garna bakixa>
-const IconPlaceholder: React.FC<{ color: string; size?: number }> = ({
-  color,
-  size = 24,
-}) => (
-  <View
-    style={{
-      width: size,
-      height: size,
-      borderRadius: size / 4,
-      backgroundColor: color,
-    }}
-  />
-);
+const ROUTE_SOFT_MAP: Record<string, string> = {
+  "01-sales": "#D1FAE5",
+  "02-purchases": "#FEF3C7",
+  "03-udharo": "#FFE4E6",
+  "04-dashboard": "#E0E7FF",
+  "05-settings": "#DBEAFE",
+};
+
+// Icons per tab route
+const ROUTE_ICON_MAP: Record<
+  string,
+  keyof typeof MaterialCommunityIcons.glyphMap
+> = {
+  "01-sales": "cash-multiple",
+  "02-purchases": "cart-outline",
+  "03-udharo": "account-cash-outline",
+  "04-dashboard": "view-dashboard-outline",
+  "05-settings": "cog-outline",
+};
+
+const ROUTE_ICON_ACTIVE_MAP: Record<
+  string,
+  keyof typeof MaterialCommunityIcons.glyphMap
+> = {
+  "01-sales": "cash-multiple",
+  "02-purchases": "cart",
+  "03-udharo": "account-cash",
+  "04-dashboard": "view-dashboard",
+  "05-settings": "cog",
+};
 
 export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
   return (
@@ -70,10 +66,13 @@ export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
             : route.name;
 
           const colorKey = ROUTE_COLOR_MAP[route.name];
-          const activeColor =
-            colorKey ? Colors_NavBar.selected[colorKey] : "#FFFFFF";
-          const unselectedColor = "rgba(255, 255, 255, 0.7)";
-          const itemColor = isFocused ? activeColor : unselectedColor;
+          const activeColor = colorKey ? Colors_NavBar.selected[colorKey] : "#4F46E5";
+          const softColor = ROUTE_SOFT_MAP[route.name] ?? "#EEF2FF";
+
+          const iconName: keyof typeof MaterialCommunityIcons.glyphMap =
+            (isFocused
+              ? ROUTE_ICON_ACTIVE_MAP[route.name]
+              : ROUTE_ICON_MAP[route.name]) ?? "circle-outline";
 
           const onPress = () => {
             const event = navigation.emit({
@@ -92,14 +91,23 @@ export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
               key={route.key}
               activeOpacity={0.8}
               onPress={onPress}
-              style={[styles.tabItem, isFocused && styles.activeTabHighlight]}>
-              {/* Icon Slot */}
+              style={[styles.tabItem, isFocused && { backgroundColor: softColor }]}>
               <View style={styles.iconContainer}>
-                <IconPlaceholder color={itemColor} />
+                <MaterialCommunityIcons
+                  name={iconName}
+                  size={22}
+                  color={isFocused ? activeColor : Colors_NavBar.inactive}
+                />
               </View>
 
-              {/* Title Label */}
-              <Text style={[styles.label, { color: itemColor }]}>{label}</Text>
+              <Text
+                style={[
+                  styles.label,
+                  { color: isFocused ? activeColor : Colors_NavBar.inactive },
+                  isFocused && styles.labelActive,
+                ]}>
+                {label}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -122,33 +130,30 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "rgba(80, 80, 80, 0.75)",
-    borderRadius: Radius.pill,
-    paddingHorizontal: Spacing.xs,
+    backgroundColor: Colors_NavBar.barBackground,
+    borderRadius: Radius.xl,
+    paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderWidth: BorderWidth.thin,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 8,
+    borderColor: Colors_NavBar.barBorder,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 10,
   },
   tabItem: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Spacing.sm,
+    paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.xs,
-    borderRadius: Radius.pill,
-    gap: Spacing.xxs,
-  },
-  activeTabHighlight: {
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    borderRadius: Radius.md,
+    gap: 2,
   },
   iconContainer: {
-    width: 28,
-    height: 28,
+    width: 26,
+    height: 26,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -156,6 +161,9 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     fontWeight: FontWeight.medium,
     textAlign: "center",
+  },
+  labelActive: {
+    fontWeight: FontWeight.semibold,
   },
 });
 

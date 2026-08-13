@@ -1,8 +1,16 @@
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
 
-import CustomTabBar from "@/shared/components/TabBar/CustomTabBar";
+import { useAuthStore } from "@/store/auth.store";
+import { CustomTabBar } from "@/shared/components/TabBar/CustomTabBar";
 
 export default function TabsLayout() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+
+  if (isHydrated && !isAuthenticated) {
+    return <Redirect href="/(auth)/login" />;
+  }
+
   return (
     <Tabs
       initialRouteName="04-dashboard"

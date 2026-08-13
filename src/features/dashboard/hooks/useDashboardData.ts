@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+
+import { fetchDashboardData } from "../data/dashboard.repository";
 import {
   DASHBOARD_STATS,
   INCOME_BARS,
@@ -5,9 +8,15 @@ import {
 } from "../data/dashboard.mock";
 
 export function useDashboardData() {
+  const query = useQuery({
+    queryKey: ["dashboard", "overview"],
+    queryFn: fetchDashboardData,
+  });
+
   return {
-    stats: DASHBOARD_STATS,
-    bars: INCOME_BARS,
-    trend: MONTH_TREND,
+    stats: query.data?.stats ?? DASHBOARD_STATS,
+    bars: query.data?.bars ?? INCOME_BARS,
+    trend: query.data?.trend ?? MONTH_TREND,
+    isLoading: query.isLoading,
   };
 }
