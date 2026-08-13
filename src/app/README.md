@@ -122,7 +122,7 @@ If you add a new tab, add both a `Tabs.Screen` entry here **and** a route-color 
 
 > [!NOTE]
 > `05-settings.tsx` breaks Rule 7 today: `features/settings/SettingsScreen.tsx` already exists, but the route still renders its own inline `View`/`Text` instead of re-exporting it. When picking this up, replace the body with:
-> ```tsx
+> ```ts
 > export { default } from "@/features/settings/SettingsScreen";
 > ```
 
