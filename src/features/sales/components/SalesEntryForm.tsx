@@ -23,7 +23,7 @@ import {
   useSalesEntries,
   useSalesSummary,
 } from "../hooks/useSalesEntries";
-import { CreateSalesEntrySchema } from "../validation";
+import { CreateSalesEntrySchema, CreateSalesEntryFormValues } from "../validation";
 
 const colors = Colors_SalesPage;
 
@@ -81,13 +81,30 @@ const COLOR_HEX: Record<string, string> = Object.fromEntries(
   colorOptions.map((color) => [color.label, color.value]),
 );
 
+type ProductDraft = {
+  id: string;
+  product: string;
+  quantity: string;
+  price: string;
+  extraDetail: DropdownOption | null;
+  extraValue: string;
+  selectedColor: (typeof colorOptions)[number];
+};
+
 export default function SalesEntryForm() {
-  const [quantity, setQuantity] = useState("");
-  const [product, setProduct] = useState("");
-  const [price, setPrice] = useState("");
-  const [extraDetail, setExtraDetail] = useState<DropdownOption | null>(null);
-  const [extraValue, setExtraValue] = useState("");
-  const [selectedColor, setSelectedColor] = useState(colorOptions[0]);
+  const emptyProduct = (): ProductDraft => ({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    product: "",
+    quantity: "",
+    price: "",
+    extraDetail: null,
+    extraValue: "",
+    selectedColor: colorOptions[0],
+  });
+
+  const [products, setProducts] = useState<ProductDraft[]>(() => [
+    emptyProduct(),
+  ]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data: entries = [], isLoading } = useSalesEntries();
@@ -95,59 +112,92 @@ export default function SalesEntryForm() {
   const createEntry = useCreateSalesEntry();
 
   const handleExtraDetailSelect = (
+    id: string,
     selected: DropdownOption | DropdownOption[],
   ) => {
     const nextValue = Array.isArray(selected) ? selected[0] : selected;
-    setExtraDetail(nextValue ?? null);
-    setExtraValue("");
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, extraDetail: nextValue ?? null, extraValue: "" } : p,
+      ),
+    );
+  };
+
+  const handleUpdateProduct = (
+    id: string,
+    field: string,
+    value: string | DropdownOption | null,
+  ) => {
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === id ? ({ ...p, [field]: value } as ProductDraft) : p,
+      ),
+    );
+  };
+
+  const handleAddProduct = () => {
+    setProducts((prev) => [...prev, emptyProduct()]);
+  };
+
+  const handleRemoveProduct = (id: string) => {
+    setProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
   const totalAmount = useMemo(() => {
-    const qty = Number(quantity) || 0;
-    const sellingPrice = Number(price) || 0;
-    return qty * sellingPrice;
-  }, [quantity, price]);
+    return products.reduce((sum, p) => {
+      const qty = Number(p.quantity) || 0;
+      const sellingPrice = Number(p.price) || 0;
+      return sum + qty * sellingPrice;
+    }, 0);
+  }, [products]);
 
   const handleReset = () => {
-    setQuantity("");
-    setProduct("");
-    setPrice("");
-    setExtraDetail(null);
-    setExtraValue("");
-    setSelectedColor(colorOptions[0]);
+    setProducts([emptyProduct()]);
     setErrors({});
   };
 
   const handleSaveSale = () => {
-    const parsed = CreateSalesEntrySchema.safeParse({
-      product,
-      quantity: quantity || "0",
-      price: price || "0",
-      amount: totalAmount,
-      extraDetail: extraDetail?.value ? extraDetail.label : null,
-      extraValue: extraValue.trim() || null,
-      color:
-        extraDetail?.value === "color" ? selectedColor.label : null,
-    });
+    const validated: CreateSalesEntryFormValues[] = [];
+    const fieldErrors: Record<string, string> = {};
 
-    if (!parsed.success) {
-      const fieldErrors: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        const key = String(issue.path[0]);
-        if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+    for (const item of products) {
+      const parsed = CreateSalesEntrySchema.safeParse({
+        product: item.product,
+        quantity: item.quantity || "0",
+        price: item.price || "0",
+        amount:
+          (Number(item.quantity) || 0) * (Number(item.price) || 0),
+        extraDetail: item.extraDetail?.value
+          ? item.extraDetail.label
+          : null,
+        extraValue: item.extraValue.trim() || null,
+        color:
+          item.extraDetail?.value === "color"
+            ? item.selectedColor.label
+            : null,
+      });
+
+      if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+          const key = `${item.id}.${String(issue.path[0])}`;
+          if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+        }
+      } else {
+        validated.push(parsed.data);
       }
-      setErrors(fieldErrors);
-      return;
     }
 
-    setErrors({});
-    createEntry.mutate(parsed.data, {
-      onSuccess: handleReset,
+    setErrors(fieldErrors);
+    if (validated.length !== products.length) return;
+
+    validated.forEach((data, index) => {
+      createEntry.mutate(data, {
+        onSuccess: () => {
+          if (index === validated.length - 1) handleReset();
+        },
+      });
     });
   };
-
-  const hasExtraDetail = !!extraDetail?.value;
-  const isColor = extraDetail?.value === "color";
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -172,189 +222,259 @@ export default function SalesEntryForm() {
         contentContainerStyle={styles.content}
       >
         <View style={styles.formCard}>
-          <View style={styles.fieldRow}>
-            <View style={styles.iconBox}>
+          <View style={styles.productHeaderRow}>
+            <Text style={styles.extraTitle}>Products</Text>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleAddProduct}
+              style={styles.addButton}
+            >
               <MaterialCommunityIcons
-                name="basket-outline"
-                size={27}
+                name="plus"
+                size={20}
                 color={colors.primary}
               />
-            </View>
-
-            <View style={styles.fieldContent}>
-              <LabeledInput
-                label="Quantity"
-                placeholder="Enter Quantity"
-                value={quantity}
-                onChangeText={setQuantity}
-                keyboardType="numeric"
-                labelColor={colors.textPrimary}
-                inputBgColor={colors.inputBG}
-                borderColor={colors.border}
-                placeholderColor="rgba(31,31,31,0.55)"
-                containerStyle={styles.inputBlock}
-                labelStyle={styles.inputLabel}
-                inputStyle={styles.inputText}
-                inputContainerStyle={styles.inputContainer}
-              />
-              {!!errors.quantity && (
-                <Text style={styles.errorText}>{errors.quantity}</Text>
-              )}
-            </View>
+              <Text style={styles.addButtonText}>Add Product</Text>
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.fieldRow}>
-            <View style={styles.iconBox}>
-              <MaterialCommunityIcons
-                name="cube-outline"
-                size={27}
-                color={colors.primary}
-              />
-            </View>
+          {products.map((p, index) => {
+            const hasExtraDetail = !!p.extraDetail?.value;
+            const isColor = p.extraDetail?.value === "color";
 
-            <View style={styles.fieldContent}>
-              <LabeledInput
-                label="Product"
-                placeholder="Enter Product name"
-                value={product}
-                onChangeText={setProduct}
-                labelColor={colors.textPrimary}
-                inputBgColor={colors.inputBG}
-                borderColor={colors.border}
-                placeholderColor="rgba(31,31,31,0.55)"
-                containerStyle={styles.inputBlock}
-                labelStyle={styles.inputLabel}
-                inputStyle={styles.inputText}
-                inputContainerStyle={styles.inputContainer}
-              />
-              {!!errors.product && (
-                <Text style={styles.errorText}>{errors.product}</Text>
-              )}
-            </View>
-          </View>
+            return (
+              <View key={p.id} style={styles.productCard}>
+                <View style={styles.productCardHeader}>
+                  <Text style={styles.inputLabel}>Item {index + 1}</Text>
 
-          <View style={styles.fieldRow}>
-            <View style={styles.iconBox}>
-              <MaterialCommunityIcons
-                name="currency-inr"
-                size={27}
-                color={colors.primary}
-              />
-            </View>
+                  {products.length > 1 && (
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => handleRemoveProduct(p.id)}
+                    >
+                      <MaterialCommunityIcons
+                        name="close-circle-outline"
+                        size={22}
+                        color={colors.primary}
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
 
-            <View style={styles.fieldContent}>
-              <LabeledInput
-                label="Price"
-                placeholder="Rs. Enter Price"
-                value={price}
-                onChangeText={setPrice}
-                keyboardType="numeric"
-                labelColor={colors.textPrimary}
-                inputBgColor={colors.inputBG}
-                borderColor={colors.border}
-                placeholderColor="rgba(31,31,31,0.55)"
-                containerStyle={styles.inputBlock}
-                labelStyle={styles.inputLabel}
-                inputStyle={styles.inputText}
-                inputContainerStyle={styles.inputContainer}
-              />
-              {!!errors.price && (
-                <Text style={styles.errorText}>{errors.price}</Text>
-              )}
-            </View>
-          </View>
-
-          <View style={styles.moreContainer}>
-            <Text style={styles.moreTitle}>More</Text>
-
-            <Dropdown
-              options={extraDetailOptions}
-              defaultValue={extraDetail ?? extraDetailOptions[0]}
-              placeholder="Optional"
-              onSelect={handleExtraDetailSelect}
-              bgColor={colors.inputBG}
-              textColor={colors.textPrimary}
-              dropdownBgColor={colors.surface}
-              dropdownTextColor={colors.textPrimary}
-              borderColor={colors.border}
-              buttonStyle={styles.dropdownButton}
-              textStyle={styles.dropdownText}
-              dropdownListStyle={styles.dropdownList}
-            />
-          </View>
-
-          {hasExtraDetail && (
-            <View style={styles.extraSection}>
-              <View style={styles.extraHeader}>
-                <Text style={styles.extraTitle}>{extraDetail?.label}</Text>
-                <Text style={styles.optionalText}>Optional</Text>
-              </View>
-
-              {isColor ? (
-                <View style={styles.colorSection}>
-                  <Text style={styles.detailLabel}>Choose Color</Text>
-
-                  <View style={styles.colorGrid}>
-                    {colorOptions.map((color) => {
-                      const selected = selectedColor.value === color.value;
-                      return (
-                        <TouchableOpacity
-                          key={color.value}
-                          activeOpacity={0.8}
-                          onPress={() => setSelectedColor(color)}
-                          style={[
-                            styles.colorCircle,
-                            { backgroundColor: color.value },
-                            selected && styles.selectedColor,
-                          ]}
-                        >
-                          {selected && (
-                            <MaterialCommunityIcons
-                              name="check"
-                              size={18}
-                              color="#FFFFFF"
-                            />
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
+                <View style={styles.fieldRow}>
+                  <View style={styles.iconBox}>
+                    <MaterialCommunityIcons
+                      name="basket-outline"
+                      size={27}
+                      color={colors.primary}
+                    />
                   </View>
 
-                  <View style={styles.selectedColorBox}>
-                    <View
-                      style={[
-                        styles.selectedColorCircle,
-                        { backgroundColor: selectedColor.value },
-                      ]}
+                  <View style={styles.fieldContent}>
+                    <LabeledInput
+                      label="Quantity"
+                      placeholder="Enter Quantity"
+                      value={p.quantity}
+                      onChangeText={(v) =>
+                        handleUpdateProduct(p.id, "quantity", v)
+                      }
+                      keyboardType="numeric"
+                      labelColor={colors.textPrimary}
+                      inputBgColor={colors.inputBG}
+                      borderColor={colors.border}
+                      placeholderColor="rgba(31,31,31,0.55)"
+                      containerStyle={styles.inputBlock}
+                      labelStyle={styles.inputLabel}
+                      inputStyle={styles.inputText}
+                      inputContainerStyle={styles.inputContainer}
                     />
-                    <Text style={styles.selectedColorText}>
-                      {selectedColor.label}
-                    </Text>
+                    {!!errors[`${p.id}.quantity`] && (
+                      <Text style={styles.errorText}>
+                        {errors[`${p.id}.quantity`]}
+                      </Text>
+                    )}
                   </View>
                 </View>
-              ) : (
-                <LabeledInput
-                  label={extraDetail?.label || "Detail"}
-                  placeholder={
-                    extraDetail?.label
-                      ? `Enter ${extraDetail.label.toLowerCase()}`
-                      : "Enter detail"
-                  }
-                  value={extraValue}
-                  onChangeText={setExtraValue}
-                  keyboardType={extraDetail?.value === "age" ? "numeric" : "default"}
-                  labelColor={colors.textPrimary}
-                  inputBgColor={colors.inputBG}
-                  borderColor={colors.border}
-                  placeholderColor="rgba(31,31,31,0.55)"
-                  containerStyle={styles.inputBlock}
-                  labelStyle={styles.inputLabel}
-                  inputStyle={styles.inputText}
-                  inputContainerStyle={styles.inputContainer}
-                />
-              )}
-            </View>
-          )}
+
+                <View style={styles.fieldRow}>
+                  <View style={styles.iconBox}>
+                    <MaterialCommunityIcons
+                      name="cube-outline"
+                      size={27}
+                      color={colors.primary}
+                    />
+                  </View>
+
+                  <View style={styles.fieldContent}>
+                    <LabeledInput
+                      label="Product"
+                      placeholder="Enter Product name"
+                      value={p.product}
+                      onChangeText={(v) =>
+                        handleUpdateProduct(p.id, "product", v)
+                      }
+                      labelColor={colors.textPrimary}
+                      inputBgColor={colors.inputBG}
+                      borderColor={colors.border}
+                      placeholderColor="rgba(31,31,31,0.55)"
+                      containerStyle={styles.inputBlock}
+                      labelStyle={styles.inputLabel}
+                      inputStyle={styles.inputText}
+                      inputContainerStyle={styles.inputContainer}
+                    />
+                    {!!errors[`${p.id}.product`] && (
+                      <Text style={styles.errorText}>
+                        {errors[`${p.id}.product`]}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+
+                <View style={styles.fieldRow}>
+                  <View style={styles.iconBox}>
+                    <MaterialCommunityIcons
+                      name="currency-inr"
+                      size={27}
+                      color={colors.primary}
+                    />
+                  </View>
+
+                  <View style={styles.fieldContent}>
+                    <LabeledInput
+                      label="Price"
+                      placeholder="Rs. Enter Price"
+                      value={p.price}
+                      onChangeText={(v) =>
+                        handleUpdateProduct(p.id, "price", v)
+                      }
+                      keyboardType="numeric"
+                      labelColor={colors.textPrimary}
+                      inputBgColor={colors.inputBG}
+                      borderColor={colors.border}
+                      placeholderColor="rgba(31,31,31,0.55)"
+                      containerStyle={styles.inputBlock}
+                      labelStyle={styles.inputLabel}
+                      inputStyle={styles.inputText}
+                      inputContainerStyle={styles.inputContainer}
+                    />
+                    {!!errors[`${p.id}.price`] && (
+                      <Text style={styles.errorText}>
+                        {errors[`${p.id}.price`]}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+
+                <View style={styles.moreContainer}>
+                  <Text style={styles.moreTitle}>More</Text>
+
+                  <Dropdown
+                    options={extraDetailOptions}
+                    defaultValue={p.extraDetail ?? extraDetailOptions[0]}
+                    placeholder="Optional"
+                    onSelect={(selected) =>
+                      handleExtraDetailSelect(p.id, selected)
+                    }
+                    bgColor={colors.inputBG}
+                    textColor={colors.textPrimary}
+                    dropdownBgColor={colors.surface}
+                    dropdownTextColor={colors.textPrimary}
+                    borderColor={colors.border}
+                    buttonStyle={styles.dropdownButton}
+                    textStyle={styles.dropdownText}
+                    dropdownListStyle={styles.dropdownList}
+                  />
+                </View>
+
+                {hasExtraDetail && (
+                  <View style={styles.extraSection}>
+                    <View style={styles.extraHeader}>
+                      <Text style={styles.extraTitle}>
+                        {p.extraDetail?.label}
+                      </Text>
+                      <Text style={styles.optionalText}>Optional</Text>
+                    </View>
+
+                    {isColor ? (
+                      <View style={styles.colorSection}>
+                        <Text style={styles.detailLabel}>Choose Color</Text>
+
+                        <View style={styles.colorGrid}>
+                          {colorOptions.map((color) => {
+                            const selected =
+                              p.selectedColor.value === color.value;
+                            return (
+                              <TouchableOpacity
+                                key={color.value}
+                                activeOpacity={0.8}
+                                onPress={() =>
+                                  handleUpdateProduct(
+                                    p.id,
+                                    "selectedColor",
+                                    color,
+                                  )
+                                }
+                                style={[
+                                  styles.colorCircle,
+                                  { backgroundColor: color.value },
+                                  selected && styles.selectedColor,
+                                ]}
+                              >
+                                {selected && (
+                                  <MaterialCommunityIcons
+                                    name="check"
+                                    size={18}
+                                    color="#FFFFFF"
+                                  />
+                                )}
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+
+                        <View style={styles.selectedColorBox}>
+                          <View
+                            style={[
+                              styles.selectedColorCircle,
+                              { backgroundColor: p.selectedColor.value },
+                            ]}
+                          />
+                          <Text style={styles.selectedColorText}>
+                            {p.selectedColor.label}
+                          </Text>
+                        </View>
+                      </View>
+                    ) : (
+                      <LabeledInput
+                        label={p.extraDetail?.label || "Detail"}
+                        placeholder={
+                          p.extraDetail?.label
+                            ? `Enter ${p.extraDetail.label.toLowerCase()}`
+                            : "Enter detail"
+                        }
+                        value={p.extraValue}
+                        onChangeText={(v) =>
+                          handleUpdateProduct(p.id, "extraValue", v)
+                        }
+                        keyboardType={
+                          p.extraDetail?.value === "age" ? "numeric" : "default"
+                        }
+                        labelColor={colors.textPrimary}
+                        inputBgColor={colors.inputBG}
+                        borderColor={colors.border}
+                        placeholderColor="rgba(31,31,31,0.55)"
+                        containerStyle={styles.inputBlock}
+                        labelStyle={styles.inputLabel}
+                        inputStyle={styles.inputText}
+                        inputContainerStyle={styles.inputContainer}
+                      />
+                    )}
+                  </View>
+                )}
+              </View>
+            );
+          })}
 
           <View style={styles.divider} />
 
@@ -555,6 +675,48 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 16,
     elevation: 2,
+  },
+
+  productHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.md,
+  },
+
+  addButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.xs,
+    minHeight: 40,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.md,
+    borderWidth: BorderWidth.base,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+  },
+
+  addButtonText: {
+    color: colors.primary,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+  },
+
+  productCard: {
+    marginBottom: Spacing.md,
+    padding: Spacing.sm,
+    borderRadius: Radius.md,
+    borderWidth: BorderWidth.thin,
+    borderColor: colors.border,
+    backgroundColor: "#F3FFF7",
+  },
+
+  productCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.sm,
   },
 
   fieldRow: {
