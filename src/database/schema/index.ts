@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export const MIGRATIONS: { version: number; name: string; sql: string }[] = [
   {
@@ -75,6 +75,15 @@ export const MIGRATIONS: { version: number; name: string; sql: string }[] = [
       );
 
       CREATE INDEX IF NOT EXISTS idx_products_name ON products (name);
+    `,
+  },
+  {
+    version: 4,
+    name: "sales_extra_details",
+    sql: `
+      ALTER TABLE sales_entries ADD COLUMN extra_detail TEXT;
+      ALTER TABLE sales_entries ADD COLUMN extra_value TEXT;
+      ALTER TABLE sales_entries ADD COLUMN color TEXT;
     `,
   },
 ];

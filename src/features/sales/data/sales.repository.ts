@@ -16,6 +16,9 @@ type SalesRow = {
   amount: number;
   customer: string | null;
   cost_price: number | null;
+  extra_detail: string | null;
+  extra_value: string | null;
+  color: string | null;
   sold_at: string;
 };
 
@@ -27,6 +30,9 @@ const FALLBACK_ENTRIES: SalesEntry[] = SALES_ENTRIES.map((entry, index) => ({
   amount: entry.amount,
   customer: null,
   costPrice: null,
+  extraDetail: null,
+  extraValue: null,
+  color: null,
   soldAt: new Date().toISOString(),
 }));
 
@@ -35,7 +41,7 @@ export async function fetchSalesEntries(): Promise<SalesEntry[]> {
   if (!db) return FALLBACK_ENTRIES;
 
   const rows = await db.getAllAsync<SalesRow>(
-    "SELECT id, product, quantity, price, amount, customer, cost_price, sold_at FROM sales_entries ORDER BY sold_at DESC, id DESC LIMIT 100",
+    "SELECT id, product, quantity, price, amount, customer, cost_price, extra_detail, extra_value, color, sold_at FROM sales_entries ORDER BY sold_at DESC, id DESC LIMIT 100",
   );
 
   return rows.map((row) =>
@@ -50,14 +56,17 @@ export async function createSalesEntry(
   if (!db) throw new Error("Database is not ready yet");
 
   await db.runAsync(
-    `INSERT INTO sales_entries (product, quantity, price, amount, customer, cost_price, sold_at)
-     VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
+    `INSERT INTO sales_entries (product, quantity, price, amount, customer, cost_price, extra_detail, extra_value, color, sold_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
     input.product,
     input.quantity,
     input.price,
     input.amount,
     input.customer ?? null,
     input.costPrice ?? null,
+    input.extraDetail ?? null,
+    input.extraValue ?? null,
+    input.color ?? null,
   );
 }
 

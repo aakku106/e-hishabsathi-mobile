@@ -6,6 +6,9 @@ export type SalesEntry = {
   amount: number;
   customer: string | null;
   costPrice: number | null;
+  extraDetail: string | null;
+  extraValue: string | null;
+  color: string | null;
   soldAt: string;
 };
 
@@ -16,6 +19,9 @@ export type CreateSalesEntryInput = {
   amount: number;
   customer?: string | null;
   costPrice?: number | null;
+  extraDetail?: string | null;
+  extraValue?: string | null;
+  color?: string | null;
 };
 
 export type SalesSummary = {

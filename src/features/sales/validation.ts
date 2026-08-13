@@ -9,6 +9,9 @@ export const CreateSalesEntrySchema = z.object({
   amount: nonNegativeNumber,
   customer: z.string().trim().optional().nullable(),
   costPrice: z.coerce.number().positive().optional().nullable(),
+  extraDetail: z.string().trim().optional().nullable(),
+  extraValue: z.string().trim().optional().nullable(),
+  color: z.string().trim().optional().nullable(),
 });
 
 export type CreateSalesEntryFormValues = z.infer<
