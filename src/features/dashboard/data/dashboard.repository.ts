@@ -18,7 +18,7 @@ type StatsQuery = {
   totalSales: number;
   totalQuantity: number;
   totalCustomers: number;
-  totalPurchases: number;
+  totalUdaaro: number;
   lastWeekSales: number;
   thisMonthSales: number;
   lastMonthSales: number;
@@ -40,7 +40,7 @@ async function queryStats(): Promise<StatsQuery | null> {
       (SELECT COALESCE(SUM(amount), 0) FROM sales_entries) as totalSales,
       (SELECT COALESCE(SUM(quantity), 0) FROM sales_entries) as totalQuantity,
       (SELECT COUNT(DISTINCT customer) FROM sales_entries WHERE customer IS NOT NULL AND customer != '') as totalCustomers,
-      (SELECT COALESCE(SUM(amount), 0) FROM purchase_entries) as totalPurchases,
+      (SELECT COALESCE(SUM(CASE WHEN transaction_type = 'CREDIT_GIVEN' THEN amount ELSE -amount END), 0) FROM local_udaaro_ledger) as totalUdaaro,
       (SELECT COALESCE(SUM(amount), 0) FROM sales_entries WHERE sold_at >= ?) as lastWeekSales,
       (SELECT COALESCE(SUM(amount), 0) FROM sales_entries WHERE sold_at >= ?) as thisMonthSales,
       (SELECT COALESCE(SUM(amount), 0) FROM sales_entries WHERE sold_at >= ? AND sold_at < ?) as lastMonthSales
@@ -113,7 +113,7 @@ export async function fetchDashboardData(): Promise<{
     },
     {
       label: "Total Profit",
-      value: formatCurrency((statsRow?.totalSales ?? 0) - (statsRow?.totalPurchases ?? 0)),
+      value: formatCurrency((statsRow?.totalSales ?? 0) - (statsRow?.totalUdaaro ?? 0)),
       change: `${Math.round(changePercent(statsRow?.thisMonthSales ?? 0, statsRow?.lastMonthSales ?? 0))}%`,
       changeType: (statsRow?.thisMonthSales ?? 0) >= (statsRow?.lastMonthSales ?? 0) ? "up" : "down",
     },

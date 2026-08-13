@@ -1,5 +1,6 @@
 import { getDatabase } from "@/database/sqlite";
 import { mapCamelCase } from "@/database/helpers";
+import { generateUuid } from "@/shared/utils/uuid";
 
 import { UDHARO_ENTRIES } from "./udharo.mock";
 import type {
@@ -54,14 +55,51 @@ export async function createUdharoEntry(
   const db = getDatabase();
   if (!db) throw new Error("Database is not ready yet");
 
-  await db.runAsync(
-    `INSERT INTO udharo_entries (name, amount, due_date, status, created_at)
-     VALUES (?, ?, ?, ?, datetime('now'))`,
-    input.name,
-    input.amount,
-    input.dueDate ?? null,
-    input.status ?? "on_track",
-  );
+  await db.withTransactionAsync(async () => {
+    await db.runAsync(
+      `INSERT INTO udharo_entries (name, amount, due_date, status, created_at)
+       VALUES (?, ?, ?, ?, datetime('now'))`,
+      input.name,
+      input.amount,
+      input.dueDate ?? null,
+      input.status ?? "on_track",
+    );
+
+    const existing = await db.getFirstAsync<{ id: string }>(
+      "SELECT id FROM local_udaaro_customers WHERE full_name = ?",
+      input.name,
+    );
+    let customerId = existing?.id ?? null;
+    if (!customerId) {
+      customerId = generateUuid();
+      await db.runAsync(
+        "INSERT INTO local_udaaro_customers (id, full_name) VALUES (?, ?)",
+        customerId,
+        input.name,
+      );
+    }
+
+    const entryDate = new Date().toISOString().slice(0, 10);
+    await db.runAsync(
+      `INSERT INTO local_udaaro_ledger (id, customer_id, transaction_type, amount, transaction_date)
+       VALUES (?, ?, 'CREDIT_GIVEN', ?, ?)`,
+      generateUuid(),
+      customerId,
+      input.amount,
+      entryDate,
+    );
+
+    if (input.status === "paid") {
+      await db.runAsync(
+        `INSERT INTO local_udaaro_ledger (id, customer_id, transaction_type, amount, transaction_date)
+         VALUES (?, ?, 'PAYMENT_RECEIVED', ?, ?)`,
+        generateUuid(),
+        customerId,
+        input.amount,
+        entryDate,
+      );
+    }
+  });
 }
 
 export async function deleteUdharoEntry(id: number): Promise<void> {
