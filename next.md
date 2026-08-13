@@ -1,5 +1,14 @@
 # What we nned to implement next
 
+## Status
+
+Part 2 (Local Edge Database) is **implemented** on branch `feat/local-edge-database`:
+- Migration v5 adds all four tables (`local_sync_queue`, `local_udaaro_customers`, `local_udaaro_ledger`, `local_udaaro_backup_log`) plus `client_uuid` idempotency columns on `sales_entries` / `purchase_entries`.
+- Repositories live in `src/database/edge/` (sync queue state machine + 7-day retention purge, customers, ledger, backup log).
+- Sales/purchase creates enqueue into `local_sync_queue` atomically (outbox); udaaro creates write the ledger only (never synced).
+- Dashboard "Total Profit" = `totalSales − totalUdaaroOutstanding` from `local_udaaro_ledger`, computed on-device.
+- AI stays unwired.
+
 # implement this exect schema 
 
 ## Part 2: Local Edge Database (Device-Bound SQLite)

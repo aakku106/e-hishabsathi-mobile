@@ -18,6 +18,8 @@ This file is the entry point for the frontend project. Keep it high-level and us
 - Expo Router-based React Native app.
 - Feature-based, offline-first frontend.
 - SQLite is the local source of truth.
+- Device-bound Local Edge Database: sales/purchases go through a sync outbox (`local_sync_queue`) with client-generated UUID idempotency keys; udaaro detail stays on-device in `local_udaaro_ledger`.
+- Dashboard "Total Profit" (cash in hand) = total sales − udhaaro outstanding, computed entirely on-device.
 - Shared UI lives in `src/shared/`.
 - Business modules live in `src/features/`.
 
@@ -34,7 +36,7 @@ This file is the entry point for the frontend project. Keep it high-level and us
 - `src/app/` for routes and layouts.
 - `src/features/` for feature modules.
 - `src/shared/` for reusable components, constants, hooks, and utilities.
-- `src/database/` for SQLite schema, migrations, and helpers.
+- `src/database/` for SQLite schema, migrations, helpers, and the device-bound Local Edge Database (sync outbox, udaaro ledger).
 - `src/services/` for sync, export, notifications, and AI.
 - `src/providers/` for global providers.
 - `src/store/` for app state.
