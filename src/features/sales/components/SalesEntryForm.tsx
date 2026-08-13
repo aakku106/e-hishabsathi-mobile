@@ -70,59 +70,68 @@ const colorOptions = [
 ];
 
 export default function SalesEntryForm() {
-  const [quantity, setQuantity] = useState("");
-  const [product, setProduct] = useState("");
-  const [price, setPrice] = useState("");
-  const [extraDetail, setExtraDetail] =
-    useState<DropdownOption | null>(null);
-  const [extraValue, setExtraValue] = useState("");
-  const [selectedColor, setSelectedColor] =
-    useState(colorOptions[0]);
+  const emptyProduct = () => ({
+    id: String(Date.now()) + Math.random().toString(36).slice(2),
+    product: "",
+    quantity: "",
+    price: "",
+    extraDetail: null as DropdownOption | null,
+    extraValue: "",
+    selectedColor: colorOptions[0],
+  });
+
+  const [products, setProducts] = useState(() => [emptyProduct()]);
 
   const handleExtraDetailSelect = (
+    id: string,
     selected: DropdownOption | DropdownOption[]
   ) => {
     const nextValue = Array.isArray(selected)
       ? selected[0]
       : selected;
 
-    setExtraDetail(nextValue ?? null);
-    setExtraValue("");
+    setProducts((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? { ...p, extraDetail: nextValue ?? null, extraValue: "" }
+          : p
+      )
+    );
+  };
+
+  const handleUpdateProduct = (
+    id: string,
+    field: string,
+    value: any
+  ) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, [field]: value } : p))
+    );
+  };
+
+  const handleAddProduct = () => {
+    setProducts((prev) => [...prev, emptyProduct()]);
+  };
+
+  const handleRemoveProduct = (id: string) => {
+    setProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
   const totalAmount = useMemo(() => {
-    const qty = Number(quantity) || 0;
-    const sellingPrice = Number(price) || 0;
-
-    return qty * sellingPrice;
-  }, [quantity, price]);
+    return products.reduce((sum, p) => {
+      const qty = Number(p.quantity) || 0;
+      const sellingPrice = Number(p.price) || 0;
+      return sum + qty * sellingPrice;
+    }, 0);
+  }, [products]);
 
   const handleReset = () => {
-    setQuantity("");
-    setProduct("");
-    setPrice("");
-    setExtraDetail(null);
-    setExtraValue("");
-    setSelectedColor(colorOptions[0]);
+    setProducts([emptyProduct()]);
   };
 
   const handleSaveSale = () => {
-    console.log("Sale Saved:", {
-      quantity,
-      product,
-      price,
-      totalAmount,
-      extraDetail,
-      extraValue,
-      color:
-        extraDetail?.value === "color"
-          ? selectedColor.label
-          : null,
-    });
+    console.log("Sale Saved:", { products, totalAmount });
   };
-
-  const hasExtraDetail = !!extraDetail?.value;
-  const isColor = extraDetail?.value === "color";
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -153,224 +162,220 @@ export default function SalesEntryForm() {
         contentContainerStyle={styles.content}
       >
         <View style={styles.formCard}>
-          <View style={styles.fieldRow}>
-            <View style={styles.iconBox}>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: Spacing.md,
+          }}>
+            <Text style={[styles.extraTitle]}>Products</Text>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleAddProduct}
+              style={[styles.actionButton, {flex: 0, minHeight: 40, paddingHorizontal: Spacing.md}]}
+            >
               <MaterialCommunityIcons
-                name="basket-outline"
-                size={27}
+                name="plus"
+                size={20}
                 color={Colors_SalesPage.enterBtn}
               />
-            </View>
 
-            <View style={styles.fieldContent}>
-              <LabeledInput
-                label="Quantity"
-                placeholder="Enter Quantity"
-                value={quantity}
-                onChangeText={setQuantity}
-                keyboardType="numeric"
-                labelColor={Colors_SalesPage.textPrimary}
-                inputBgColor={Colors_SalesPage.inputBG}
-                borderColor={Colors_SalesPage.border}
-                placeholderColor="rgba(31,31,31,0.55)"
-                containerStyle={styles.inputBlock}
-                labelStyle={styles.inputLabel}
-                inputStyle={styles.inputText}
-                inputContainerStyle={styles.inputContainer}
-              />
-            </View>
+              <Text style={[styles.resetText, {marginLeft: Spacing.xs}]}>Add Product</Text>
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.fieldRow}>
-            <View style={styles.iconBox}>
-              <MaterialCommunityIcons
-                name="cube-outline"
-                size={27}
-                color={Colors_SalesPage.enterBtn}
-              />
-            </View>
+          {products.map((p, index) => {
+            const hasExtraDetail = !!p.extraDetail?.value;
+            const isColor = p.extraDetail?.value === 'color';
 
-            <View style={styles.fieldContent}>
-              <LabeledInput
-                label="Product"
-                placeholder="Enter Product name"
-                value={product}
-                onChangeText={setProduct}
-                labelColor={Colors_SalesPage.textPrimary}
-                inputBgColor={Colors_SalesPage.inputBG}
-                borderColor={Colors_SalesPage.border}
-                placeholderColor="rgba(31,31,31,0.55)"
-                containerStyle={styles.inputBlock}
-                labelStyle={styles.inputLabel}
-                inputStyle={styles.inputText}
-                inputContainerStyle={styles.inputContainer}
-              />
-            </View>
+            return (
+              <View key={p.id} style={{marginBottom: Spacing.md, padding: Spacing.sm, borderRadius: Radius.md, borderWidth: BorderWidth.thin, borderColor: Colors_SalesPage.border, backgroundColor: '#F3FFF7'}}>
+                <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.sm}}>
+                  <Text style={[styles.inputLabel]}>Item {index + 1}</Text>
 
-            <View style={styles.rightIcon}>
-              <MaterialCommunityIcons
-                name="chevron-down"
-                size={26}
-                color={Colors_SalesPage.enterBtn}
-              />
-            </View>
-          </View>
+                  {products.length > 1 && (
+                    <TouchableOpacity onPress={() => handleRemoveProduct(p.id)} activeOpacity={0.8}>
+                      <MaterialCommunityIcons name="close-circle-outline" size={22} color={Colors_SalesPage.enterBtn} />
+                    </TouchableOpacity>
+                  )}
+                </View>
 
-          <View style={styles.fieldRow}>
-            <View style={styles.iconBox}>
-              <MaterialCommunityIcons
-                name="currency-inr"
-                size={27}
-                color={Colors_SalesPage.enterBtn}
-              />
-            </View>
-
-            <View style={styles.fieldContent}>
-              <LabeledInput
-                label="Price"
-                placeholder="Rs. Enter Price"
-                value={price}
-                onChangeText={setPrice}
-                keyboardType="numeric"
-                labelColor={Colors_SalesPage.textPrimary}
-                inputBgColor={Colors_SalesPage.inputBG}
-                borderColor={Colors_SalesPage.border}
-                placeholderColor="rgba(31,31,31,0.55)"
-                containerStyle={styles.inputBlock}
-                labelStyle={styles.inputLabel}
-                inputStyle={styles.inputText}
-                inputContainerStyle={styles.inputContainer}
-              />
-            </View>
-          </View>
-
-          <View style={styles.moreContainer}>
-            <Text style={styles.moreTitle}>More</Text>
-
-            <Dropdown
-              options={extraDetailOptions}
-              defaultValue={
-                extraDetail ?? extraDetailOptions[0]
-              }
-              placeholder="Optional"
-              onSelect={handleExtraDetailSelect}
-              bgColor={Colors_SalesPage.inputBG}
-              textColor={Colors_SalesPage.textPrimary}
-              dropdownBgColor={Colors_SalesPage.surface}
-              dropdownTextColor={Colors_SalesPage.textPrimary}
-              borderColor={Colors_SalesPage.border}
-              buttonStyle={styles.dropdownButton}
-              textStyle={styles.dropdownText}
-              dropdownListStyle={styles.dropdownList}
-            />
-          </View>
-
-          {hasExtraDetail && (
-            <View style={styles.extraSection}>
-              <View style={styles.extraHeader}>
-                <Text style={styles.extraTitle}>
-                  {extraDetail?.label}
-                </Text>
-
-                <Text style={styles.optionalText}>
-                  Optional
-                </Text>
-              </View>
-
-              {isColor ? (
-                <View style={styles.colorSection}>
-                  <Text style={styles.detailLabel}>
-                    Choose Color
-                  </Text>
-
-                  <View style={styles.colorGrid}>
-                    {colorOptions.map((color) => {
-                      const selected =
-                        selectedColor.value === color.value;
-
-                      return (
-                        <TouchableOpacity
-                          key={color.value}
-                          activeOpacity={0.8}
-                          onPress={() =>
-                            setSelectedColor(color)
-                          }
-                          style={[
-                            styles.colorCircle,
-                            {
-                              backgroundColor: color.value,
-                            },
-                            selected &&
-                              styles.selectedColor,
-                          ]}
-                        >
-                          {selected && (
-                            <MaterialCommunityIcons
-                              name="check"
-                              size={18}
-                              color="#FFFFFF"
-                            />
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
+                <View style={styles.fieldRow}>
+                  <View style={styles.iconBox}>
+                    <MaterialCommunityIcons
+                      name="basket-outline"
+                      size={27}
+                      color={Colors_SalesPage.enterBtn}
+                    />
                   </View>
 
-                  <View style={styles.selectedColorBox}>
-                    <View
-                      style={[
-                        styles.selectedColorCircle,
-                        {
-                          backgroundColor:
-                            selectedColor.value,
-                        },
-                      ]}
+                  <View style={styles.fieldContent}>
+                    <LabeledInput
+                      label="Quantity"
+                      placeholder="Enter Quantity"
+                      value={p.quantity}
+                      onChangeText={(v) => handleUpdateProduct(p.id, 'quantity', v)}
+                      keyboardType="numeric"
+                      labelColor={Colors_SalesPage.textPrimary}
+                      inputBgColor={Colors_SalesPage.inputBG}
+                      borderColor={Colors_SalesPage.border}
+                      placeholderColor="rgba(31,31,31,0.55)"
+                      containerStyle={styles.inputBlock}
+                      labelStyle={styles.inputLabel}
+                      inputStyle={styles.inputText}
+                      inputContainerStyle={styles.inputContainer}
                     />
-
-                    <Text
-                      style={styles.selectedColorText}
-                    >
-                      {selectedColor.label}
-                    </Text>
                   </View>
                 </View>
-              ) : (
-                <LabeledInput
-                  label={
-                    extraDetail?.label || "Detail"
-                  }
-                  placeholder={
-                    extraDetail?.label
-                      ? `Enter ${extraDetail.label.toLowerCase()}`
-                      : "Enter detail"
-                  }
-                  value={extraValue}
-                  onChangeText={setExtraValue}
-                  keyboardType={
-                    extraDetail?.value === "age"
-                      ? "numeric"
-                      : "default"
-                  }
-                  labelColor={
-                    Colors_SalesPage.textPrimary
-                  }
-                  inputBgColor={
-                    Colors_SalesPage.inputBG
-                  }
-                  borderColor={
-                    Colors_SalesPage.border
-                  }
-                  placeholderColor="rgba(31,31,31,0.55)"
-                  containerStyle={styles.inputBlock}
-                  labelStyle={styles.inputLabel}
-                  inputStyle={styles.inputText}
-                  inputContainerStyle={
-                    styles.inputContainer
-                  }
-                />
-              )}
-            </View>
-          )}
+
+                <View style={styles.fieldRow}>
+                  <View style={styles.iconBox}>
+                    <MaterialCommunityIcons
+                      name="cube-outline"
+                      size={27}
+                      color={Colors_SalesPage.enterBtn}
+                    />
+                  </View>
+
+                  <View style={styles.fieldContent}>
+                    <LabeledInput
+                      label="Product"
+                      placeholder="Enter Product name"
+                      value={p.product}
+                      onChangeText={(v) => handleUpdateProduct(p.id, 'product', v)}
+                      labelColor={Colors_SalesPage.textPrimary}
+                      inputBgColor={Colors_SalesPage.inputBG}
+                      borderColor={Colors_SalesPage.border}
+                      placeholderColor="rgba(31,31,31,0.55)"
+                      containerStyle={styles.inputBlock}
+                      labelStyle={styles.inputLabel}
+                      inputStyle={styles.inputText}
+                      inputContainerStyle={styles.inputContainer}
+                    />
+                  </View>
+
+                  <View style={styles.rightIcon}>
+                    <MaterialCommunityIcons
+                      name="chevron-down"
+                      size={26}
+                      color={Colors_SalesPage.enterBtn}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.fieldRow}>
+                  <View style={styles.iconBox}>
+                    <MaterialCommunityIcons
+                      name="currency-inr"
+                      size={27}
+                      color={Colors_SalesPage.enterBtn}
+                    />
+                  </View>
+
+                  <View style={styles.fieldContent}>
+                    <LabeledInput
+                      label="Price"
+                      placeholder="Rs. Enter Price"
+                      value={p.price}
+                      onChangeText={(v) => handleUpdateProduct(p.id, 'price', v)}
+                      keyboardType="numeric"
+                      labelColor={Colors_SalesPage.textPrimary}
+                      inputBgColor={Colors_SalesPage.inputBG}
+                      borderColor={Colors_SalesPage.border}
+                      placeholderColor="rgba(31,31,31,0.55)"
+                      containerStyle={styles.inputBlock}
+                      labelStyle={styles.inputLabel}
+                      inputStyle={styles.inputText}
+                      inputContainerStyle={styles.inputContainer}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.moreContainer}>
+                  <Text style={styles.moreTitle}>More</Text>
+
+                  <Dropdown
+                    options={extraDetailOptions}
+                    defaultValue={p.extraDetail ?? extraDetailOptions[0]}
+                    placeholder="Optional"
+                    onSelect={(s) => handleExtraDetailSelect(p.id, s)}
+                    bgColor={Colors_SalesPage.inputBG}
+                    textColor={Colors_SalesPage.textPrimary}
+                    dropdownBgColor={Colors_SalesPage.surface}
+                    dropdownTextColor={Colors_SalesPage.textPrimary}
+                    borderColor={Colors_SalesPage.border}
+                    buttonStyle={styles.dropdownButton}
+                    textStyle={styles.dropdownText}
+                    dropdownListStyle={styles.dropdownList}
+                  />
+                </View>
+
+                {hasExtraDetail && (
+                  <View style={styles.extraSection}>
+                    <View style={styles.extraHeader}>
+                      <Text style={styles.extraTitle}>
+                        {p.extraDetail?.label}
+                      </Text>
+
+                      <Text style={styles.optionalText}>Optional</Text>
+                    </View>
+
+                    {isColor ? (
+                      <View style={styles.colorSection}>
+                        <Text style={styles.detailLabel}>Choose Color</Text>
+
+                        <View style={styles.colorGrid}>
+                          {colorOptions.map((color) => {
+                            const selected = p.selectedColor.value === color.value;
+
+                            return (
+                              <TouchableOpacity
+                                key={color.value}
+                                activeOpacity={0.8}
+                                onPress={() => handleUpdateProduct(p.id, 'selectedColor', color)}
+                                style={[
+                                  styles.colorCircle,
+                                  { backgroundColor: color.value },
+                                  selected && styles.selectedColor,
+                                ]}
+                              >
+                                {selected && (
+                                  <MaterialCommunityIcons name="check" size={18} color="#FFFFFF" />
+                                )}
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+
+                        <View style={styles.selectedColorBox}>
+                          <View style={[styles.selectedColorCircle, { backgroundColor: p.selectedColor.value }]} />
+
+                          <Text style={styles.selectedColorText}>{p.selectedColor.label}</Text>
+                        </View>
+                      </View>
+                    ) : (
+                      <LabeledInput
+                        label={p.extraDetail?.label || 'Detail'}
+                        placeholder={p.extraDetail?.label ? `Enter ${p.extraDetail.label.toLowerCase()}` : 'Enter detail'}
+                        value={p.extraValue}
+                        onChangeText={(v) => handleUpdateProduct(p.id, 'extraValue', v)}
+                        keyboardType={p.extraDetail?.value === 'age' ? 'numeric' : 'default'}
+                        labelColor={Colors_SalesPage.textPrimary}
+                        inputBgColor={Colors_SalesPage.inputBG}
+                        borderColor={Colors_SalesPage.border}
+                        placeholderColor="rgba(31,31,31,0.55)"
+                        containerStyle={styles.inputBlock}
+                        labelStyle={styles.inputLabel}
+                        inputStyle={styles.inputText}
+                        inputContainerStyle={styles.inputContainer}
+                      />
+                    )}
+                  </View>
+                )}
+              </View>
+            );
+          })}
 
           <View style={styles.divider} />
 
