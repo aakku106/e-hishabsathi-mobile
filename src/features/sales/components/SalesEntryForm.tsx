@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -9,15 +10,22 @@ import {
   View,
 } from "react-native";
 
-import Dropdown, {
-  DropdownOption,
-} from "@/shared/components/DatePicker/DropDown";
-import LabeledInput from "@/shared/components/Input/LabledInput";
-
+import { Dropdown, DropdownOption } from "@/shared/components/DatePicker/DropDown";
+import { LabeledInput } from "@/shared/components/Input/LabledInput";
 import { Colors_SalesPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { formatCurrency } from "@/shared/utils/formatter";
+
+import {
+  useCreateSalesEntry,
+  useSalesEntries,
+  useSalesSummary,
+} from "../hooks/useSalesEntries";
+import { CreateSalesEntrySchema, CreateSalesEntryFormValues } from "../validation";
+
+const colors = Colors_SalesPage;
 
 const extraDetailOptions: DropdownOption[] = [
   {
@@ -69,43 +77,61 @@ const colorOptions = [
   },
 ];
 
+const COLOR_HEX: Record<string, string> = Object.fromEntries(
+  colorOptions.map((color) => [color.label, color.value]),
+);
+
+type ProductDraft = {
+  id: string;
+  product: string;
+  quantity: string;
+  price: string;
+  extraDetail: DropdownOption | null;
+  extraValue: string;
+  selectedColor: (typeof colorOptions)[number];
+};
+
 export default function SalesEntryForm() {
-  const emptyProduct = () => ({
-    id: String(Date.now()) + Math.random().toString(36).slice(2),
+  const emptyProduct = (): ProductDraft => ({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     product: "",
     quantity: "",
     price: "",
-    extraDetail: null as DropdownOption | null,
+    extraDetail: null,
     extraValue: "",
     selectedColor: colorOptions[0],
   });
 
-  const [products, setProducts] = useState(() => [emptyProduct()]);
+  const [products, setProducts] = useState<ProductDraft[]>(() => [
+    emptyProduct(),
+  ]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const { data: entries = [], isLoading } = useSalesEntries();
+  const { data: summary } = useSalesSummary();
+  const createEntry = useCreateSalesEntry();
 
   const handleExtraDetailSelect = (
     id: string,
-    selected: DropdownOption | DropdownOption[]
+    selected: DropdownOption | DropdownOption[],
   ) => {
-    const nextValue = Array.isArray(selected)
-      ? selected[0]
-      : selected;
-
+    const nextValue = Array.isArray(selected) ? selected[0] : selected;
     setProducts((prev) =>
       prev.map((p) =>
-        p.id === id
-          ? { ...p, extraDetail: nextValue ?? null, extraValue: "" }
-          : p
-      )
+        p.id === id ? { ...p, extraDetail: nextValue ?? null, extraValue: "" } : p,
+      ),
     );
   };
 
   const handleUpdateProduct = (
     id: string,
     field: string,
-    value: any
+    value: string | DropdownOption | null,
   ) => {
     setProducts((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, [field]: value } : p))
+      prev.map((p) =>
+        p.id === id ? ({ ...p, [field]: value } as ProductDraft) : p,
+      ),
     );
   };
 
@@ -127,32 +153,66 @@ export default function SalesEntryForm() {
 
   const handleReset = () => {
     setProducts([emptyProduct()]);
+    setErrors({});
   };
 
   const handleSaveSale = () => {
-    console.log("Sale Saved:", { products, totalAmount });
+    const validated: CreateSalesEntryFormValues[] = [];
+    const fieldErrors: Record<string, string> = {};
+
+    for (const item of products) {
+      const parsed = CreateSalesEntrySchema.safeParse({
+        product: item.product,
+        quantity: item.quantity || "0",
+        price: item.price || "0",
+        amount:
+          (Number(item.quantity) || 0) * (Number(item.price) || 0),
+        extraDetail: item.extraDetail?.value
+          ? item.extraDetail.label
+          : null,
+        extraValue: item.extraValue.trim() || null,
+        color:
+          item.extraDetail?.value === "color"
+            ? item.selectedColor.label
+            : null,
+      });
+
+      if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+          const key = `${item.id}.${String(issue.path[0])}`;
+          if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+        }
+      } else {
+        validated.push(parsed.data);
+      }
+    }
+
+    setErrors(fieldErrors);
+    if (validated.length !== products.length) return;
+
+    validated.forEach((data, index) => {
+      createEntry.mutate(data, {
+        onSuccess: () => {
+          if (index === validated.length - 1) handleReset();
+        },
+      });
+    });
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          activeOpacity={0.7}
-        >
+        <View style={styles.headerIconBox}>
           <MaterialCommunityIcons
-            name="arrow-left"
-            size={30}
+            name="cash-multiple"
+            size={24}
             color="#FFFFFF"
           />
-        </TouchableOpacity>
+        </View>
 
         <View style={styles.headerTextContainer}>
           <Text style={styles.headerTitle}>Sales</Text>
-
-          <Text style={styles.headerSubtitle}>
-            Add a new sale
-          </Text>
+          <Text style={styles.headerSubtitle}>Add a new sale</Text>
         </View>
       </View>
 
@@ -162,41 +222,42 @@ export default function SalesEntryForm() {
         contentContainerStyle={styles.content}
       >
         <View style={styles.formCard}>
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: Spacing.md,
-          }}>
-            <Text style={[styles.extraTitle]}>Products</Text>
+          <View style={styles.productHeaderRow}>
+            <Text style={styles.extraTitle}>Products</Text>
 
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={handleAddProduct}
-              style={[styles.actionButton, {flex: 0, minHeight: 40, paddingHorizontal: Spacing.md}]}
+              style={styles.addButton}
             >
               <MaterialCommunityIcons
                 name="plus"
                 size={20}
-                color={Colors_SalesPage.enterBtn}
+                color={colors.primary}
               />
-
-              <Text style={[styles.resetText, {marginLeft: Spacing.xs}]}>Add Product</Text>
+              <Text style={styles.addButtonText}>Add Product</Text>
             </TouchableOpacity>
           </View>
 
           {products.map((p, index) => {
             const hasExtraDetail = !!p.extraDetail?.value;
-            const isColor = p.extraDetail?.value === 'color';
+            const isColor = p.extraDetail?.value === "color";
 
             return (
-              <View key={p.id} style={{marginBottom: Spacing.md, padding: Spacing.sm, borderRadius: Radius.md, borderWidth: BorderWidth.thin, borderColor: Colors_SalesPage.border, backgroundColor: '#F3FFF7'}}>
-                <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.sm}}>
-                  <Text style={[styles.inputLabel]}>Item {index + 1}</Text>
+              <View key={p.id} style={styles.productCard}>
+                <View style={styles.productCardHeader}>
+                  <Text style={styles.inputLabel}>Item {index + 1}</Text>
 
                   {products.length > 1 && (
-                    <TouchableOpacity onPress={() => handleRemoveProduct(p.id)} activeOpacity={0.8}>
-                      <MaterialCommunityIcons name="close-circle-outline" size={22} color={Colors_SalesPage.enterBtn} />
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => handleRemoveProduct(p.id)}
+                    >
+                      <MaterialCommunityIcons
+                        name="close-circle-outline"
+                        size={22}
+                        color={colors.primary}
+                      />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -206,7 +267,7 @@ export default function SalesEntryForm() {
                     <MaterialCommunityIcons
                       name="basket-outline"
                       size={27}
-                      color={Colors_SalesPage.enterBtn}
+                      color={colors.primary}
                     />
                   </View>
 
@@ -215,17 +276,24 @@ export default function SalesEntryForm() {
                       label="Quantity"
                       placeholder="Enter Quantity"
                       value={p.quantity}
-                      onChangeText={(v) => handleUpdateProduct(p.id, 'quantity', v)}
+                      onChangeText={(v) =>
+                        handleUpdateProduct(p.id, "quantity", v)
+                      }
                       keyboardType="numeric"
-                      labelColor={Colors_SalesPage.textPrimary}
-                      inputBgColor={Colors_SalesPage.inputBG}
-                      borderColor={Colors_SalesPage.border}
+                      labelColor={colors.textPrimary}
+                      inputBgColor={colors.inputBG}
+                      borderColor={colors.border}
                       placeholderColor="rgba(31,31,31,0.55)"
                       containerStyle={styles.inputBlock}
                       labelStyle={styles.inputLabel}
                       inputStyle={styles.inputText}
                       inputContainerStyle={styles.inputContainer}
                     />
+                    {!!errors[`${p.id}.quantity`] && (
+                      <Text style={styles.errorText}>
+                        {errors[`${p.id}.quantity`]}
+                      </Text>
+                    )}
                   </View>
                 </View>
 
@@ -234,7 +302,7 @@ export default function SalesEntryForm() {
                     <MaterialCommunityIcons
                       name="cube-outline"
                       size={27}
-                      color={Colors_SalesPage.enterBtn}
+                      color={colors.primary}
                     />
                   </View>
 
@@ -243,24 +311,23 @@ export default function SalesEntryForm() {
                       label="Product"
                       placeholder="Enter Product name"
                       value={p.product}
-                      onChangeText={(v) => handleUpdateProduct(p.id, 'product', v)}
-                      labelColor={Colors_SalesPage.textPrimary}
-                      inputBgColor={Colors_SalesPage.inputBG}
-                      borderColor={Colors_SalesPage.border}
+                      onChangeText={(v) =>
+                        handleUpdateProduct(p.id, "product", v)
+                      }
+                      labelColor={colors.textPrimary}
+                      inputBgColor={colors.inputBG}
+                      borderColor={colors.border}
                       placeholderColor="rgba(31,31,31,0.55)"
                       containerStyle={styles.inputBlock}
                       labelStyle={styles.inputLabel}
                       inputStyle={styles.inputText}
                       inputContainerStyle={styles.inputContainer}
                     />
-                  </View>
-
-                  <View style={styles.rightIcon}>
-                    <MaterialCommunityIcons
-                      name="chevron-down"
-                      size={26}
-                      color={Colors_SalesPage.enterBtn}
-                    />
+                    {!!errors[`${p.id}.product`] && (
+                      <Text style={styles.errorText}>
+                        {errors[`${p.id}.product`]}
+                      </Text>
+                    )}
                   </View>
                 </View>
 
@@ -269,7 +336,7 @@ export default function SalesEntryForm() {
                     <MaterialCommunityIcons
                       name="currency-inr"
                       size={27}
-                      color={Colors_SalesPage.enterBtn}
+                      color={colors.primary}
                     />
                   </View>
 
@@ -278,17 +345,24 @@ export default function SalesEntryForm() {
                       label="Price"
                       placeholder="Rs. Enter Price"
                       value={p.price}
-                      onChangeText={(v) => handleUpdateProduct(p.id, 'price', v)}
+                      onChangeText={(v) =>
+                        handleUpdateProduct(p.id, "price", v)
+                      }
                       keyboardType="numeric"
-                      labelColor={Colors_SalesPage.textPrimary}
-                      inputBgColor={Colors_SalesPage.inputBG}
-                      borderColor={Colors_SalesPage.border}
+                      labelColor={colors.textPrimary}
+                      inputBgColor={colors.inputBG}
+                      borderColor={colors.border}
                       placeholderColor="rgba(31,31,31,0.55)"
                       containerStyle={styles.inputBlock}
                       labelStyle={styles.inputLabel}
                       inputStyle={styles.inputText}
                       inputContainerStyle={styles.inputContainer}
                     />
+                    {!!errors[`${p.id}.price`] && (
+                      <Text style={styles.errorText}>
+                        {errors[`${p.id}.price`]}
+                      </Text>
+                    )}
                   </View>
                 </View>
 
@@ -299,12 +373,14 @@ export default function SalesEntryForm() {
                     options={extraDetailOptions}
                     defaultValue={p.extraDetail ?? extraDetailOptions[0]}
                     placeholder="Optional"
-                    onSelect={(s) => handleExtraDetailSelect(p.id, s)}
-                    bgColor={Colors_SalesPage.inputBG}
-                    textColor={Colors_SalesPage.textPrimary}
-                    dropdownBgColor={Colors_SalesPage.surface}
-                    dropdownTextColor={Colors_SalesPage.textPrimary}
-                    borderColor={Colors_SalesPage.border}
+                    onSelect={(selected) =>
+                      handleExtraDetailSelect(p.id, selected)
+                    }
+                    bgColor={colors.inputBG}
+                    textColor={colors.textPrimary}
+                    dropdownBgColor={colors.surface}
+                    dropdownTextColor={colors.textPrimary}
+                    borderColor={colors.border}
                     buttonStyle={styles.dropdownButton}
                     textStyle={styles.dropdownText}
                     dropdownListStyle={styles.dropdownList}
@@ -317,7 +393,6 @@ export default function SalesEntryForm() {
                       <Text style={styles.extraTitle}>
                         {p.extraDetail?.label}
                       </Text>
-
                       <Text style={styles.optionalText}>Optional</Text>
                     </View>
 
@@ -327,13 +402,19 @@ export default function SalesEntryForm() {
 
                         <View style={styles.colorGrid}>
                           {colorOptions.map((color) => {
-                            const selected = p.selectedColor.value === color.value;
-
+                            const selected =
+                              p.selectedColor.value === color.value;
                             return (
                               <TouchableOpacity
                                 key={color.value}
                                 activeOpacity={0.8}
-                                onPress={() => handleUpdateProduct(p.id, 'selectedColor', color)}
+                                onPress={() =>
+                                  handleUpdateProduct(
+                                    p.id,
+                                    "selectedColor",
+                                    color,
+                                  )
+                                }
                                 style={[
                                   styles.colorCircle,
                                   { backgroundColor: color.value },
@@ -341,7 +422,11 @@ export default function SalesEntryForm() {
                                 ]}
                               >
                                 {selected && (
-                                  <MaterialCommunityIcons name="check" size={18} color="#FFFFFF" />
+                                  <MaterialCommunityIcons
+                                    name="check"
+                                    size={18}
+                                    color="#FFFFFF"
+                                  />
                                 )}
                               </TouchableOpacity>
                             );
@@ -349,21 +434,35 @@ export default function SalesEntryForm() {
                         </View>
 
                         <View style={styles.selectedColorBox}>
-                          <View style={[styles.selectedColorCircle, { backgroundColor: p.selectedColor.value }]} />
-
-                          <Text style={styles.selectedColorText}>{p.selectedColor.label}</Text>
+                          <View
+                            style={[
+                              styles.selectedColorCircle,
+                              { backgroundColor: p.selectedColor.value },
+                            ]}
+                          />
+                          <Text style={styles.selectedColorText}>
+                            {p.selectedColor.label}
+                          </Text>
                         </View>
                       </View>
                     ) : (
                       <LabeledInput
-                        label={p.extraDetail?.label || 'Detail'}
-                        placeholder={p.extraDetail?.label ? `Enter ${p.extraDetail.label.toLowerCase()}` : 'Enter detail'}
+                        label={p.extraDetail?.label || "Detail"}
+                        placeholder={
+                          p.extraDetail?.label
+                            ? `Enter ${p.extraDetail.label.toLowerCase()}`
+                            : "Enter detail"
+                        }
                         value={p.extraValue}
-                        onChangeText={(v) => handleUpdateProduct(p.id, 'extraValue', v)}
-                        keyboardType={p.extraDetail?.value === 'age' ? 'numeric' : 'default'}
-                        labelColor={Colors_SalesPage.textPrimary}
-                        inputBgColor={Colors_SalesPage.inputBG}
-                        borderColor={Colors_SalesPage.border}
+                        onChangeText={(v) =>
+                          handleUpdateProduct(p.id, "extraValue", v)
+                        }
+                        keyboardType={
+                          p.extraDetail?.value === "age" ? "numeric" : "default"
+                        }
+                        labelColor={colors.textPrimary}
+                        inputBgColor={colors.inputBG}
+                        borderColor={colors.border}
                         placeholderColor="rgba(31,31,31,0.55)"
                         containerStyle={styles.inputBlock}
                         labelStyle={styles.inputLabel}
@@ -385,21 +484,14 @@ export default function SalesEntryForm() {
                 <MaterialCommunityIcons
                   name="receipt-text-outline"
                   size={27}
-                  color={Colors_SalesPage.enterBtn}
+                  color={colors.primary}
                 />
               </View>
-
-              <Text style={styles.totalLabel}>
-                Total Amount
-              </Text>
+              <Text style={styles.totalLabel}>Total Amount</Text>
             </View>
 
             <Text style={styles.totalAmount}>
-              Rs.{" "}
-              {totalAmount.toLocaleString("en-IN", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+              {formatCurrency(totalAmount)}
             </Text>
           </View>
 
@@ -407,41 +499,116 @@ export default function SalesEntryForm() {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={handleReset}
-              style={[
-                styles.actionButton,
-                styles.resetButton,
-              ]}
+              style={[styles.actionButton, styles.resetButton]}
             >
               <MaterialCommunityIcons
                 name="refresh"
                 size={24}
-                color={Colors_SalesPage.enterBtn}
+                color={colors.primary}
               />
-
-              <Text style={styles.resetText}>
-                Reset
-              </Text>
+              <Text style={styles.resetText}>Reset</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={handleSaveSale}
-              style={[
-                styles.actionButton,
-                styles.saveButton,
-              ]}
+              disabled={createEntry.isPending}
+              style={[styles.actionButton, styles.saveButton]}
             >
-              <MaterialCommunityIcons
-                name="content-save-outline"
-                size={24}
-                color="#FFFFFF"
-              />
-
-              <Text style={styles.saveText}>
-                Save Sale
-              </Text>
+              {createEntry.isPending ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <>
+                  <MaterialCommunityIcons
+                    name="content-save-outline"
+                    size={24}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.saveText}>Save Sale</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
+
+          {createEntry.isError && (
+            <Text style={styles.errorText}>
+              Could not save the entry. Please try again.
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Entries</Text>
+            <Text style={styles.summaryValue}>{summary?.entryCount ?? 0}</Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Quantity</Text>
+            <Text style={styles.summaryValue}>{summary?.totalQuantity ?? 0}</Text>
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryLabel}>Total</Text>
+            <Text style={[styles.summaryValue, { color: colors.primary }]}>
+              {formatCurrency(summary?.totalAmount ?? 0)}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.listSection}>
+          <Text style={styles.listTitle}>Recent sales</Text>
+
+          {isLoading ? (
+            <ActivityIndicator color={colors.primary} style={styles.loader} />
+          ) : (
+            <View style={styles.listCard}>
+              {entries.length === 0 && (
+                <Text style={styles.emptyText}>
+                  No sales yet. Add your first sale above.
+                </Text>
+              )}
+              {entries.map((entry, index) => (
+                <View
+                  key={entry.id}
+                  style={[
+                    styles.entryRow,
+                    index !== entries.length - 1 && styles.entryDivider,
+                  ]}
+                >
+                  <View style={styles.entryIcon}>
+                    <MaterialCommunityIcons
+                      name="shopping-outline"
+                      size={18}
+                      color={colors.primary}
+                    />
+                  </View>
+
+                  <View style={styles.entryContent}>
+                    <Text style={styles.entryName}>{entry.product}</Text>
+                    <View style={styles.entryMetaRow}>
+                      {!!entry.color && (
+                        <View
+                          style={[
+                            styles.colorDot,
+                            { backgroundColor: COLOR_HEX[entry.color] ?? "#94A3B8" },
+                          ]}
+                        />
+                      )}
+                      <Text style={styles.entryMeta}>
+                        Qty {entry.quantity} × {formatCurrency(entry.price)}
+                        {entry.extraDetail ? ` · ${entry.extraDetail}` : ""}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.entryAmount}>
+                    {formatCurrency(entry.amount)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -451,11 +618,11 @@ export default function SalesEntryForm() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors_SalesPage.background,
+    backgroundColor: colors.background,
   },
 
   header: {
-    backgroundColor: Colors_SalesPage.topBtn,
+    backgroundColor: colors.primary,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.lg,
@@ -464,9 +631,11 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
 
-  backButton: {
-    width: 40,
-    height: 40,
+  headerIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.18)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -477,9 +646,9 @@ const styles = StyleSheet.create({
 
   headerTitle: {
     color: "#FFFFFF",
-    fontSize: 30,
+    fontSize: 26,
     fontWeight: FontWeight.bold,
-    lineHeight: 34,
+    lineHeight: 32,
   },
 
   headerSubtitle: {
@@ -491,24 +660,63 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xl,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing["4xl"],
   },
 
   formCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderRadius: Radius.xl,
     padding: Spacing.md,
     borderWidth: BorderWidth.thin,
-    borderColor: "rgba(255,255,255,0.8)",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
+    borderColor: colors.border,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
     elevation: 2,
+  },
+
+  productHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.md,
+  },
+
+  addButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.xs,
+    minHeight: 40,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.md,
+    borderWidth: BorderWidth.base,
+    borderColor: colors.primary,
+    backgroundColor: colors.surface,
+  },
+
+  addButtonText: {
+    color: colors.primary,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+  },
+
+  productCard: {
+    marginBottom: Spacing.md,
+    padding: Spacing.sm,
+    borderRadius: Radius.md,
+    borderWidth: BorderWidth.thin,
+    borderColor: colors.border,
+    backgroundColor: "#F3FFF7",
+  },
+
+  productCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.sm,
   },
 
   fieldRow: {
@@ -523,7 +731,7 @@ const styles = StyleSheet.create({
     height: 52,
     marginTop: 25,
     borderRadius: Radius.md,
-    backgroundColor: "#ECF8F0",
+    backgroundColor: colors.primarySoft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -532,30 +740,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  rightIcon: {
-    position: "absolute",
-    right: Spacing.md,
-    bottom: 15,
-  },
-
   inputBlock: {
     gap: Spacing.xs,
   },
 
   inputContainer: {
-    backgroundColor: Colors_SalesPage.inputBG,
-    borderColor: Colors_SalesPage.border,
+    backgroundColor: colors.inputBG,
+    borderColor: colors.border,
     shadowOpacity: 0,
     shadowColor: "transparent",
-    shadowOffset: {
-      width: 0,
-      height: 0,
-    },
+    shadowOffset: { width: 0, height: 0 },
     shadowRadius: 0,
     elevation: 0,
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.md,
     borderWidth: BorderWidth.thin,
+    borderRadius: Radius.md,
   },
 
   inputLabel: {
@@ -565,9 +765,15 @@ const styles = StyleSheet.create({
   },
 
   inputText: {
-    color: Colors_SalesPage.textPrimary,
+    color: colors.textPrimary,
     fontSize: FontSize.md,
     fontWeight: FontWeight.regular,
+  },
+
+  errorText: {
+    color: colors.danger,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
   },
 
   moreContainer: {
@@ -576,7 +782,7 @@ const styles = StyleSheet.create({
   },
 
   moreTitle: {
-    color: Colors_SalesPage.textPrimary,
+    color: colors.textPrimary,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
     marginBottom: Spacing.xs,
@@ -585,7 +791,7 @@ const styles = StyleSheet.create({
   dropdownButton: {
     borderRadius: Radius.lg,
     borderWidth: BorderWidth.base,
-    borderColor: Colors_SalesPage.border,
+    borderColor: colors.border,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
   },
@@ -598,7 +804,7 @@ const styles = StyleSheet.create({
   dropdownList: {
     borderRadius: Radius.lg,
     borderWidth: BorderWidth.base,
-    borderColor: Colors_SalesPage.border,
+    borderColor: colors.border,
   },
 
   extraSection: {
@@ -606,8 +812,8 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     borderRadius: Radius.md,
     borderWidth: BorderWidth.thin,
-    borderColor: Colors_SalesPage.border,
-    backgroundColor: "#F3FFF7",
+    borderColor: colors.border,
+    backgroundColor: colors.primarySoft,
     gap: Spacing.sm,
   },
 
@@ -618,19 +824,19 @@ const styles = StyleSheet.create({
   },
 
   extraTitle: {
-    color: Colors_SalesPage.textPrimary,
+    color: colors.textPrimary,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
   },
 
   optionalText: {
-    color: Colors_SalesPage.enterBtn,
+    color: colors.primary,
     fontSize: FontSize.sm,
     fontWeight: FontWeight.bold,
   },
 
   detailLabel: {
-    color: Colors_SalesPage.textPrimary,
+    color: colors.textPrimary,
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
   },
@@ -656,12 +862,8 @@ const styles = StyleSheet.create({
   },
 
   selectedColor: {
-    borderColor: Colors_SalesPage.textPrimary,
-    transform: [
-      {
-        scale: 1.08,
-      },
-    ],
+    borderColor: colors.textPrimary,
+    transform: [{ scale: 1.08 }],
   },
 
   selectedColorBox: {
@@ -670,9 +872,9 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     padding: Spacing.sm,
     borderRadius: Radius.md,
-    backgroundColor: Colors_SalesPage.inputBG,
+    backgroundColor: colors.inputBG,
     borderWidth: BorderWidth.base,
-    borderColor: Colors_SalesPage.border,
+    borderColor: colors.border,
   },
 
   selectedColorCircle: {
@@ -680,18 +882,18 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: BorderWidth.base,
-    borderColor: Colors_SalesPage.border,
+    borderColor: colors.border,
   },
 
   selectedColorText: {
-    color: Colors_SalesPage.textPrimary,
+    color: colors.textPrimary,
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
   },
 
   divider: {
     height: 1,
-    backgroundColor: Colors_SalesPage.border,
+    backgroundColor: colors.border,
     marginVertical: Spacing.md,
   },
 
@@ -701,7 +903,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     padding: Spacing.md,
     borderRadius: Radius.md,
-    backgroundColor: "#EFFAF2",
+    backgroundColor: colors.primarySoft,
   },
 
   totalLeft: {
@@ -714,19 +916,19 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: Radius.md,
-    backgroundColor: "#E5F5EA",
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
 
   totalLabel: {
-    color: Colors_SalesPage.textPrimary,
+    color: colors.textPrimary,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.medium,
   },
 
   totalAmount: {
-    color: Colors_SalesPage.enterBtn,
+    color: colors.primary,
     fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
   },
@@ -748,19 +950,19 @@ const styles = StyleSheet.create({
   },
 
   resetButton: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.surface,
     borderWidth: BorderWidth.base,
-    borderColor: Colors_SalesPage.enterBtn,
+    borderColor: colors.primary,
   },
 
   saveButton: {
-    backgroundColor: Colors_SalesPage.enterBtn,
+    backgroundColor: colors.primary,
     borderWidth: BorderWidth.thin,
     borderColor: "rgba(255,255,255,0.3)",
   },
 
   resetText: {
-    color: Colors_SalesPage.enterBtn,
+    color: colors.primary,
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
   },
@@ -769,5 +971,140 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
+  },
+
+  summaryCard: {
+    marginTop: Spacing.xl,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.surface,
+    borderRadius: Radius.lg,
+    borderWidth: BorderWidth.thin,
+    borderColor: colors.border,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.sm,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    elevation: 2,
+  },
+
+  summaryItem: {
+    flex: 1,
+    alignItems: "center",
+    gap: Spacing.xxs,
+  },
+
+  summaryLabel: {
+    color: colors.textMuted,
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semibold,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+
+  summaryValue: {
+    color: colors.textPrimary,
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.bold,
+    textAlign: "center",
+  },
+
+  summaryDivider: {
+    width: BorderWidth.thin,
+    alignSelf: "stretch",
+    backgroundColor: colors.border,
+  },
+
+  listSection: {
+    marginTop: Spacing["2xl"],
+    gap: Spacing.md,
+  },
+
+  listTitle: {
+    color: colors.textPrimary,
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+  },
+
+  loader: {
+    alignSelf: "center",
+    marginTop: Spacing.lg,
+  },
+
+  listCard: {
+    backgroundColor: colors.surface,
+    borderRadius: Radius.lg,
+    borderWidth: BorderWidth.thin,
+    borderColor: colors.border,
+    overflow: "hidden",
+  },
+
+  entryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    gap: Spacing.md,
+  },
+
+  entryDivider: {
+    borderBottomWidth: BorderWidth.thin,
+    borderBottomColor: colors.border,
+  },
+
+  entryIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  entryContent: {
+    flex: 1,
+    gap: 2,
+  },
+
+  entryName: {
+    color: colors.textPrimary,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
+  },
+
+  entryMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+
+  colorDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: BorderWidth.thin,
+    borderColor: colors.border,
+  },
+
+  entryMeta: {
+    color: colors.textMuted,
+    fontSize: FontSize.sm,
+  },
+
+  entryAmount: {
+    color: colors.textPrimary,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+  },
+
+  emptyText: {
+    color: colors.textMuted,
+    fontSize: FontSize.md,
+    textAlign: "center",
+    paddingVertical: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
   },
 });

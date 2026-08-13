@@ -1,27 +1,23 @@
-export type UdharoEntry = {
+import type { UdharoEntry } from "../types";
+
+export type { UdharoEntry };
+
+export type UdharoEntryMock = {
   name: string;
   amount: string;
-  //   due: string;
-  //   status: string;
 };
 
-export const UDHARO_ENTRIES: UdharoEntry[] = [
+export const UDHARO_ENTRIES: UdharoEntryMock[] = [
   {
     name: "Rahul Timelsena",
     amount: "Rs. 240",
-    // due: "Due in 3 days",
-    // status: "On track",
   },
   {
     name: "Sita Kirana",
     amount: "Rs. 11,500",
-    // due: "Due today",
-    // status: "Needs follow-up
   },
   {
     name: "Maya Suppliers",
     amount: "Rs. 38,000",
-    // due: "Overdue 8 days",
-    // status: "Overdue",
   },
 ];

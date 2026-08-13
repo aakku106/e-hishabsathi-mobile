@@ -3,7 +3,7 @@ import { Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -25,7 +25,7 @@ export default function AIOverlay({
   onClose?: () => void;
 }) {
   const sheetHeight = WINDOW_HEIGHT * 0.85;
-  const translateY = useRef(new Animated.Value(sheetHeight)).current;
+  const [translateY] = useState(() => new Animated.Value(sheetHeight));
 
   useEffect(() => {
     if (visible) {
@@ -41,7 +41,7 @@ export default function AIOverlay({
         useNativeDriver: true,
       }).start(() => onClose());
     }
-  }, [visible]);
+  }, [visible, onClose, sheetHeight, translateY]);
 
   // sample messages (static for now)
   const messages = [

@@ -185,6 +185,60 @@ export const Typography_AiPage = {
   },
 } as const;
 
+export const Typography_InventoryPage = {
+  title: {
+    fontSize: 26,
+    fontWeight: "700",
+    lineHeight: 32,
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    lineHeight: 24,
+    letterSpacing: 0.25,
+  },
+  body: {
+    fontSize: 15,
+    fontWeight: "400",
+    lineHeight: 22,
+    letterSpacing: 0.2,
+  },
+  button: {
+    fontSize: 22,
+    fontWeight: "600",
+    lineHeight: 28,
+    letterSpacing: 1,
+  },
+} as const;
+
+export const Typography_TaxPage = {
+  title: {
+    fontSize: 26,
+    fontWeight: "700",
+    lineHeight: 32,
+    letterSpacing: 0.5,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    lineHeight: 24,
+    letterSpacing: 0.25,
+  },
+  body: {
+    fontSize: 15,
+    fontWeight: "400",
+    lineHeight: 22,
+    letterSpacing: 0.2,
+  },
+  button: {
+    fontSize: 22,
+    fontWeight: "600",
+    lineHeight: 28,
+    letterSpacing: 1,
+  },
+} as const;
+
 export const FontSize = {
   xs: 10,
   sm: 12,
@@ -194,6 +248,7 @@ export const FontSize = {
   "2xl": 24,
   "3xl": 28,
   "4xl": 32,
+  "5xl": 40,
 } as const;
 
 export const FontWeight = {

@@ -65,6 +65,19 @@ Cloud API
 
 Screens should **never communicate directly with SQLite**.
 
+Local Edge Database
+
+Business records that must sync later are written atomically with an outbox entry:
+
+```
+Feature Data Layer
+      │
+      ▼
+SQLite (business table + local_sync_queue in one transaction)
+```
+
+Udaaro records are written to the local ledger only — never enqueued for sync (privacy rule).
+
 ---
 
 # 3. Folder Structure
@@ -470,7 +483,7 @@ Global interfaces shared by multiple features.
 
 ## database/
 
-Contains SQLite configuration.
+Contains SQLite configuration and the device-bound **Local Edge Database**.
 
 This folder should never contain UI.
 
@@ -482,8 +495,24 @@ Responsibilities
 - Create schema
 - Run migrations
 - Database helpers
+- Local Edge Database tables and repositories
 
 ---
+
+Local Edge Database (`database/edge/`)
+
+Device-bound tables that keep the app fully offline-first and privacy-compliant. These are separate from the regular business tables:
+
+- `local_sync_queue` — outbox pattern table tracking pending uploads to the cloud backend. Every locally created record carries a client-generated UUID used as the backend idempotency key. Sync state machine: `NOT_SYNCED → SYNCING → SYNCED` (plus `FAILED`). A row is deleted only once it is both `SYNCED` and past its 7-day edit window (see `purgeSyncedOlderThan`).
+- `local_udaaro_customers` — the merchant's private address book. Never leaves the device.
+- `local_udaaro_ledger` — credit given / payment received events per customer. Customer-level detail is never sent to the cloud; only opt-in daily aggregates are.
+- `local_udaaro_backup_log` — manual, opt-in backup of Udaaro tables to cloud storage.
+
+Rules enforced by the edge layer:
+
+- Udaaro detail never syncs: udhaaro records are written to the ledger but **not** enqueued into `local_sync_queue`.
+- Idempotency is enforced by the DB constraint (`ON CONFLICT (client_entry_id) DO NOTHING`), not app logic.
+- The dashboard "Total Profit / cash in hand" figure (`total sales − udhaaro outstanding`) is computed entirely on-device from `sales_entries` and `local_udaaro_ledger` — no backend round-trip.
 
 Structure
 
@@ -497,6 +526,18 @@ database/
     schema/
 
     helpers/
+
+    edge/
+
+        types.ts
+
+        syncQueue.ts
+
+        udaaroCustomers.ts
+
+        udaaroLedger.ts
+
+        backupLog.ts
 ```
 
 ---

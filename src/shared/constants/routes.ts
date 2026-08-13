@@ -1,12 +1,14 @@
 export const Routes = {
   auth: {
     login: "/(auth)/login",
-    register: "/(auth)/register",
+    onboarding: "/(auth)/onboarding",
+    businessType: "/(auth)/business-type",
   },
   tabs: {
     sales: "/(tabs)/01-sales",
-    buy: "/(tabs)/02-buy",
+    purchases: "/(tabs)/02-purchases",
     udharo: "/(tabs)/03-udharo",
     dashboard: "/(tabs)/04-dashboard",
+    settings: "/(tabs)/05-settings",
   },
 } as const;

@@ -1,4 +1,10 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import { useState } from "react";
 import {
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -7,86 +13,170 @@ import {
   View,
 } from "react-native";
 
-import LabeledInput from "@/shared/components/Input/LabledInput";
+import { APP } from "@/config/app";
+import { setSetting, SETTING_KEYS } from "@/database/helpers/settings";
+import { LabeledInput } from "@/shared/components/Input/LabledInput";
 import { Colors_LoginPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { useAuthStore } from "@/store/auth.store";
+
+const colors = Colors_LoginPage;
 
 export default function LoginScreen() {
+  const router = useRouter();
+  const login = useAuthStore((state) => state.login);
+
+  const [pan, setPan] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSignIn = () => {
+    if (!pan.trim() || !username.trim() || !password.trim()) {
+      setError("Please fill in all fields to sign in.");
+      return;
+    }
+    setError(null);
+    login({ pan: pan.trim(), username: username.trim() });
+    setSetting(SETTING_KEYS.authPan, pan.trim());
+    setSetting(SETTING_KEYS.authUsername, username.trim());
+    router.replace("/(auth)/onboarding");
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Welcome Back!!</Text>
-          <Text style={styles.subtitle}>Please Login your Account</Text>
-        </View>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <LinearGradient
+            colors={[colors.heroTop, colors.heroBottom]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.hero}
+          >
+            <View style={styles.logoBadge}>
+              <MaterialCommunityIcons
+                name="book-account-outline"
+                size={40}
+                color="#FFFFFF"
+              />
+            </View>
+            <Text style={styles.appName}>{APP.name}</Text>
+            <Text style={styles.tagline}>
+              Your khata, sales and udharo — all in one place.
+            </Text>
+          </LinearGradient>
 
-        <View style={styles.form}>
-          <LabeledInput
-            label="PAN"
-            placeholder="Enter Your PAN number"
-            labelColor={Colors_LoginPage.primaryText}
-            inputBgColor={Colors_LoginPage.primaryBg}
-            borderColor="#B8B8B8"
-            placeholderColor="#888888"
-            containerStyle={styles.inputBlock}
-            labelStyle={styles.inputLabel}
-            inputStyle={styles.inputText}
-            inputContainerStyle={styles.inputContainer}
-          />
+          <View style={styles.formCard}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Welcome back</Text>
+              <Text style={styles.subtitle}>Sign in to continue to your khata</Text>
+            </View>
 
-          <LabeledInput
-            label="User Name"
-            placeholder="Enter Your User Name"
-            labelColor={Colors_LoginPage.primaryText}
-            inputBgColor={Colors_LoginPage.primaryBg}
-            borderColor="#B8B8B8"
-            placeholderColor="#888888"
-            containerStyle={styles.inputBlock}
-            labelStyle={styles.inputLabel}
-            inputStyle={styles.inputText}
-            inputContainerStyle={styles.inputContainer}
-          />
+            <View style={styles.form}>
+              <View style={styles.inputBlock}>
+                <LabeledInput
+                  label="PAN"
+                  placeholder="Enter Your PAN number"
+                  value={pan}
+                  onChangeText={setPan}
+                  keyboardType="number-pad"
+                  labelColor={colors.textPrimary}
+                  inputBgColor={colors.surface}
+                  borderColor={colors.border}
+                  placeholderColor={colors.textMuted}
+                  labelStyle={styles.inputLabel}
+                  inputStyle={styles.inputText}
+                  inputContainerStyle={styles.inputContainer}
+                />
+              </View>
 
-          <LabeledInput
-            label="Password"
-            placeholder="Enter Your Password"
-            secureTextEntry
-            labelColor={Colors_LoginPage.primaryText}
-            inputBgColor={Colors_LoginPage.primaryBg}
-            borderColor="#B8B8B8"
-            placeholderColor="#888888"
-            containerStyle={styles.inputBlock}
-            labelStyle={styles.inputLabel}
-            inputStyle={styles.inputText}
-            inputContainerStyle={styles.inputContainer}
-          />
+              <View style={styles.inputBlock}>
+                <LabeledInput
+                  label="User Name"
+                  placeholder="Enter Your User Name"
+                  value={username}
+                  onChangeText={setUsername}
+                  labelColor={colors.textPrimary}
+                  inputBgColor={colors.surface}
+                  borderColor={colors.border}
+                  placeholderColor={colors.textMuted}
+                  labelStyle={styles.inputLabel}
+                  inputStyle={styles.inputText}
+                  inputContainerStyle={styles.inputContainer}
+                />
+              </View>
 
-          <TouchableOpacity activeOpacity={0.8} style={styles.forgotButton}>
-            <Text style={styles.forgotText}>Forgot Password</Text>
-          </TouchableOpacity>
-        </View>
+              <View style={styles.inputBlock}>
+                <LabeledInput
+                  label="Password"
+                  placeholder="Enter Your Password"
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                  labelColor={colors.textPrimary}
+                  inputBgColor={colors.surface}
+                  borderColor={colors.border}
+                  placeholderColor={colors.textMuted}
+                  labelStyle={styles.inputLabel}
+                  inputStyle={styles.inputText}
+                  inputContainerStyle={styles.inputContainer}
+                />
+              </View>
 
-        <TouchableOpacity activeOpacity={0.85} style={styles.signInButton}>
-          <Text style={styles.signInText}>Sign in</Text>
-        </TouchableOpacity>
+              {!!error && <Text style={styles.errorText}>{error}</Text>}
 
-        <View style={styles.orRow}>
-          <View style={styles.orLine} />
-          <Text style={styles.orText}>OR</Text>
-          <View style={styles.orLine} />
-        </View>
+              <TouchableOpacity activeOpacity={0.8} style={styles.forgotButton}>
+                <Text style={styles.forgotText}>Forgot Password?</Text>
+              </TouchableOpacity>
+            </View>
 
-        <Text style={styles.registerRow}>
-          <Text style={styles.registerMuted}>Didn’t have an Account!? </Text>
-          <Text style={styles.registerAction}>Register With Us</Text>
-        </Text>
-      </ScrollView>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.signInButton}
+              onPress={handleSignIn}
+            >
+              <LinearGradient
+                colors={[colors.primary, colors.primaryDeep]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.signInGradient}
+              >
+                <Text style={styles.signInText}>Sign in</Text>
+                <MaterialCommunityIcons
+                  name="arrow-right"
+                  size={20}
+                  color={colors.onPrimary}
+                />
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <View style={styles.orRow}>
+              <View style={styles.orLine} />
+              <Text style={styles.orText}>OR</Text>
+              <View style={styles.orLine} />
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => router.replace("/(auth)/onboarding")}
+            >
+              <Text style={styles.registerRow}>
+                <Text style={styles.registerMuted}>New here? </Text>
+                <Text style={styles.registerAction}>Create your account</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -94,27 +184,74 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors_LoginPage.primaryBg,
+    backgroundColor: colors.background,
+  },
+  flex: {
+    flex: 1,
   },
   content: {
     flexGrow: 1,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing["2xl"],
-    paddingBottom: Spacing["2xl"],
+    paddingBottom: Spacing["3xl"],
+  },
+  hero: {
+    alignItems: "center",
+    paddingTop: Spacing["3xl"],
+    paddingBottom: Spacing["4xl"],
+    paddingHorizontal: Spacing.xl,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+  logoBadge: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: "rgba(255,255,255,0.16)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: Spacing.lg,
+  },
+  appName: {
+    color: "#FFFFFF",
+    fontSize: 26,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.5,
+    textAlign: "center",
+  },
+  tagline: {
+    color: "rgba(255,255,255,0.85)",
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.regular,
+    lineHeight: 20,
+    textAlign: "center",
+    marginTop: Spacing.xs,
+  },
+  formCard: {
+    backgroundColor: colors.surface,
+    marginTop: -Spacing["2xl"],
+    marginHorizontal: Spacing.lg,
+    borderRadius: Radius.xl,
+    borderWidth: BorderWidth.thin,
+    borderColor: colors.border,
+    padding: Spacing.xl,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 6,
   },
   header: {
     gap: Spacing.xs,
     marginBottom: Spacing.xl,
   },
   title: {
-    color: Colors_LoginPage.primaryText,
-    fontSize: 24,
+    color: colors.textPrimary,
+    fontSize: 22,
     fontWeight: FontWeight.bold,
-    lineHeight: 30,
+    lineHeight: 28,
   },
   subtitle: {
-    color: Colors_LoginPage.ternaryText,
-    fontSize: FontSize.sm,
+    color: colors.textMuted,
+    fontSize: FontSize.md,
     fontWeight: FontWeight.regular,
     lineHeight: 20,
   },
@@ -125,81 +262,89 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   inputLabel: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.medium,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
     lineHeight: 20,
   },
   inputContainer: {
-    borderRadius: Radius.xl,
+    borderRadius: Radius.md,
     borderWidth: BorderWidth.thin,
-    shadowOpacity: 0,
-    shadowColor: "transparent",
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 0,
-    elevation: 0,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
-    minHeight: 54,
+    minHeight: 52,
   },
   inputText: {
-    fontSize: FontSize.md,
-    color: Colors_LoginPage.primaryText,
+    fontSize: FontSize.lg,
+    color: colors.textPrimary,
+  },
+  errorText: {
+    color: colors.danger,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
   },
   forgotButton: {
     alignSelf: "flex-end",
     marginTop: -Spacing.xs,
   },
   forgotText: {
-    color: Colors_LoginPage.primaryText,
+    color: colors.primary,
     fontSize: FontSize.md,
     fontWeight: FontWeight.semibold,
   },
   signInButton: {
-    marginTop: Spacing["4xl"],
-    backgroundColor: Colors_LoginPage.signInBtn,
-    borderRadius: 16,
-    minHeight: 48,
-    alignItems: "center",
-    justifyContent: "center",
+    marginTop: Spacing["2xl"],
+    shadowColor: colors.primaryDeep,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 6,
   },
-  signInText: {
-    color: Colors_LoginPage.primaryBg,
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-  },
-  orRow: {
-    marginTop: Spacing.lg,
+  signInGradient: {
+    minHeight: 52,
+    borderRadius: Radius.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: Spacing.sm,
   },
+  signInText: {
+    color: colors.onPrimary,
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+  },
+  orRow: {
+    marginTop: Spacing.xl,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.md,
+  },
   orLine: {
-    width: 32,
+    width: 48,
     height: 1,
-    backgroundColor: "#D4D4D4",
+    backgroundColor: colors.border,
   },
   orText: {
-    color: "#B3B3B3",
+    color: colors.textMuted,
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
     letterSpacing: 1,
   },
   registerRow: {
-    marginTop: Spacing.md,
+    marginTop: Spacing.lg,
     textAlign: "center",
-    fontSize: FontSize.sm,
-    lineHeight: 18,
-    color: Colors_LoginPage.ternaryText,
+    fontSize: FontSize.md,
+    lineHeight: 20,
+    color: colors.textMuted,
   },
   registerMuted: {
-    color: Colors_LoginPage.ternaryText,
-    fontSize: FontSize.sm,
+    color: colors.textMuted,
+    fontSize: FontSize.md,
     fontWeight: FontWeight.regular,
   },
   registerAction: {
-    color: Colors_LoginPage.primaryText,
-    fontSize: FontSize.sm,
+    color: colors.primary,
+    fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
   },
 });
