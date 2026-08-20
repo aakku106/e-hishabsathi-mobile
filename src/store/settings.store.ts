@@ -11,7 +11,7 @@ type SettingsState = {
   toggleTheme: () => void;
   setCurrency: (currency: string) => void;
   setLanguage: (language: "en" | "np") => void;
-  hydrate: (mode: ThemeMode) => void;
+  hydrate: (mode: ThemeMode, language?: "en" | "np") => void;
 };
 
 export const useSettingsStore = create<SettingsState>((set) => ({
@@ -26,5 +26,5 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     })),
   setCurrency: (currency) => set({ currency }),
   setLanguage: (language) => set({ language }),
-  hydrate: (themeMode) => set({ themeMode, isHydrated: true }),
+  hydrate: (themeMode, language = "en") => set({ themeMode, language, isHydrated: true }),
 }));

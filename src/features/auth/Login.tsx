@@ -9,13 +9,14 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
+  TextInputProps,
   TouchableOpacity,
   View,
 } from "react-native";
 
 import { APP } from "@/config/app";
 import { setSetting, SETTING_KEYS } from "@/database/helpers/settings";
-import { LabeledInput } from "@/shared/components/Input/LabledInput";
 import { Colors_LoginPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
@@ -31,6 +32,7 @@ export default function LoginScreen() {
   const [pan, setPan] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSignIn = () => {
@@ -83,52 +85,37 @@ export default function LoginScreen() {
 
             <View style={styles.form}>
               <View style={styles.inputBlock}>
-                <LabeledInput
+                <AuthInput
+                  icon="account-outline"
                   label="PAN"
                   placeholder="Enter Your PAN number"
                   value={pan}
                   onChangeText={setPan}
                   keyboardType="number-pad"
-                  labelColor={colors.textPrimary}
-                  inputBgColor={colors.surface}
-                  borderColor={colors.border}
-                  placeholderColor={colors.textMuted}
-                  labelStyle={styles.inputLabel}
-                  inputStyle={styles.inputText}
-                  inputContainerStyle={styles.inputContainer}
+                  
                 />
               </View>
 
               <View style={styles.inputBlock}>
-                <LabeledInput
+                <AuthInput
+                  icon="account-outline"
                   label="User Name"
                   placeholder="Enter Your User Name"
                   value={username}
                   onChangeText={setUsername}
-                  labelColor={colors.textPrimary}
-                  inputBgColor={colors.surface}
-                  borderColor={colors.border}
-                  placeholderColor={colors.textMuted}
-                  labelStyle={styles.inputLabel}
-                  inputStyle={styles.inputText}
-                  inputContainerStyle={styles.inputContainer}
                 />
               </View>
 
               <View style={styles.inputBlock}>
-                <LabeledInput
+                <AuthInput
+                  icon="lock-outline"
                   label="Password"
                   placeholder="Enter Your Password"
-                  secureTextEntry
+                  secureTextEntry={!showPassword}
                   value={password}
                   onChangeText={setPassword}
-                  labelColor={colors.textPrimary}
-                  inputBgColor={colors.surface}
-                  borderColor={colors.border}
-                  placeholderColor={colors.textMuted}
-                  labelStyle={styles.inputLabel}
-                  inputStyle={styles.inputText}
-                  inputContainerStyle={styles.inputContainer}
+                  rightIcon={showPassword ? "eye-off-outline" : "eye-outline"}
+                  onRightIconPress={() => setShowPassword((visible) => !visible)}
                 />
               </View>
 
@@ -181,6 +168,46 @@ export default function LoginScreen() {
   );
 }
 
+type AuthInputProps = TextInputProps & {
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  label: string;
+  rightIcon?: keyof typeof MaterialCommunityIcons.glyphMap;
+  onRightIconPress?: () => void;
+};
+
+function AuthInput({
+  icon,
+  label,
+  rightIcon,
+  onRightIconPress,
+  ...inputProps
+}: AuthInputProps) {
+  return (
+    <View style={styles.inputBlock}>
+      <Text style={styles.inputLabel}>{label}</Text>
+      <View style={styles.inputContainer}>
+        <View style={styles.inputIcon}>
+          <MaterialCommunityIcons name={icon} size={22} color={colors.primary} />
+        </View>
+        <TextInput
+          {...inputProps}
+          style={styles.inputText}
+          placeholderTextColor={colors.textMuted}
+        />
+        {!!rightIcon && (
+          <TouchableOpacity
+            style={styles.rightIconButton}
+            onPress={onRightIconPress}
+            accessibilityLabel="Toggle password visibility"
+          >
+            <MaterialCommunityIcons name={rightIcon} size={24} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -191,35 +218,41 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    paddingBottom: Spacing["3xl"],
+    paddingBottom: Spacing["4xl"],
   },
   hero: {
     alignItems: "center",
-    paddingTop: Spacing["3xl"],
-    paddingBottom: Spacing["4xl"],
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.lg,
+    paddingTop: 54,
+    paddingBottom: 116,
     paddingHorizontal: Spacing.xl,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    borderRadius: 32,
+    shadowColor: colors.heroBottom,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.24,
+    shadowRadius: 20,
+    elevation: 8,
   },
   logoBadge: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: "rgba(255,255,255,0.16)",
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    backgroundColor: "rgba(255,255,255,0.9)",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   appName: {
     color: "#FFFFFF",
-    fontSize: 26,
+    fontSize: 30,
     fontWeight: FontWeight.bold,
     letterSpacing: 0.5,
     textAlign: "center",
   },
   tagline: {
     color: "rgba(255,255,255,0.85)",
-    fontSize: FontSize.md,
+    fontSize: FontSize.lg,
     fontWeight: FontWeight.regular,
     lineHeight: 20,
     textAlign: "center",
@@ -227,12 +260,14 @@ const styles = StyleSheet.create({
   },
   formCard: {
     backgroundColor: colors.surface,
-    marginTop: -Spacing["2xl"],
-    marginHorizontal: Spacing.lg,
+    marginTop: -Spacing["4xl"],
+    marginHorizontal: Spacing.xl,
     borderRadius: Radius.xl,
     borderWidth: BorderWidth.thin,
     borderColor: colors.border,
-    padding: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing["2xl"],
+    paddingBottom: Spacing.xl,
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.08,
@@ -241,7 +276,7 @@ const styles = StyleSheet.create({
   },
   header: {
     gap: Spacing.xs,
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing["2xl"],
   },
   title: {
     color: colors.textPrimary,
@@ -256,7 +291,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   form: {
-    gap: Spacing.lg,
+    gap: Spacing.xl,
   },
   inputBlock: {
     gap: Spacing.sm,
@@ -267,15 +302,34 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: Radius.md,
     borderWidth: BorderWidth.thin,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    minHeight: 52,
+    paddingHorizontal: Spacing.md,
+    minHeight: 68,
+    backgroundColor: colors.surface,
+  },
+  inputIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    backgroundColor: colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.md,
   },
   inputText: {
+    flex: 1,
     fontSize: FontSize.lg,
     color: colors.textPrimary,
+    padding: 0,
+  },
+  rightIconButton: {
+    width: 34,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
   },
   errorText: {
     color: colors.danger,
@@ -292,7 +346,7 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.semibold,
   },
   signInButton: {
-    marginTop: Spacing["2xl"],
+    marginTop: Spacing["3xl"],
     shadowColor: colors.primaryDeep,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
@@ -300,8 +354,8 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   signInGradient: {
-    minHeight: 52,
-    borderRadius: Radius.md,
+    minHeight: 64,
+    borderRadius: Radius.lg,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -309,11 +363,11 @@ const styles = StyleSheet.create({
   },
   signInText: {
     color: colors.onPrimary,
-    fontSize: FontSize.lg,
+    fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
   },
   orRow: {
-    marginTop: Spacing.xl,
+    marginTop: Spacing["2xl"],
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

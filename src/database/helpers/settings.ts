@@ -33,4 +33,5 @@ export const SETTING_KEYS = {
   authPan: "auth.pan",
   authUsername: "auth.username",
   themeMode: "settings.themeMode",
+  language: "settings.language",
 } as const;

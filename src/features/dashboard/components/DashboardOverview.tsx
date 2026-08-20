@@ -2,31 +2,35 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
   Animated,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import Svg, { Circle, Line, Polygon, Polyline } from "react-native-svg";
 
 import { Colors_DashboardPage } from "@/shared/constants/colors";
-import { BorderWidth, Radius } from "@/shared/constants/radius";
+import { Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { useCopy } from "@/shared/i18n";
 
 import AIOverlay from "@/features/ai/components/AIOverlay";
-import { PageHeader } from "@/shared/components/Header/PageHeader";
-import { Dropdown, type DropdownOption } from "@/shared/components/DatePicker/DropDown";
 import { useDashboardData } from "../hooks/useDashboardData";
+import type { DashboardPeriod } from "../data/dashboard.repository";
 
 type ToggleProps = {
   active: string;
   left: string;
   right: string;
+  leftLabel?: string;
+  rightLabel?: string;
   onChange?: (value: string) => void;
 };
 
-function Toggle({ active, left, right, onChange }: ToggleProps) {
+function Toggle({ active, left, right, leftLabel = left, rightLabel = right, onChange }: ToggleProps) {
   const [progress] = useState(
     () => new Animated.Value(active === left ? 0 : 1),
   );
@@ -59,7 +63,7 @@ function Toggle({ active, left, right, onChange }: ToggleProps) {
             styles.toggleLabel,
             active === left && styles.toggleLabelActive,
           ]}>
-          {left}
+          {leftLabel}
         </Text>
       </TouchableOpacity>
 
@@ -72,51 +76,18 @@ function Toggle({ active, left, right, onChange }: ToggleProps) {
             styles.toggleLabel,
             active === right && styles.toggleLabelActive,
           ]}>
-          {right}
+          {rightLabel}
         </Text>
       </TouchableOpacity>
     </View>
   );
 }
 
-const STAT_ICONS: Record<string, { icon: string; tint: string; soft: string }> = {
-  "Total Sells": {
-    icon: "cash-multiple",
-    tint: "#059669",
-    soft: "#D1FAE5",
-  },
-  "Products sold": {
-    icon: "shopping-outline",
-    tint: "#4F46E5",
-    soft: "#E0E7FF",
-  },
-  Customers: {
-    icon: "account-group-outline",
-    tint: "#0284C7",
-    soft: "#E0F2FE",
-  },
-  Profit: {
-    icon: "trending-up",
-    tint: "#7C3AED",
-    soft: "#EDE9FE",
-  },
-};
-
-const DEFAULT_STAT_STYLE = {
-  icon: "chart-box-outline",
-  tint: "#4F46E5",
-  soft: "#E0E7FF",
-};
-
 export default function DashboardOverview() {
-  const { stats, bars, trend } = useDashboardData();
-  const periodOptions: DropdownOption[] = [
-    { label: "Today", value: "today" },
-    { label: "Week", value: "week" },
-    { label: "Month", value: "month" },
-    { label: "Year", value: "year" },
-  ];
-
+  const { t } = useCopy();
+  const [period, setPeriod] = useState<DashboardPeriod>("today");
+  const [periodMenuOpen, setPeriodMenuOpen] = useState(false);
+  const { stats, bars, trend } = useDashboardData(period);
   // UI toggle states
   const [incomeMode, setIncomeMode] = useState<string>("Income");
   const [trendMode, setTrendMode] = useState<string>("Month");
@@ -146,59 +117,51 @@ export default function DashboardOverview() {
   }, [incomeMode, bars, barHeights]);
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}>
-      <PageHeader
-        title="Dashboard"
-        subtitle="Your business at a glance"
-        gradient={[Colors_DashboardPage.heroTop, Colors_DashboardPage.heroBottom]}
-        right={
-          <TouchableOpacity
-            style={styles.aiButton}
-            accessible
-            accessibilityLabel="Open AI assistant"
-            activeOpacity={0.85}
-            onPress={() => setShowAI(true)}>
-            <MaterialCommunityIcons
-              name="creation"
-              size={20}
-              color="#FFFFFF"
-            />
+    <View style={styles.screen}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}>
+      <View style={styles.appHeader}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.headerIconButton} accessibilityLabel="Open menu">
+            <MaterialCommunityIcons name="menu" size={28} color={Colors_DashboardPage.textPrimary} />
           </TouchableOpacity>
-        }>
-        <View style={styles.periodRow}>
-          <Dropdown
-            options={periodOptions}
-            defaultValue={periodOptions[0]}
-            placeholder="Select period"
-            maxSelectable={1}
-            bgColor="rgba(255,255,255,0.12)"
-            textColor="#FFFFFF"
-            borderColor="rgba(255,255,255,0.22)"
-            dropdownBgColor="#FFFFFF"
-            dropdownTextColor="#0F172A"
-            buttonStyle={styles.periodButton}
-            textStyle={{ fontWeight: FontWeight.semibold }}
-          />
+          <View style={styles.dashboardPill}>
+            <Text style={styles.brandName}>{t("Dashboard")}</Text>
+          </View>
+          <TouchableOpacity style={styles.headerIconButton} accessibilityLabel="Open notifications">
+            <MaterialCommunityIcons name="bell-outline" size={27} color={Colors_DashboardPage.textPrimary} />
+            <View style={styles.notificationDot} />
+          </TouchableOpacity>
         </View>
-      </PageHeader>
+      </View>
+
+      <View style={styles.todayRow}>
+        <Pressable style={styles.periodSelector} onPress={() => setPeriodMenuOpen((open) => !open)}>
+          <Text style={styles.todayText}>{t(period === "today" ? "Today" : period === "week" ? "This Week" : period === "month" ? "This Month" : "This Year")}</Text>
+          <MaterialCommunityIcons name={periodMenuOpen ? "chevron-up" : "chevron-down"} size={20} color={Colors_DashboardPage.textPrimary} />
+        </Pressable>
+        {periodMenuOpen && (
+          <View style={styles.periodMenu}>
+            {(["today", "week", "month", "year"] as DashboardPeriod[]).map((option) => (
+              <Pressable key={option} style={[styles.periodOption, period === option && styles.periodOptionActive]} onPress={() => { setPeriod(option); setPeriodMenuOpen(false); }}>
+                <Text style={[styles.periodOptionText, period === option && styles.periodOptionTextActive]}>{t(option === "today" ? "Today" : option === "week" ? "This Week" : option === "month" ? "This Month" : "This Year")}</Text>
+                {period === option && <MaterialCommunityIcons name="check" size={18} color={Colors_DashboardPage.greenPrimary} />}
+              </Pressable>
+            ))}
+          </View>
+        )}
+      </View>
 
       <View style={styles.cardGrid}>
         {stats.map((stat) => {
-          const preset = STAT_ICONS[stat.label] ?? DEFAULT_STAT_STYLE;
           return (
             <View key={stat.label} style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: preset.soft }]}>
-                <MaterialCommunityIcons
-                  name={preset.icon as keyof typeof MaterialCommunityIcons.glyphMap}
-                  size={20}
-                  color={preset.tint}
-                />
+              <View style={styles.statBody}>
+                <Text style={styles.statLabel}>{t(stat.label)}</Text>
+                <Text style={styles.statValue}>{stat.value}</Text>
               </View>
-              <Text style={styles.statLabel}>{stat.label}</Text>
-              <Text style={styles.statValue}>{stat.value}</Text>
 
               {!!stat.change && (
                 <View
@@ -227,13 +190,13 @@ export default function DashboardOverview() {
 
       <View style={styles.chartCard}>
         <View style={styles.chartHeader}>
-          <Text style={styles.chartTitle}>
-            {incomeMode === "Income" ? "Income" : "Spending"}
-          </Text>
+          <Text style={styles.chartTitle}>{t("Income vs Spend")}</Text>
           <Toggle
             active={incomeMode}
             left="Income"
             right="Spend"
+            leftLabel={t("Income")}
+            rightLabel={t("Spend")}
             onChange={(v) => {
               Animated.timing(chartFade, {
                 toValue: 0,
@@ -279,11 +242,13 @@ export default function DashboardOverview() {
 
       <View style={styles.trendCard}>
         <View style={styles.trendTopRow}>
-          <Text style={styles.chartTitle}>Trend</Text>
+          <Text style={styles.chartTitle}>{t("Business Trend")}</Text>
           <Toggle
             active={trendMode}
             left="Month"
             right="Year"
+            leftLabel={t("Month")}
+            rightLabel={t("Year")}
             onChange={(v) => {
               Animated.timing(trendFade, {
                 toValue: 0,
@@ -302,18 +267,19 @@ export default function DashboardOverview() {
         </View>
 
         <Animated.View style={[styles.trendChart, { opacity: trendFade }]}>
-          {trend.map((point, index) => {
-            const heights =
-              trendMode === "Month" ?
-                [52, 72, 82, 60, 58, 24, 48]
-              : [32, 42, 62, 40, 38, 14, 28];
-            return (
-              <View key={point.label} style={styles.trendColumn}>
-                <View style={[styles.trendDot, { height: heights[index] }]} />
-                <Text style={styles.trendLabel}>{point.label}</Text>
-              </View>
-            );
-          })}
+          <Svg width="100%" height="170" viewBox="0 0 700 170">
+            <Line x1="0" y1="28" x2="700" y2="28" stroke="#DDE8DF" strokeDasharray="5 5" />
+            <Line x1="0" y1="85" x2="700" y2="85" stroke="#DDE8DF" strokeDasharray="5 5" />
+            <Line x1="0" y1="142" x2="700" y2="142" stroke="#DDE8DF" strokeDasharray="5 5" />
+            <Polygon points="0,75 116,112 233,137 350,91 466,67 583,34 700,94 700,142 0,142" fill="#E4F3E6" />
+            <Polyline points="0,75 116,112 233,137 350,91 466,67 583,34 700,94" fill="none" stroke="#159447" strokeWidth="3" />
+            {[{ x: 0, y: 75 }, { x: 116, y: 112 }, { x: 233, y: 137 }, { x: 350, y: 91 }, { x: 466, y: 67 }, { x: 583, y: 34 }, { x: 700, y: 94 }].map((point) => (
+              <Circle key={`${point.x}-${point.y}`} cx={point.x} cy={point.y} r="6" fill="#159447" stroke="#FFFFFF" strokeWidth="2" />
+            ))}
+          </Svg>
+          <View style={styles.trendLabelsRow}>
+            {trend.map((point) => <Text key={point.label} style={styles.trendLabel}>{point.label}</Text>)}
+          </View>
         </Animated.View>
 
         <View style={styles.trendValueRow}>
@@ -322,32 +288,144 @@ export default function DashboardOverview() {
         </View>
       </View>
 
+      </ScrollView>
+
+      <TouchableOpacity
+        style={styles.floatingAIButton}
+        accessibilityLabel="Open AI Assistant"
+        activeOpacity={0.85}
+        onPress={() => setShowAI(true)}
+      >
+        <MaterialCommunityIcons name="creation-outline" size={24} color="#FFFFFF" />
+        <Text style={styles.floatingAIText}>AI</Text>
+      </TouchableOpacity>
+
       {showAI && (
         <AIOverlay visible={showAI} onClose={() => setShowAI(false)} />
       )}
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    position: "relative",
+  },
   container: {
     flex: 1,
     backgroundColor: Colors_DashboardPage.background,
   },
   content: {
     flexGrow: 1,
-    paddingBottom: Spacing["4xl"],
+    paddingBottom: 120,
+  },
+  floatingAIButton: {
+    position: "absolute",
+    right: Spacing.lg,
+    bottom: 92,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: Colors_DashboardPage.greenPrimary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 8,
+    zIndex: 10,
+  },
+  floatingAIText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
+    marginTop: -2,
+  },
+  appHeader: {
+    backgroundColor: Colors_DashboardPage.surface,
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.sm,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  headerIconButton: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  brandName: {
+    color: Colors_DashboardPage.greenPrimary,
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    textAlign: "center",
+  },
+  dashboardPill: {
+    flex: 1,
+    marginHorizontal: Spacing.lg,
+    minHeight: 58,
+    borderRadius: Radius.pill,
+    backgroundColor: "#EAF8EC",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  notificationDot: {
+    position: "absolute",
+    top: 6,
+    right: 7,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: Colors_DashboardPage.greenPrimary,
   },
   periodRow: {
-    marginTop: Spacing.lg,
+    marginTop: Spacing.sm,
     alignItems: "center",
   },
   periodButton: {
-    minWidth: 140,
-    minHeight: 42,
+    minWidth: 238,
+    minHeight: 46,
     paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
     borderRadius: Radius.pill,
-    borderWidth: BorderWidth.thin,
+    borderWidth: 1,
+    borderColor: "#CDECCF",
+    backgroundColor: "#EAF8EC",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+  },
+  periodText: {
+    color: Colors_DashboardPage.greenPrimary,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
+  },
+  todayRow: {
+    marginTop: Spacing.sm,
+    marginHorizontal: Spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    position: "relative",
+    zIndex: 5,
+  },
+  periodSelector: { flexDirection: "row", alignItems: "center", gap: Spacing.xs, paddingVertical: Spacing.xs },
+  periodMenu: { position: "absolute", top: 38, left: 0, minWidth: 150, padding: Spacing.xs, backgroundColor: Colors_DashboardPage.surface, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors_DashboardPage.border, shadowColor: "#0F172A", shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 6 },
+  periodOption: { minHeight: 40, paddingHorizontal: Spacing.sm, borderRadius: Radius.sm, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  periodOptionActive: { backgroundColor: "#EAF8EC" },
+  periodOptionText: { color: Colors_DashboardPage.textPrimary, fontSize: FontSize.sm },
+  periodOptionTextActive: { color: Colors_DashboardPage.greenPrimary, fontWeight: FontWeight.bold },
+  todayText: {
+    color: Colors_DashboardPage.textPrimary,
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
   },
   aiButton: {
     width: 44,
@@ -358,7 +436,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   cardGrid: {
-    marginTop: -Spacing.xl,
+    marginTop: Spacing.xl,
     marginHorizontal: Spacing.lg,
     flexDirection: "row",
     flexWrap: "wrap",
@@ -367,15 +445,20 @@ const styles = StyleSheet.create({
   statCard: {
     width: "47.5%",
     flexGrow: 1,
+    minHeight: 116,
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors_DashboardPage.surface,
-    borderRadius: Radius.lg,
+    borderRadius: Radius.xl,
     padding: Spacing.lg,
     gap: Spacing.xs,
+    borderWidth: 1,
+    borderColor: "#F0F2F1",
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    elevation: 3,
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
   },
   statIcon: {
     width: 40,
@@ -383,7 +466,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: Spacing.xs,
+    marginRight: Spacing.xs,
+  },
+  statBody: {
+    flex: 1,
+    gap: Spacing.sm,
   },
   statLabel: {
     color: Colors_DashboardPage.textMuted,
@@ -394,13 +481,13 @@ const styles = StyleSheet.create({
     color: Colors_DashboardPage.textPrimary,
     fontSize: FontSize["2xl"],
     fontWeight: FontWeight.bold,
-    letterSpacing: -0.5,
+    letterSpacing: 0,
   },
   changeBadge: {
     alignSelf: "flex-start",
     borderRadius: Radius.pill,
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: 4,
   },
   changeBadgeUp: {
     backgroundColor: "#D1FAE5",
@@ -419,16 +506,12 @@ const styles = StyleSheet.create({
     color: Colors_DashboardPage.redPrimary,
   },
   chartCard: {
-    marginTop: Spacing.xl,
+    marginTop: Spacing["2xl"],
     marginHorizontal: Spacing.lg,
     backgroundColor: Colors_DashboardPage.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    elevation: 3,
+    borderTopWidth: 1,
+    borderTopColor: "#E7ECE8",
+    paddingTop: Spacing.lg,
   },
   chartHeader: {
     flexDirection: "row",
@@ -526,13 +609,9 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
     marginHorizontal: Spacing.lg,
     backgroundColor: Colors_DashboardPage.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    elevation: 3,
+    borderTopWidth: 1,
+    borderTopColor: "#E7ECE8",
+    paddingTop: Spacing.lg,
   },
   trendTopRow: {
     flexDirection: "row",
@@ -541,13 +620,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   trendChart: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    height: 140,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors_DashboardPage.border,
-    paddingBottom: Spacing.xs,
+    height: 195,
+    paddingTop: Spacing.sm,
   },
   trendColumn: {
     width: 40,
@@ -565,6 +639,12 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     fontWeight: FontWeight.medium,
     textAlign: "center",
+  },
+  trendLabelsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 2,
+    marginTop: -22,
   },
   trendValueRow: {
     flexDirection: "row",

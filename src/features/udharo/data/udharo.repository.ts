@@ -73,9 +73,16 @@ export async function createUdharoEntry(
     if (!customerId) {
       customerId = generateUuid();
       await db.runAsync(
-        "INSERT INTO local_udaaro_customers (id, full_name) VALUES (?, ?)",
+        "INSERT INTO local_udaaro_customers (id, full_name, phone_number) VALUES (?, ?, ?)",
         customerId,
         input.name,
+        input.phoneNumber ?? null,
+      );
+    } else if (input.phoneNumber) {
+      await db.runAsync(
+        "UPDATE local_udaaro_customers SET phone_number = ? WHERE id = ?",
+        input.phoneNumber,
+        customerId,
       );
     }
 

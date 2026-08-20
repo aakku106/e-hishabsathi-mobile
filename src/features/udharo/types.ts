@@ -12,6 +12,7 @@ export type UdharoEntry = {
 export type CreateUdharoEntryInput = {
   name: string;
   amount: number;
+  phoneNumber?: string | null;
   dueDate?: string | null;
   status?: UdharoStatus;
 };

@@ -1,7 +1,6 @@
 import dayjs from "dayjs";
 
 import { getDatabase } from "@/database/sqlite";
-import { changePercent } from "@/shared/utils/calculations";
 import { lastMonths, lastWeekdayLabels } from "@/shared/utils/date";
 import { formatCurrency } from "@/shared/utils/formatter";
 
@@ -14,55 +13,51 @@ import {
   type DashboardTrendPoint,
 } from "./dashboard.mock";
 
+export type DashboardPeriod = "today" | "week" | "month" | "year";
+
 type StatsQuery = {
   totalSales: number;
-  totalQuantity: number;
-  totalCustomers: number;
-  totalUdaaro: number;
-  lastWeekSales: number;
-  thisMonthSales: number;
-  lastMonthSales: number;
+  totalPurchases: number;
+  totalBuys: number;
+  totalUdharo: number;
 };
+function periodStart(period: DashboardPeriod) {
+  const now = dayjs();
+  if (period === "today") return now.startOf("day");
+  if (period === "week") return now.subtract(6, "day").startOf("day");
+  if (period === "year") return now.startOf("year");
+  return now.startOf("month");
+}
 
-async function queryStats(): Promise<StatsQuery | null> {
+async function queryStats(period: DashboardPeriod): Promise<StatsQuery | null> {
   const db = getDatabase();
   if (!db) return null;
-
-  const weekStart = dayjs().subtract(7, "day").toISOString();
-  const monthStart = dayjs().startOf("month").toISOString();
-  const prevMonthStart = dayjs()
-    .subtract(1, "month")
-    .startOf("month")
-    .toISOString();
+  const start = periodStart(period).toISOString();
 
   const row = await db.getFirstAsync<StatsQuery>(
     `SELECT
-      (SELECT COALESCE(SUM(amount), 0) FROM sales_entries) as totalSales,
-      (SELECT COALESCE(SUM(quantity), 0) FROM sales_entries) as totalQuantity,
-      (SELECT COUNT(DISTINCT customer) FROM sales_entries WHERE customer IS NOT NULL AND customer != '') as totalCustomers,
-      (SELECT COALESCE(SUM(CASE WHEN transaction_type = 'CREDIT_GIVEN' THEN amount ELSE -amount END), 0) FROM local_udaaro_ledger) as totalUdaaro,
-      (SELECT COALESCE(SUM(amount), 0) FROM sales_entries WHERE sold_at >= ?) as lastWeekSales,
-      (SELECT COALESCE(SUM(amount), 0) FROM sales_entries WHERE sold_at >= ?) as thisMonthSales,
-      (SELECT COALESCE(SUM(amount), 0) FROM sales_entries WHERE sold_at >= ? AND sold_at < ?) as lastMonthSales
-    `,
-    weekStart,
-    monthStart,
-    prevMonthStart,
-    monthStart,
+      (SELECT COALESCE(SUM(amount), 0) FROM sales_entries WHERE sold_at >= ?) as totalSales,
+      (SELECT COALESCE(SUM(amount), 0) FROM purchase_entries WHERE purchased_at >= ?) as totalPurchases,
+      (SELECT COUNT(*) FROM purchase_entries WHERE purchased_at >= ?) as totalBuys,
+      (SELECT COUNT(*) FROM udharo_entries WHERE created_at >= ?) as totalUdharo`,
+    start,
+    start,
+    start,
+    start,
   );
 
   return row;
 }
 
-async function queryIncomeBars(): Promise<{ weekday: number; amount: number }[]> {
+async function queryIncomeBars(period: DashboardPeriod): Promise<{ weekday: number; amount: number }[]> {
   const db = getDatabase();
   if (!db) return [];
 
-  const weekStart = dayjs().subtract(6, "day").startOf("day").toISOString();
+  const start = periodStart(period).toISOString();
   return db.getAllAsync<{ weekday: number; amount: number }>(
     `SELECT CAST(strftime('%w', sold_at) AS INTEGER) as weekday, COALESCE(SUM(amount), 0) as amount
-     FROM sales_entries WHERE sold_at >= ? GROUP BY weekday`,
-    weekStart,
+    FROM sales_entries WHERE sold_at >= ? GROUP BY weekday`,
+      start,
   );
 }
 
@@ -78,7 +73,7 @@ async function queryMonthTrend(): Promise<{ month: string; amount: number }[]> {
   );
 }
 
-export async function fetchDashboardData(): Promise<{
+export async function fetchDashboardData(period: DashboardPeriod = "today"): Promise<{
   stats: DashboardStat[];
   bars: DashboardBar[];
   trend: DashboardTrendPoint[];
@@ -87,35 +82,35 @@ export async function fetchDashboardData(): Promise<{
   if (!db) return { stats: DASHBOARD_STATS, bars: INCOME_BARS, trend: MONTH_TREND };
 
   const [statsRow, incomeBars, monthTrend] = await Promise.all([
-    queryStats(),
-    queryIncomeBars(),
+    queryStats(period),
+    queryIncomeBars(period),
     queryMonthTrend(),
   ]);
 
   const stats: DashboardStat[] = [
     {
-      label: "Total Sells",
+      label: "Total Sales",
       value: formatCurrency(statsRow?.totalSales ?? 0),
-      change: Math.round(changePercent(statsRow?.lastWeekSales ?? 0, statsRow?.lastMonthSales ?? 0)).toString(),
-      changeType: (statsRow?.lastWeekSales ?? 0) >= (statsRow?.lastMonthSales ?? 0) ? "up" : "down",
+      change: "0%",
+      changeType: "up",
     },
     {
-      label: "Total Products sold",
-      value: String(statsRow?.totalQuantity ?? 0),
-      change: `${Math.round(changePercent(statsRow?.thisMonthSales ?? 0, statsRow?.lastMonthSales ?? 0))}%`,
-      changeType: (statsRow?.thisMonthSales ?? 0) >= (statsRow?.lastMonthSales ?? 0) ? "up" : "down",
+      label: "Total Buys",
+      value: String(statsRow?.totalBuys ?? 0),
+      change: "0%",
+      changeType: "up",
     },
     {
-      label: "Total Customers",
-      value: String(statsRow?.totalCustomers ?? 0),
+      label: "Total Ud h aro",
+      value: String(statsRow?.totalUdharo ?? 0),
       change: "0%",
       changeType: "down",
     },
     {
       label: "Total Profit",
-      value: formatCurrency((statsRow?.totalSales ?? 0) - (statsRow?.totalUdaaro ?? 0)),
-      change: `${Math.round(changePercent(statsRow?.thisMonthSales ?? 0, statsRow?.lastMonthSales ?? 0))}%`,
-      changeType: (statsRow?.thisMonthSales ?? 0) >= (statsRow?.lastMonthSales ?? 0) ? "up" : "down",
+      value: formatCurrency((statsRow?.totalSales ?? 0) - (statsRow?.totalPurchases ?? 0)),
+      change: "0%",
+      changeType: "up",
     },
   ];
 

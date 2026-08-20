@@ -7,6 +7,7 @@ import type { UdharoStatus } from "./types";
 export const CreateUdharoEntrySchema = z.object({
   name: requiredText,
   amount: nonNegativeNumber,
+  phoneNumber: z.string().trim().optional(),
   dueDate: z.string().nullable().optional(),
   status: z.enum(["on_track", "overdue", "paid"]).default("on_track"),
 });
