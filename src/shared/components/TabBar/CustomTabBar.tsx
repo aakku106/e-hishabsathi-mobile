@@ -6,6 +6,7 @@ import { Colors_NavBar } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Layout, Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { useCopy } from "@/shared/i18n";
 
 type TabRoute = {
   key: string;
@@ -53,6 +54,7 @@ const ROUTE_ICON_ACTIVE_MAP: Record<
 };
 
 export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
+  const { t } = useCopy();
   return (
     <View style={styles.outerContainer}>
       <View style={styles.navBar}>
@@ -60,10 +62,11 @@ export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
           const { options } = descriptors[route.key];
           const isFocused = state.index === index;
 
-          const label =
+          const label = t(
             typeof options.tabBarLabel === "string" ? options.tabBarLabel
             : options.title !== undefined ? options.title
-            : route.name;
+            : route.name,
+          );
 
           const colorKey = ROUTE_COLOR_MAP[route.name];
           const activeColor = colorKey ? Colors_NavBar.selected[colorKey] : "#4F46E5";

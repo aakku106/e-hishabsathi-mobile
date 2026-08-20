@@ -40,11 +40,11 @@ export const Colors_SalesPage: PageColors = {
 
 export const Colors_PurchasesPage: PageColors = {
   ...basePage,
-  background: "#FDF8F1",
-  surfaceAlt: "#FDF1DC",
-  primary: "#F59E0B",
-  primaryDeep: "#B45309",
-  primarySoft: "#FDE68A",
+  background: "#FFF9F4",
+  surfaceAlt: "#FFF0E5",
+  primary: "#FF5A00",
+  primaryDeep: "#FF4D00",
+  primarySoft: "#FFE0CC",
 };
 
 export const Colors_UdharoPage: PageColors = {

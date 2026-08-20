@@ -104,14 +104,7 @@ export async function deleteSalesEntry(id: number): Promise<void> {
 export async function fetchSalesSummary(): Promise<SalesSummary> {
   const db = getDatabase();
   if (!db) {
-    return FALLBACK_ENTRIES.reduce(
-      (summary, entry) => ({
-        totalAmount: summary.totalAmount + entry.amount,
-        totalQuantity: summary.totalQuantity + entry.quantity,
-        entryCount: summary.entryCount + 1,
-      }),
-      { totalAmount: 0, totalQuantity: 0, entryCount: 0 },
-    );
+    return { totalAmount: 0, totalQuantity: 0, entryCount: 0 };
   }
 
   const row = await db.getFirstAsync<{

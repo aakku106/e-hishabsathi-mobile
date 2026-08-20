@@ -1,7 +1,9 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  Platform,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -17,6 +19,7 @@ import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { formatCurrency } from "@/shared/utils/formatter";
+import { useCopy } from "@/shared/i18n";
 
 import {
   useCreateSalesEntry,
@@ -26,6 +29,18 @@ import {
 import { CreateSalesEntrySchema, CreateSalesEntryFormValues } from "../validation";
 
 const colors = Colors_SalesPage;
+
+type SpeechRecognitionLike = {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  onstart: (() => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  start: () => void;
+  stop: () => void;
+};
 
 const extraDetailOptions: DropdownOption[] = [
   {
@@ -92,6 +107,7 @@ type ProductDraft = {
 };
 
 export default function SalesEntryForm() {
+  const { t, language } = useCopy();
   const emptyProduct = (): ProductDraft => ({
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     product: "",
@@ -106,6 +122,8 @@ export default function SalesEntryForm() {
     emptyProduct(),
   ]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [listeningProductId, setListeningProductId] = useState<string | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   const { data: entries = [], isLoading } = useSalesEntries();
   const { data: summary } = useSalesSummary();
@@ -154,6 +172,63 @@ export default function SalesEntryForm() {
   const handleReset = () => {
     setProducts([emptyProduct()]);
     setErrors({});
+  };
+
+  const handleVoiceInput = (id: string) => {
+    if (Platform.OS !== "web") {
+      Alert.alert(
+        "Voice input unavailable",
+        "Voice input is currently enabled in the web version. Native microphone support can be added with a speech recognition module.",
+      );
+      return;
+    }
+
+    const browserWindow = globalThis as typeof globalThis & {
+      SpeechRecognition?: new () => SpeechRecognitionLike;
+      webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+    };
+    const Recognition =
+      browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition;
+
+    if (!Recognition) {
+      Alert.alert("Voice input unavailable", "Try Chrome or Edge for microphone support.");
+      return;
+    }
+
+    if (listeningProductId === id) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    const recognition = new Recognition();
+    recognition.lang = language === "np" ? "ne-NP" : "en-IN";
+    recognition.interimResults = false;
+    recognition.continuous = false;
+    recognition.onstart = () => setListeningProductId(id);
+    recognition.onend = () => {
+      setListeningProductId(null);
+      recognitionRef.current = null;
+    };
+    recognition.onerror = () => {
+      setListeningProductId(null);
+      recognitionRef.current = null;
+      Alert.alert("Voice input failed", "Please allow microphone access and try again.");
+    };
+    recognition.onresult = (event) => {
+      const transcript = event.results[0]?.[0]?.transcript ?? "";
+      const quantityMatch = transcript.match(/(?:quantity|qty)\s*([\d.]+)/i);
+      const priceMatch = transcript.match(/price\s*(?:is|of)?\s*([\d.]+)/i);
+      const productMatch = transcript.match(/product\s*(?:is|called)?\s*([\w -]+?)(?=\s+price|\s+quantity|$)/i);
+
+      if (quantityMatch) handleUpdateProduct(id, "quantity", quantityMatch[1]);
+      if (priceMatch) handleUpdateProduct(id, "price", priceMatch[1]);
+      if (productMatch) handleUpdateProduct(id, "product", productMatch[1].trim());
+      if (!quantityMatch && !priceMatch && !productMatch) {
+        handleUpdateProduct(id, "product", transcript);
+      }
+    };
+    recognitionRef.current = recognition;
+    recognition.start();
   };
 
   const handleSaveSale = () => {
@@ -211,8 +286,8 @@ export default function SalesEntryForm() {
         </View>
 
         <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>Sales</Text>
-          <Text style={styles.headerSubtitle}>Add a new sale</Text>
+          <Text style={styles.headerTitle}>{t("Sales")}</Text>
+          <Text style={styles.headerSubtitle}>{t("Add a new sale")}</Text>
         </View>
       </View>
 
@@ -223,7 +298,7 @@ export default function SalesEntryForm() {
       >
         <View style={styles.formCard}>
           <View style={styles.productHeaderRow}>
-            <Text style={styles.extraTitle}>Products</Text>
+            <Text style={styles.extraTitle}>{t("Products")}</Text>
 
             <TouchableOpacity
               activeOpacity={0.8}
@@ -235,7 +310,7 @@ export default function SalesEntryForm() {
                 size={20}
                 color={colors.primary}
               />
-              <Text style={styles.addButtonText}>Add Product</Text>
+              <Text style={styles.addButtonText}>{t("Add Product")}</Text>
             </TouchableOpacity>
           </View>
 
@@ -246,7 +321,7 @@ export default function SalesEntryForm() {
             return (
               <View key={p.id} style={styles.productCard}>
                 <View style={styles.productCardHeader}>
-                  <Text style={styles.inputLabel}>Item {index + 1}</Text>
+                  <Text style={styles.inputLabel}>{t("Item")} {index + 1}</Text>
 
                   {products.length > 1 && (
                     <TouchableOpacity
@@ -273,8 +348,8 @@ export default function SalesEntryForm() {
 
                   <View style={styles.fieldContent}>
                     <LabeledInput
-                      label="Quantity"
-                      placeholder="Enter Quantity"
+                      label={t("Quantity")}
+                      placeholder={t("Enter Quantity")}
                       value={p.quantity}
                       onChangeText={(v) =>
                         handleUpdateProduct(p.id, "quantity", v)
@@ -308,8 +383,8 @@ export default function SalesEntryForm() {
 
                   <View style={styles.fieldContent}>
                     <LabeledInput
-                      label="Product"
-                      placeholder="Enter Product name"
+                      label={t("Product")}
+                      placeholder={t("Enter Product name")}
                       value={p.product}
                       onChangeText={(v) =>
                         handleUpdateProduct(p.id, "product", v)
@@ -342,8 +417,8 @@ export default function SalesEntryForm() {
 
                   <View style={styles.fieldContent}>
                     <LabeledInput
-                      label="Price"
-                      placeholder="Rs. Enter Price"
+                      label={t("Price")}
+                      placeholder={`Rs. ${t("Enter Price")}`}
                       value={p.price}
                       onChangeText={(v) =>
                         handleUpdateProduct(p.id, "price", v)
@@ -367,24 +442,43 @@ export default function SalesEntryForm() {
                 </View>
 
                 <View style={styles.moreContainer}>
-                  <Text style={styles.moreTitle}>More</Text>
+                  <Text style={styles.moreTitle}>{t("More")}</Text>
 
-                  <Dropdown
-                    options={extraDetailOptions}
-                    defaultValue={p.extraDetail ?? extraDetailOptions[0]}
-                    placeholder="Optional"
-                    onSelect={(selected) =>
-                      handleExtraDetailSelect(p.id, selected)
-                    }
-                    bgColor={colors.inputBG}
-                    textColor={colors.textPrimary}
-                    dropdownBgColor={colors.surface}
-                    dropdownTextColor={colors.textPrimary}
-                    borderColor={colors.border}
-                    buttonStyle={styles.dropdownButton}
-                    textStyle={styles.dropdownText}
-                    dropdownListStyle={styles.dropdownList}
-                  />
+                  <View style={styles.moreRow}>
+                    <View style={styles.moreDropdown}>
+                      <Dropdown
+                        options={extraDetailOptions}
+                        defaultValue={p.extraDetail ?? extraDetailOptions[0]}
+                        placeholder="Optional"
+                        onSelect={(selected) =>
+                          handleExtraDetailSelect(p.id, selected)
+                        }
+                        bgColor={colors.inputBG}
+                        textColor={colors.textPrimary}
+                        dropdownBgColor={colors.surface}
+                        dropdownTextColor={colors.textPrimary}
+                        borderColor={colors.border}
+                        buttonStyle={styles.dropdownButton}
+                        textStyle={styles.dropdownText}
+                        dropdownListStyle={styles.dropdownList}
+                      />
+                    </View>
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => handleVoiceInput(p.id)}
+                      style={[styles.voiceButton, listeningProductId === p.id && styles.voiceButtonActive]}
+                    >
+                      <MaterialCommunityIcons
+                        name={listeningProductId === p.id ? "stop-circle-outline" : "microphone-outline"}
+                        size={19}
+                        color={colors.primary}
+                      />
+                      <View>
+                        <Text style={styles.voiceTitle}>{listeningProductId === p.id ? t("Listening") : t("AI Voice")}</Text>
+                        <Text style={styles.voiceSubtitle}>{listeningProductId === p.id ? t("Speak now") : t("Fill with voice")}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
                 {hasExtraDetail && (
@@ -487,7 +581,7 @@ export default function SalesEntryForm() {
                   color={colors.primary}
                 />
               </View>
-              <Text style={styles.totalLabel}>Total Amount</Text>
+              <Text style={styles.totalLabel}>{t("Total Amount")}</Text>
             </View>
 
             <Text style={styles.totalAmount}>
@@ -506,7 +600,7 @@ export default function SalesEntryForm() {
                 size={24}
                 color={colors.primary}
               />
-              <Text style={styles.resetText}>Reset</Text>
+              <Text style={styles.resetText}>{t("Reset")}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -524,7 +618,7 @@ export default function SalesEntryForm() {
                     size={24}
                     color="#FFFFFF"
                   />
-                  <Text style={styles.saveText}>Save Sale</Text>
+                  <Text style={styles.saveText}>{t("Save Sale")}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -539,17 +633,17 @@ export default function SalesEntryForm() {
 
         <View style={styles.summaryCard}>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Entries</Text>
+            <Text style={styles.summaryLabel}>{t("Entries")}</Text>
             <Text style={styles.summaryValue}>{summary?.entryCount ?? 0}</Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Quantity</Text>
+            <Text style={styles.summaryLabel}>{t("Quantity")}</Text>
             <Text style={styles.summaryValue}>{summary?.totalQuantity ?? 0}</Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Total</Text>
+            <Text style={styles.summaryLabel}>{t("Total")}</Text>
             <Text style={[styles.summaryValue, { color: colors.primary }]}>
               {formatCurrency(summary?.totalAmount ?? 0)}
             </Text>
@@ -557,7 +651,7 @@ export default function SalesEntryForm() {
         </View>
 
         <View style={styles.listSection}>
-          <Text style={styles.listTitle}>Recent sales</Text>
+          <Text style={styles.listTitle}>{t("Recent sales")}</Text>
 
           {isLoading ? (
             <ActivityIndicator color={colors.primary} style={styles.loader} />
@@ -786,6 +880,44 @@ const styles = StyleSheet.create({
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
     marginBottom: Spacing.xs,
+  },
+
+  moreRow: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    gap: Spacing.sm,
+  },
+
+  moreDropdown: {
+    flex: 1,
+  },
+
+  voiceButton: {
+    flex: 0.72,
+    minHeight: 52,
+    borderWidth: BorderWidth.base,
+    borderColor: colors.primary,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.xs,
+  },
+
+  voiceButtonActive: {
+    backgroundColor: colors.primarySoft,
+  },
+
+  voiceTitle: {
+    color: colors.primary,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+  },
+
+  voiceSubtitle: {
+    color: colors.textMuted,
+    fontSize: 10,
   },
 
   dropdownButton: {
@@ -1108,3 +1240,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
 });
+

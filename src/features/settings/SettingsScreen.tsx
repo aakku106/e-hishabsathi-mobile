@@ -6,13 +6,14 @@ import {
   StyleSheet,
   Switch,
   Text,
+  Pressable,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { APP } from "@/config/app";
-import { removeSetting, SETTING_KEYS } from "@/database/helpers/settings";
+import { removeSetting, setSetting, SETTING_KEYS } from "@/database/helpers/settings";
 import { persistThemeMode } from "@/lib/hydration";
 import { useBusiness } from "@/features/business/hooks/useBusiness";
 import { useAuthStore } from "@/store/auth.store";
@@ -33,10 +34,29 @@ const BUSINESS_TYPE_LABELS: Record<string, string> = {
   other: "Other",
 };
 
+const COPY = {
+  en: { settings: "Settings", subtitle: "Manage your shop and preferences", profile: "Business profile", manage: "Manage", preferences: "Preferences", general: "General", about: "About", inventory: "Inventory", products: "Products and stock", tax: "Tax / VAT", vat: "Monthly VAT summary", dark: "Dark mode", currently: "Currently", currency: "Currency", account: "Account", notifications: "Notifications", language: "Change Language", terms: "Terms & Conditions", privacy: "Privacy Policy", appName: "App name", version: "Version", logout: "Logout", english: "English", nepali: "नेपाली" },
+  np: { settings: "सेटिङहरू", subtitle: "आफ्नो पसल र प्राथमिकता व्यवस्थापन गर्नुहोस्", profile: "व्यवसाय प्रोफाइल", manage: "व्यवस्थापन", preferences: "प्राथमिकताहरू", general: "सामान्य", about: "बारेमा", inventory: "इन्भेन्टरी", products: "उत्पादन र स्टक", tax: "कर / VAT", vat: "मासिक VAT सारांश", dark: "डार्क मोड", currently: "हाल", currency: "मुद्रा", account: "खाता", notifications: "सूचनाहरू", language: "भाषा परिवर्तन", terms: "नियम तथा सर्तहरू", privacy: "गोपनीयता नीति", appName: "एपको नाम", version: "संस्करण", logout: "लगआउट", english: "English", nepali: "नेपाली" },
+} as const;
+
+function SettingsLink({ icon, label, value }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value?: string }) {
+  return (
+    <View style={styles.settingRow}>
+      <View style={styles.rowLeading}>
+        <View style={styles.smallIcon}><MaterialCommunityIcons name={icon} size={18} color={colors.primary} /></View>
+        <Text style={styles.settingLabel}>{label}</Text>
+      </View>
+      {!!value && <Text style={styles.settingValue}>{value}</Text>}
+      <MaterialCommunityIcons name="chevron-right" size={22} color={colors.textMuted} />
+    </View>
+  );
+}
+
 export default function SettingsScreen() {
   const router = useRouter();
   const { data: business } = useBusiness();
-  const { themeMode, toggleTheme, currency } = useSettingsStore();
+  const { themeMode, toggleTheme, currency, language, setLanguage } = useSettingsStore();
+  const copy = COPY[language];
   const logout = useAuthStore((state) => state.logout);
 
   const handleLogout = () => {
@@ -52,6 +72,12 @@ export default function SettingsScreen() {
     persistThemeMode(nextMode);
   };
 
+  const handleLanguageChange = () => {
+    const nextLanguage = language === "en" ? "np" : "en";
+    setLanguage(nextLanguage);
+    void setSetting(SETTING_KEYS.language, nextLanguage);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <ScrollView
@@ -59,14 +85,14 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <PageHeader
-          title="Settings"
-          subtitle="Manage your shop and preferences"
+          title={copy.settings}
+          subtitle={copy.subtitle}
           icon="cog-outline"
           gradient={[colors.primary, colors.primaryDeep]}
         />
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Business profile</Text>
+          <Text style={styles.sectionTitle}>{copy.profile}</Text>
           <View style={styles.card}>
             <View style={styles.profileRow}>
               <LinearGradient
@@ -111,7 +137,7 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Manage</Text>
+          <Text style={styles.sectionTitle}>{copy.manage}</Text>
           <View style={styles.card}>
             <TouchableOpacity
               style={styles.linkRow}
@@ -126,8 +152,8 @@ export default function SettingsScreen() {
                 />
               </View>
               <View style={styles.linkTextWrap}>
-                <Text style={styles.settingLabel}>Inventory</Text>
-                <Text style={styles.settingHint}>Products and stock</Text>
+                <Text style={styles.settingLabel}>{copy.inventory}</Text>
+                <Text style={styles.settingHint}>{copy.products}</Text>
               </View>
               <MaterialCommunityIcons
                 name="chevron-right"
@@ -151,8 +177,8 @@ export default function SettingsScreen() {
                 />
               </View>
               <View style={styles.linkTextWrap}>
-                <Text style={styles.settingLabel}>Tax / VAT</Text>
-                <Text style={styles.settingHint}>Monthly VAT summary</Text>
+                <Text style={styles.settingLabel}>{copy.tax}</Text>
+                <Text style={styles.settingHint}>{copy.vat}</Text>
               </View>
               <MaterialCommunityIcons
                 name="chevron-right"
@@ -164,13 +190,13 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Preferences</Text>
+          <Text style={styles.sectionTitle}>{copy.preferences}</Text>
           <View style={styles.card}>
             <View style={styles.settingRow}>
               <View style={styles.settingTextWrap}>
-                <Text style={styles.settingLabel}>Dark mode</Text>
+                <Text style={styles.settingLabel}>{copy.dark}</Text>
                 <Text style={styles.settingHint}>
-                  Currently {themeMode === "dark" ? "on" : "off"}
+                  {copy.currently} {themeMode === "dark" ? "on" : "off"}
                 </Text>
               </View>
               <Switch
@@ -185,7 +211,7 @@ export default function SettingsScreen() {
 
             <View style={styles.settingRow}>
               <View style={styles.settingTextWrap}>
-                <Text style={styles.settingLabel}>Currency</Text>
+                <Text style={styles.settingLabel}>{copy.currency}</Text>
                 <Text style={styles.settingHint}>{currency}</Text>
               </View>
               <View style={styles.currencyBadge}>
@@ -196,15 +222,45 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
+          <Text style={styles.sectionTitle}>{copy.general}</Text>
+          <View style={styles.card}>
+            <SettingsLink icon="account-outline" label={copy.account} value={business?.name ?? "-"} />
+            <View style={styles.rowDivider} />
+            <SettingsLink icon="bell-outline" label={copy.notifications} />
+            <View style={styles.rowDivider} />
+            <Pressable style={styles.settingRow} onPress={handleLanguageChange}>
+              <View style={styles.rowLeading}>
+                <View style={styles.smallIcon}><MaterialCommunityIcons name="translate" size={18} color={colors.primary} /></View>
+                <Text style={styles.settingLabel}>{copy.language}</Text>
+              </View>
+              <Text style={styles.settingValue}>{language === "en" ? copy.english : copy.nepali}</Text>
+              <MaterialCommunityIcons name="chevron-right" size={22} color={colors.textMuted} />
+            </Pressable>
+            <View style={styles.rowDivider} />
+            <SettingsLink icon="file-document-outline" label={copy.terms} />
+            <View style={styles.rowDivider} />
+            <SettingsLink icon="lock-outline" label={copy.privacy} />
+            <View style={styles.rowDivider} />
+            <Pressable style={styles.settingRow} onPress={handleLogout}>
+              <View style={styles.rowLeading}>
+                <View style={styles.smallIcon}><MaterialCommunityIcons name="logout" size={18} color={colors.primary} /></View>
+                <Text style={styles.settingLabel}>{copy.logout}</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={22} color={colors.textMuted} />
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{copy.about}</Text>
           <View style={styles.card}>
             <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>App name</Text>
+              <Text style={styles.settingLabel}>{copy.appName}</Text>
               <Text style={styles.settingValue}>{APP.name}</Text>
             </View>
             <View style={styles.rowDivider} />
             <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Version</Text>
+              <Text style={styles.settingLabel}>{copy.version}</Text>
               <Text style={styles.settingValue}>{APP.version}</Text>
             </View>
           </View>
@@ -306,6 +362,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: Spacing.md,
+  },
+  rowLeading: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
+  },
+  smallIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
   },
   linkRow: {
     flexDirection: "row",

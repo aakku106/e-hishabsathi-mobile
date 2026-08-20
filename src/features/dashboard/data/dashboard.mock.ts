@@ -16,14 +16,14 @@ export type DashboardTrendPoint = {
 };
 
 export const DASHBOARD_STATS: DashboardStat[] = [
-  { label: "Total Sells", value: "Rs.32,650", change: "3", changeType: "up" },
+  { label: "Total Sales", value: "Rs.32,650", change: "10%", changeType: "up" },
   {
-    label: "Total Products sold",
-    value: "37",
-    change: "10%",
+    label: "Total Buys",
+    value: "24",
+    change: "8%",
     changeType: "up",
   },
-  { label: "Total Customers", value: "12", change: "3%", changeType: "down" },
+  { label: "Total Ud h aro", value: "18", change: "5%", changeType: "down" },
   {
     label: "Total Profit",
     value: "Rs.19,550",

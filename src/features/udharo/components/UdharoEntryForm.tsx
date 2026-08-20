@@ -1,7 +1,10 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
+  Pressable,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,6 +19,7 @@ import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { formatCurrency } from "@/shared/utils/formatter";
+import { useCopy } from "@/shared/i18n";
 
 import {
   useCreateUdharoEntry,
@@ -25,6 +29,18 @@ import {
 import { CreateUdharoEntrySchema } from "../validation";
 
 const colors = Colors_UdharoPage;
+
+type SpeechRecognitionLike = {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  onstart: (() => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  start: () => void;
+  stop: () => void;
+};
 
 const STATUS_LABELS: Record<string, string> = {
   on_track: "On track",
@@ -39,18 +55,78 @@ const STATUS_BADGE: Record<string, { bg: string; text: string }> = {
 };
 
 export default function UdharoEntryForm() {
+  const { t, language } = useCopy();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [showMore, setShowMore] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   const { data: udharoEntries = [], isLoading } = useUdharoEntries();
   const { data: summary } = useUdharoSummary();
   const createEntry = useCreateUdharoEntry();
 
+  const handleVoiceInput = () => {
+    if (Platform.OS !== "web") {
+      Alert.alert("Voice input unavailable", "Voice input is currently enabled in the web version.");
+      return;
+    }
+
+    const browserWindow = globalThis as typeof globalThis & {
+      SpeechRecognition?: new () => SpeechRecognitionLike;
+      webkitSpeechRecognition?: new () => SpeechRecognitionLike;
+    };
+    const Recognition = browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition;
+    if (!Recognition) {
+      Alert.alert("Voice input unavailable", "Try Chrome or Edge for microphone voice input.");
+      return;
+    }
+    if (isListening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+
+    const recognition = new Recognition();
+    recognition.lang = language === "np" ? "ne-NP" : "en-IN";
+    recognition.interimResults = false;
+    recognition.continuous = false;
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+    recognition.onerror = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+      Alert.alert("Voice input failed", "Please allow microphone access and try again.");
+    };
+    recognition.onresult = (event) => {
+      const transcript = event.results[0]?.[0]?.transcript ?? "";
+      const amountMatch = transcript.match(/(?:amount|money|rupees|rs)\s*(?:is|of)?\s*([\d.]+)/i);
+      const phoneMatch = transcript.match(/(?:phone|mobile|number)\s*(?:is)?\s*([\d -]{7,})/i);
+      const dateMatch = transcript.match(/(?:due date|date)\s*(?:is|on)?\s*([\d/-]+)/i);
+      const nameMatch = transcript.match(/(?:name|customer)\s*(?:is|called)?\s*([\w ]+?)(?=\s+(?:amount|phone|mobile|due date|date)|$)/i);
+
+      if (amountMatch) setAmount(amountMatch[1]);
+      if (phoneMatch) setPhoneNumber(phoneMatch[1].replace(/\D/g, ""));
+      if (dateMatch) setDueDate(dateMatch[1]);
+      if (nameMatch) setName(nameMatch[1].trim());
+      if (!amountMatch && !phoneMatch && !dateMatch && !nameMatch) setName(transcript);
+      setShowMore(Boolean(phoneMatch || dateMatch));
+    };
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
   const handleSubmit = () => {
     const parsed = CreateUdharoEntrySchema.safeParse({
       name,
       amount: amount || "0",
+      phoneNumber: phoneNumber || undefined,
+      dueDate: dueDate || null,
     });
 
     if (!parsed.success) {
@@ -68,6 +144,8 @@ export default function UdharoEntryForm() {
       onSuccess: () => {
         setName("");
         setAmount("");
+        setPhoneNumber("");
+        setDueDate("");
       },
     });
   };
@@ -80,8 +158,8 @@ export default function UdharoEntryForm() {
       keyboardShouldPersistTaps="handled"
     >
       <PageHeader
-        title="Udharo"
-        subtitle="Track money owed to you"
+        title={t("Udharo")}
+        subtitle={t("Track money owed to you")}
         icon="account-cash-outline"
         gradient={[colors.primary, colors.primaryDeep]}
       />
@@ -90,8 +168,8 @@ export default function UdharoEntryForm() {
         <View style={styles.fieldGroup}>
           <View style={styles.inputBlock}>
             <LabeledInput
-              label="Name"
-              placeholder="Enter Name"
+              label={t("Name")}
+              placeholder={t("Enter Name")}
               value={name}
               onChangeText={setName}
               labelColor={colors.textPrimary}
@@ -109,7 +187,7 @@ export default function UdharoEntryForm() {
 
           <View style={styles.inputBlock}>
             <LabeledInput
-              label="Amount"
+              label={t("Amount")}
               placeholder="Rs."
               keyboardType="decimal-pad"
               value={amount}
@@ -129,8 +207,38 @@ export default function UdharoEntryForm() {
           </View>
         </View>
 
+        <View style={styles.moreSection}>
+          <View style={styles.moreHeader}>
+            <Pressable
+              style={styles.moreToggle}
+              onPress={() => setShowMore((value) => !value)}
+            >
+              <Text style={styles.moreTitle}>{t("More")}</Text>
+              <MaterialCommunityIcons
+                name={showMore ? "chevron-up" : "chevron-down"}
+                size={22}
+                color={colors.primary}
+              />
+            </Pressable>
+            <Pressable style={styles.voiceButton} onPress={handleVoiceInput}>
+              <MaterialCommunityIcons name={isListening ? "stop-circle-outline" : "microphone-outline"} size={18} color={colors.primary} />
+              <Text style={styles.voiceText}>{isListening ? t("Listening") : t("AI Voice")}</Text>
+            </Pressable>
+          </View>
+          {showMore && (
+            <View style={styles.moreFields}>
+              <View style={styles.inputBlock}>
+                <LabeledInput label={t("Phone Number")} placeholder={t("Enter phone number")} value={phoneNumber} onChangeText={setPhoneNumber} keyboardType="phone-pad" labelColor={colors.textPrimary} inputBgColor={colors.inputBG} borderColor={colors.border} placeholderColor={colors.textMuted} labelStyle={styles.inputLabel} inputStyle={styles.inputText} inputContainerStyle={styles.inputContainer} />
+              </View>
+              <View style={styles.inputBlock}>
+                <LabeledInput label={t("Due Date")} placeholder="YYYY-MM-DD" value={dueDate} onChangeText={setDueDate} labelColor={colors.textPrimary} inputBgColor={colors.inputBG} borderColor={colors.border} placeholderColor={colors.textMuted} labelStyle={styles.inputLabel} inputStyle={styles.inputText} inputContainerStyle={styles.inputContainer} />
+              </View>
+            </View>
+          )}
+        </View>
+
         <PrimaryButton
-          title="Save entry"
+          title={t("Save entry")}
           loading={createEntry.isPending}
           onPress={handleSubmit}
           gradient={[colors.primary, colors.primaryDeep]}
@@ -144,25 +252,25 @@ export default function UdharoEntryForm() {
 
       <View style={styles.summaryCard}>
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>People</Text>
+          <Text style={styles.summaryLabel}>{t("People")}</Text>
           <Text style={styles.summaryValue}>{summary?.entryCount ?? 0}</Text>
         </View>
         <View style={styles.summaryDivider} />
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Total udharo</Text>
+          <Text style={styles.summaryLabel}>{t("Total udharo")}</Text>
           <Text style={[styles.summaryValue, { color: colors.primary }]}>
             {formatCurrency(summary?.totalAmount ?? 0)}
           </Text>
         </View>
         <View style={styles.summaryDivider} />
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Overdue</Text>
+          <Text style={styles.summaryLabel}>{t("Overdue")}</Text>
           <Text style={styles.summaryValue}>{summary?.overdueCount ?? 0}</Text>
         </View>
       </View>
 
       <View style={styles.listSection}>
-        <Text style={styles.sectionTitle}>Recent udharo</Text>
+        <Text style={styles.sectionTitle}>{t("Recent udharo")}</Text>
 
         {isLoading ? (
           <ActivityIndicator color={colors.primary} />
@@ -263,6 +371,51 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.regular,
+  },
+  moreSection: {
+    borderTopWidth: BorderWidth.thin,
+    borderTopColor: colors.border,
+    paddingTop: Spacing.md,
+    gap: Spacing.md,
+  },
+  moreHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+  },
+  moreToggle: {
+    flex: 1,
+    minHeight: 38,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  moreTitle: {
+    color: colors.textPrimary,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+  },
+  voiceButton: {
+    minHeight: 38,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
+  voiceText: {
+    color: colors.primary,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+  },
+  moreFields: {
+    gap: Spacing.md,
   },
   errorText: {
     color: colors.danger,
