@@ -165,6 +165,20 @@ export default function UdharoEntryForm() {
       />
 
       <View style={styles.formCard}>
+        <Pressable
+          style={[styles.voiceButton, styles.voiceButtonFull]}
+          onPress={handleVoiceInput}
+        >
+          <MaterialCommunityIcons
+            name={isListening ? "stop-circle-outline" : "microphone-outline"}
+            size={18}
+            color={colors.primary}
+          />
+          <Text style={styles.voiceText}>
+            {isListening ? t("Listening") : t("AI Voice")}
+          </Text>
+        </Pressable>
+
         <View style={styles.fieldGroup}>
           <View style={styles.inputBlock}>
             <LabeledInput
@@ -219,10 +233,6 @@ export default function UdharoEntryForm() {
                 size={22}
                 color={colors.primary}
               />
-            </Pressable>
-            <Pressable style={styles.voiceButton} onPress={handleVoiceInput}>
-              <MaterialCommunityIcons name={isListening ? "stop-circle-outline" : "microphone-outline"} size={18} color={colors.primary} />
-              <Text style={styles.voiceText}>{isListening ? t("Listening") : t("AI Voice")}</Text>
             </Pressable>
           </View>
           {showMore && (
@@ -408,6 +418,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.xs,
+  },
+  voiceButtonFull: {
+    width: "100%",
+    justifyContent: "center",
+    marginBottom: Spacing.xs,
   },
   voiceText: {
     color: colors.primary,
