@@ -172,23 +172,33 @@ export default function PurchaseScreen() {
                 <Text style={styles.addProductText}>{t("Add Product")}</Text>
               </Pressable>
             </View>
+            <Pressable
+              style={[styles.voiceButton, styles.voiceButtonFull, isListening && styles.voiceButtonActive]}
+              onPress={handleVoiceInput}
+            >
+              <MaterialCommunityIcons
+                name={isListening ? "stop-circle-outline" : "microphone-outline"}
+                size={20}
+                color={colors.primary}
+              />
+              <View>
+                <Text style={styles.voiceTitle}>{isListening ? t("Listening") : t("AI Voice")}</Text>
+                <Text style={styles.voiceSubtitle}>{isListening ? t("Speak now") : t("Fill with voice")}</Text>
+              </View>
+            </Pressable>
             <View style={styles.form}>
               <View style={styles.itemCard}>
                 <Text style={styles.itemTitle}>{t("Item 1")}</Text>
-                <PurchaseField icon="briefcase-outline" label={t("Quantity")} placeholder={t("Enter Quantity")} value={quantity} onChangeText={setQuantity} keyboardType="number-pad" error={errors.quantity} />
-                <PurchaseField icon="tag-outline" label={t("Product")} placeholder={t("Enter Product name")} value={product} onChangeText={setProduct} returnKeyType="next" error={errors.product} />
-                <PurchaseField icon="currency-inr" label={t("Price")} placeholder={t("Enter Price")} value={price} onChangeText={setPrice} keyboardType="decimal-pad" returnKeyType="done" error={errors.price} />
-                <PurchaseField icon="storefront-outline" label={t("Supplier")} placeholder={t("Enter Supplier name")} value="" onChangeText={() => undefined} />
+                <PurchaseField label={t("Quantity")} placeholder={t("Enter Quantity")} value={quantity} onChangeText={setQuantity} keyboardType="number-pad" error={errors.quantity} />
+                <PurchaseField label={t("Product")} placeholder={t("Enter Product name")} value={product} onChangeText={setProduct} returnKeyType="next" error={errors.product} />
+                <PurchaseField label={t("Price")} placeholder={t("Enter Price")} value={price} onChangeText={setPrice} keyboardType="decimal-pad" returnKeyType="done" error={errors.price} />
+                <PurchaseField label={t("Supplier")} placeholder={t("Enter Supplier name")} value="" onChangeText={() => undefined} />
                 <Text style={styles.moreLabel}>{t("More")}</Text>
                 <View style={styles.moreRow}>
                   <View style={styles.selectField}>
                     <Text style={styles.selectText}>{t("Select extra detail")}</Text>
                     <MaterialCommunityIcons name="menu-down" size={27} color={colors.textPrimary} />
                   </View>
-                  <Pressable style={[styles.voiceButton, isListening && styles.voiceButtonActive]} onPress={handleVoiceInput}>
-                    <MaterialCommunityIcons name={isListening ? "stop-circle-outline" : "microphone-outline"} size={20} color={colors.primary} />
-                    <View><Text style={styles.voiceTitle}>{isListening ? t("Listening") : t("AI Voice")}</Text><Text style={styles.voiceSubtitle}>{isListening ? t("Speak now") : t("Fill with voice")}</Text></View>
-                  </Pressable>
                 </View>
               </View>
             </View>
@@ -272,29 +282,23 @@ export default function PurchaseScreen() {
 }
 
 type PurchaseFieldProps = React.ComponentProps<typeof LabeledInput> & {
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
   error?: string;
 };
 
-function PurchaseField({ icon, error, ...props }: PurchaseFieldProps) {
+function PurchaseField({ error, ...props }: PurchaseFieldProps) {
   return (
-    <View style={styles.fieldRow}>
-      <View style={styles.fieldIcon}>
-        <MaterialCommunityIcons name={icon} size={29} color={colors.primary} />
-      </View>
-      <View style={styles.fieldInput}>
-        <LabeledInput
-          {...props}
-          labelColor={colors.textPrimary}
-          inputBgColor={colors.inputBG}
-          borderColor={colors.border}
-          placeholderColor={colors.textMuted}
-          labelStyle={styles.inputLabel}
-          inputStyle={styles.inputText}
-          inputContainerStyle={styles.inputContainer}
-        />
-        {!!error && <Text style={styles.errorText}>{error}</Text>}
-      </View>
+    <View style={styles.fieldInput}>
+      <LabeledInput
+        {...props}
+        labelColor={colors.textPrimary}
+        inputBgColor={colors.inputBG}
+        borderColor={colors.border}
+        placeholderColor={colors.textMuted}
+        labelStyle={styles.inputLabel}
+        inputStyle={styles.inputText}
+        inputContainerStyle={styles.inputContainer}
+      />
+      {!!error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 }
@@ -361,8 +365,6 @@ const styles = StyleSheet.create({
   addProductText: { color: colors.primary, fontSize: FontSize.md, fontWeight: FontWeight.bold },
   itemCard: { borderWidth: 1, borderColor: colors.border, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.md },
   itemTitle: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: FontWeight.bold, marginBottom: Spacing.xs },
-  fieldRow: { flexDirection: "row", alignItems: "center", gap: Spacing.md },
-  fieldIcon: { width: 70, height: 70, borderRadius: Radius.md, backgroundColor: colors.surfaceAlt, alignItems: "center", justifyContent: "center" },
   fieldInput: { flex: 1, gap: Spacing.xs },
   field: {
     gap: Spacing.xs,
@@ -394,6 +396,7 @@ const styles = StyleSheet.create({
   selectField: { flex: 1, minHeight: 58, borderWidth: 1, borderColor: colors.border, borderRadius: Radius.md, paddingHorizontal: Spacing.md, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   selectText: { color: colors.textPrimary, fontSize: FontSize.md },
   voiceButton: { flex: 0.72, minHeight: 58, borderWidth: 1.5, borderColor: colors.primary, borderRadius: Radius.md, paddingHorizontal: Spacing.sm, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: Spacing.xs },
+  voiceButtonFull: { flex: 0, width: "100%", marginBottom: Spacing.md },
   voiceButtonActive: { backgroundColor: colors.surfaceAlt },
   voiceTitle: { color: colors.primary, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   voiceSubtitle: { color: colors.textMuted, fontSize: 10 },

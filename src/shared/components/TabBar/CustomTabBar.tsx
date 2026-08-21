@@ -35,9 +35,9 @@ const ROUTE_ICON_MAP: Record<
   string,
   keyof typeof MaterialCommunityIcons.glyphMap
 > = {
-  "01-sales": "cash-multiple",
-  "02-purchases": "cart-outline",
-  "03-udharo": "account-cash-outline",
+  "01-sales": "rhombus-outline",
+  "02-purchases": "circle-outline",
+  "03-udharo": "triangle-outline",
   "04-dashboard": "view-dashboard-outline",
   "05-settings": "cog-outline",
 };
@@ -46,9 +46,9 @@ const ROUTE_ICON_ACTIVE_MAP: Record<
   string,
   keyof typeof MaterialCommunityIcons.glyphMap
 > = {
-  "01-sales": "cash-multiple",
-  "02-purchases": "cart",
-  "03-udharo": "account-cash",
+  "01-sales": "rhombus",
+  "02-purchases": "circle",
+  "03-udharo": "triangle",
   "04-dashboard": "view-dashboard",
   "05-settings": "cog",
 };

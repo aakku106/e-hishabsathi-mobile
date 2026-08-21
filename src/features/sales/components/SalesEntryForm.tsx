@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -125,6 +125,13 @@ export default function SalesEntryForm() {
   const [listeningProductId, setListeningProductId] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.stop();
+      recognitionRef.current = null;
+    };
+  }, []);
+
   const { data: entries = [], isLoading } = useSalesEntries();
   const { data: summary } = useSalesSummary();
   const createEntry = useCreateSalesEntry();
@@ -200,18 +207,24 @@ export default function SalesEntryForm() {
       return;
     }
 
+    recognitionRef.current?.stop();
+
     const recognition = new Recognition();
     recognition.lang = language === "np" ? "ne-NP" : "en-IN";
     recognition.interimResults = false;
     recognition.continuous = false;
     recognition.onstart = () => setListeningProductId(id);
     recognition.onend = () => {
-      setListeningProductId(null);
-      recognitionRef.current = null;
+      if (recognitionRef.current === recognition) {
+        setListeningProductId(null);
+        recognitionRef.current = null;
+      }
     };
     recognition.onerror = () => {
-      setListeningProductId(null);
-      recognitionRef.current = null;
+      if (recognitionRef.current === recognition) {
+        setListeningProductId(null);
+        recognitionRef.current = null;
+      }
       Alert.alert("Voice input failed", "Please allow microphone access and try again.");
     };
     recognition.onresult = (event) => {
@@ -314,6 +327,42 @@ export default function SalesEntryForm() {
             </TouchableOpacity>
           </View>
 
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => {
+              const targetProduct = products[products.length - 1];
+              if (targetProduct) handleVoiceInput(targetProduct.id);
+            }}
+            style={[
+              styles.voiceButton,
+              styles.voiceButtonFull,
+              listeningProductId === products[products.length - 1]?.id &&
+                styles.voiceButtonActive,
+            ]}
+          >
+            <MaterialCommunityIcons
+              name={
+                listeningProductId === products[products.length - 1]?.id
+                  ? "stop-circle-outline"
+                  : "microphone-outline"
+              }
+              size={19}
+              color={colors.primary}
+            />
+            <View>
+              <Text style={styles.voiceTitle}>
+                {listeningProductId === products[products.length - 1]?.id
+                  ? t("Listening")
+                  : t("AI Voice")}
+              </Text>
+              <Text style={styles.voiceSubtitle}>
+                {listeningProductId === products[products.length - 1]?.id
+                  ? t("Speak now")
+                  : `${t("Fill with voice")} - ${t("Item")} ${products.length}`}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
           {products.map((p, index) => {
             const hasExtraDetail = !!p.extraDetail?.value;
             const isColor = p.extraDetail?.value === "color";
@@ -338,14 +387,6 @@ export default function SalesEntryForm() {
                 </View>
 
                 <View style={styles.fieldRow}>
-                  <View style={styles.iconBox}>
-                    <MaterialCommunityIcons
-                      name="basket-outline"
-                      size={27}
-                      color={colors.primary}
-                    />
-                  </View>
-
                   <View style={styles.fieldContent}>
                     <LabeledInput
                       label={t("Quantity")}
@@ -373,14 +414,6 @@ export default function SalesEntryForm() {
                 </View>
 
                 <View style={styles.fieldRow}>
-                  <View style={styles.iconBox}>
-                    <MaterialCommunityIcons
-                      name="cube-outline"
-                      size={27}
-                      color={colors.primary}
-                    />
-                  </View>
-
                   <View style={styles.fieldContent}>
                     <LabeledInput
                       label={t("Product")}
@@ -407,14 +440,6 @@ export default function SalesEntryForm() {
                 </View>
 
                 <View style={styles.fieldRow}>
-                  <View style={styles.iconBox}>
-                    <MaterialCommunityIcons
-                      name="currency-inr"
-                      size={27}
-                      color={colors.primary}
-                    />
-                  </View>
-
                   <View style={styles.fieldContent}>
                     <LabeledInput
                       label={t("Price")}
@@ -463,21 +488,7 @@ export default function SalesEntryForm() {
                         dropdownListStyle={styles.dropdownList}
                       />
                     </View>
-                    <TouchableOpacity
-                      activeOpacity={0.8}
-                      onPress={() => handleVoiceInput(p.id)}
-                      style={[styles.voiceButton, listeningProductId === p.id && styles.voiceButtonActive]}
-                    >
-                      <MaterialCommunityIcons
-                        name={listeningProductId === p.id ? "stop-circle-outline" : "microphone-outline"}
-                        size={19}
-                        color={colors.primary}
-                      />
-                      <View>
-                        <Text style={styles.voiceTitle}>{listeningProductId === p.id ? t("Listening") : t("AI Voice")}</Text>
-                        <Text style={styles.voiceSubtitle}>{listeningProductId === p.id ? t("Speak now") : t("Fill with voice")}</Text>
-                      </View>
-                    </TouchableOpacity>
+
                   </View>
                 </View>
 
@@ -814,20 +825,7 @@ const styles = StyleSheet.create({
   },
 
   fieldRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: Spacing.md,
     marginBottom: Spacing.lg,
-  },
-
-  iconBox: {
-    width: 52,
-    height: 52,
-    marginTop: 25,
-    borderRadius: Radius.md,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
   },
 
   fieldContent: {
@@ -903,6 +901,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: Spacing.xs,
+  },
+
+  voiceButtonFull: {
+    flex: 0,
+    width: "100%",
+    marginBottom: Spacing.md,
   },
 
   voiceButtonActive: {
