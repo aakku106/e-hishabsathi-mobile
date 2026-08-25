@@ -26,5 +26,6 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     })),
   setCurrency: (currency) => set({ currency }),
   setLanguage: (language) => set({ language }),
-  hydrate: (themeMode, language = "en") => set({ themeMode, language, isHydrated: true }),
+  hydrate: (themeMode, language = "en") =>
+    set({ themeMode, language, isHydrated: true }),
 }));
