@@ -20,7 +20,9 @@ export function startOfWeek(date: string | Date | number = new Date()): string {
   return dayjs(date).startOf("week").toISOString();
 }
 
-export function startOfMonth(date: string | Date | number = new Date()): string {
+export function startOfMonth(
+  date: string | Date | number = new Date(),
+): string {
   return dayjs(date).startOf("month").toISOString();
 }
 
