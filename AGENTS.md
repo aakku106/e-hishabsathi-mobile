@@ -4,7 +4,7 @@ The repo root is `e-hishabsathi-mobile/` (git, package.json, expo config all liv
 
 ## Before writing code
 
-- **Expo HAS CHANGED**: this is SDK 57. Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code.
+- **Expo HAS CHANGED**: this is SDK 57. Read the exact versioned docs at <https://docs.expo.dev/versions/v57.0.0/> before writing any code.
 - Read `doc/guide0.0.1-alpha.1.md` before changing architecture or data flow; read `src/shared/constants/README.md` before touching colors, spacing, radius, or typography.
 
 ## Architecture rules (enforced, see guide)

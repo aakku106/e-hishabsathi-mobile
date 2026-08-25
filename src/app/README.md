@@ -72,11 +72,11 @@ Expo Router's catch-all 404 screen. Unlike feature routes, this one owns its UI 
 
 The pre-login / onboarding flow.
 
-| Route | Status |
-| --- | --- |
-| `login.tsx` | Wired — exports `@/features/auth/Login` |
+| Route               | Status                                                       |
+| ------------------- | ------------------------------------------------------------ |
+| `login.tsx`         | Wired — exports `@/features/auth/Login`                      |
 | `business-type.tsx` | Placeholder — inline stub, not yet wired to a feature screen |
-| `onboarding.tsx` | Placeholder — inline stub, not yet wired to a feature screen |
+| `onboarding.tsx`    | Placeholder — inline stub, not yet wired to a feature screen |
 
 `login.tsx` follows the thin-route pattern:
 
@@ -112,16 +112,17 @@ export default function TabsLayout() {
 
 If you add a new tab, add both a `Tabs.Screen` entry here **and** a route-color mapping in `CustomTabBar` (see its README) — the two need to stay in sync.
 
-| Route | Status |
-| --- | --- |
-| `01-sales.tsx` | Wired — exports `@/features/sales/SalesScreen` |
-| `02-purchases.tsx` | Wired — exports `@/features/purchase/PurchaseScreen` |
-| `03-udharo.tsx` | Wired — exports `@/features/udharo/UdharoScreen` |
-| `04-dashboard.tsx` | Wired — exports `@/features/dashboard/DashboardScreen` |
-| `05-settings.tsx` | **Not thin** — renders inline UI instead of exporting `@/features/settings/SettingsScreen`, even though that screen already exists |
+| Route              | Status                                                                                                                             |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `01-sales.tsx`     | Wired — exports `@/features/sales/SalesScreen`                                                                                     |
+| `02-purchases.tsx` | Wired — exports `@/features/purchase/PurchaseScreen`                                                                               |
+| `03-udharo.tsx`    | Wired — exports `@/features/udharo/UdharoScreen`                                                                                   |
+| `04-dashboard.tsx` | Wired — exports `@/features/dashboard/DashboardScreen`                                                                             |
+| `05-settings.tsx`  | **Not thin** — renders inline UI instead of exporting `@/features/settings/SettingsScreen`, even though that screen already exists |
 
 > [!NOTE]
 > `05-settings.tsx` breaks Rule 7 today: `features/settings/SettingsScreen.tsx` already exists, but the route still renders its own inline `View`/`Text` instead of re-exporting it. When picking this up, replace the body with:
+>
 > ```ts
 > export { default } from "@/features/settings/SettingsScreen";
 > ```
