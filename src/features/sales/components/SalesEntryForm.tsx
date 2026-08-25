@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -12,21 +12,27 @@ import {
   View,
 } from "react-native";
 
-import { Dropdown, DropdownOption } from "@/shared/components/DatePicker/DropDown";
+import {
+  Dropdown,
+  DropdownOption,
+} from "@/shared/components/DatePicker/DropDown";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
 import { Colors_SalesPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
-import { formatCurrency } from "@/shared/utils/formatter";
 import { useCopy } from "@/shared/i18n";
+import { formatCurrency } from "@/shared/utils/formatter";
 
 import {
   useCreateSalesEntry,
   useSalesEntries,
   useSalesSummary,
 } from "../hooks/useSalesEntries";
-import { CreateSalesEntrySchema, CreateSalesEntryFormValues } from "../validation";
+import {
+  CreateSalesEntryFormValues,
+  CreateSalesEntrySchema,
+} from "../validation";
 
 const colors = Colors_SalesPage;
 
@@ -37,7 +43,11 @@ type SpeechRecognitionLike = {
   onstart: (() => void) | null;
   onend: (() => void) | null;
   onerror: (() => void) | null;
-  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onresult:
+    | ((event: {
+        results: ArrayLike<ArrayLike<{ transcript: string }>>;
+      }) => void)
+    | null;
   start: () => void;
   stop: () => void;
 };
@@ -122,7 +132,9 @@ export default function SalesEntryForm() {
     emptyProduct(),
   ]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [listeningProductId, setListeningProductId] = useState<string | null>(null);
+  const [listeningProductId, setListeningProductId] = useState<string | null>(
+    null,
+  );
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   useEffect(() => {
@@ -143,7 +155,9 @@ export default function SalesEntryForm() {
     const nextValue = Array.isArray(selected) ? selected[0] : selected;
     setProducts((prev) =>
       prev.map((p) =>
-        p.id === id ? { ...p, extraDetail: nextValue ?? null, extraValue: "" } : p,
+        p.id === id ?
+          { ...p, extraDetail: nextValue ?? null, extraValue: "" }
+        : p,
       ),
     );
   };
@@ -198,7 +212,10 @@ export default function SalesEntryForm() {
       browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition;
 
     if (!Recognition) {
-      Alert.alert("Voice input unavailable", "Try Chrome or Edge for microphone support.");
+      Alert.alert(
+        "Voice input unavailable",
+        "Try Chrome or Edge for microphone support.",
+      );
       return;
     }
 
@@ -225,17 +242,23 @@ export default function SalesEntryForm() {
         setListeningProductId(null);
         recognitionRef.current = null;
       }
-      Alert.alert("Voice input failed", "Please allow microphone access and try again.");
+      Alert.alert(
+        "Voice input failed",
+        "Please allow microphone access and try again.",
+      );
     };
     recognition.onresult = (event) => {
       const transcript = event.results[0]?.[0]?.transcript ?? "";
       const quantityMatch = transcript.match(/(?:quantity|qty)\s*([\d.]+)/i);
       const priceMatch = transcript.match(/price\s*(?:is|of)?\s*([\d.]+)/i);
-      const productMatch = transcript.match(/product\s*(?:is|called)?\s*([\w -]+?)(?=\s+price|\s+quantity|$)/i);
+      const productMatch = transcript.match(
+        /product\s*(?:is|called)?\s*([\w -]+?)(?=\s+price|\s+quantity|$)/i,
+      );
 
       if (quantityMatch) handleUpdateProduct(id, "quantity", quantityMatch[1]);
       if (priceMatch) handleUpdateProduct(id, "price", priceMatch[1]);
-      if (productMatch) handleUpdateProduct(id, "product", productMatch[1].trim());
+      if (productMatch)
+        handleUpdateProduct(id, "product", productMatch[1].trim());
       if (!quantityMatch && !priceMatch && !productMatch) {
         handleUpdateProduct(id, "product", transcript);
       }
@@ -253,16 +276,11 @@ export default function SalesEntryForm() {
         product: item.product,
         quantity: item.quantity || "0",
         price: item.price || "0",
-        amount:
-          (Number(item.quantity) || 0) * (Number(item.price) || 0),
-        extraDetail: item.extraDetail?.value
-          ? item.extraDetail.label
-          : null,
+        amount: (Number(item.quantity) || 0) * (Number(item.price) || 0),
+        extraDetail: item.extraDetail?.value ? item.extraDetail.label : null,
         extraValue: item.extraValue.trim() || null,
         color:
-          item.extraDetail?.value === "color"
-            ? item.selectedColor.label
-            : null,
+          item.extraDetail?.value === "color" ? item.selectedColor.label : null,
       });
 
       if (!parsed.success) {
@@ -307,8 +325,7 @@ export default function SalesEntryForm() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.content}
-      >
+        contentContainerStyle={styles.content}>
         <View style={styles.formCard}>
           <View style={styles.productHeaderRow}>
             <Text style={styles.extraTitle}>{t("Products")}</Text>
@@ -316,8 +333,7 @@ export default function SalesEntryForm() {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={handleAddProduct}
-              style={styles.addButton}
-            >
+              style={styles.addButton}>
               <MaterialCommunityIcons
                 name="plus"
                 size={20}
@@ -338,27 +354,26 @@ export default function SalesEntryForm() {
               styles.voiceButtonFull,
               listeningProductId === products[products.length - 1]?.id &&
                 styles.voiceButtonActive,
-            ]}
-          >
+            ]}>
             <MaterialCommunityIcons
               name={
-                listeningProductId === products[products.length - 1]?.id
-                  ? "stop-circle-outline"
-                  : "microphone-outline"
+                listeningProductId === products[products.length - 1]?.id ?
+                  "stop-circle-outline"
+                : "microphone-outline"
               }
               size={19}
               color={colors.primary}
             />
             <View>
               <Text style={styles.voiceTitle}>
-                {listeningProductId === products[products.length - 1]?.id
-                  ? t("Listening")
-                  : t("AI Voice")}
+                {listeningProductId === products[products.length - 1]?.id ?
+                  t("Listening")
+                : t("AI Voice")}
               </Text>
               <Text style={styles.voiceSubtitle}>
-                {listeningProductId === products[products.length - 1]?.id
-                  ? t("Speak now")
-                  : `${t("Fill with voice")} - ${t("Item")} ${products.length}`}
+                {listeningProductId === products[products.length - 1]?.id ?
+                  t("Speak now")
+                : `${t("Fill with voice")} - ${t("Item")} ${products.length}`}
               </Text>
             </View>
           </TouchableOpacity>
@@ -370,13 +385,14 @@ export default function SalesEntryForm() {
             return (
               <View key={p.id} style={styles.productCard}>
                 <View style={styles.productCardHeader}>
-                  <Text style={styles.inputLabel}>{t("Item")} {index + 1}</Text>
+                  <Text style={styles.inputLabel}>
+                    {t("Item")} {index + 1}
+                  </Text>
 
                   {products.length > 1 && (
                     <TouchableOpacity
                       activeOpacity={0.8}
-                      onPress={() => handleRemoveProduct(p.id)}
-                    >
+                      onPress={() => handleRemoveProduct(p.id)}>
                       <MaterialCommunityIcons
                         name="close-circle-outline"
                         size={22}
@@ -488,7 +504,6 @@ export default function SalesEntryForm() {
                         dropdownListStyle={styles.dropdownList}
                       />
                     </View>
-
                   </View>
                 </View>
 
@@ -501,7 +516,7 @@ export default function SalesEntryForm() {
                       <Text style={styles.optionalText}>Optional</Text>
                     </View>
 
-                    {isColor ? (
+                    {isColor ?
                       <View style={styles.colorSection}>
                         <Text style={styles.detailLabel}>Choose Color</Text>
 
@@ -524,8 +539,7 @@ export default function SalesEntryForm() {
                                   styles.colorCircle,
                                   { backgroundColor: color.value },
                                   selected && styles.selectedColor,
-                                ]}
-                              >
+                                ]}>
                                 {selected && (
                                   <MaterialCommunityIcons
                                     name="check"
@@ -550,13 +564,12 @@ export default function SalesEntryForm() {
                           </Text>
                         </View>
                       </View>
-                    ) : (
-                      <LabeledInput
+                    : <LabeledInput
                         label={p.extraDetail?.label || "Detail"}
                         placeholder={
-                          p.extraDetail?.label
-                            ? `Enter ${p.extraDetail.label.toLowerCase()}`
-                            : "Enter detail"
+                          p.extraDetail?.label ?
+                            `Enter ${p.extraDetail.label.toLowerCase()}`
+                          : "Enter detail"
                         }
                         value={p.extraValue}
                         onChangeText={(v) =>
@@ -574,7 +587,7 @@ export default function SalesEntryForm() {
                         inputStyle={styles.inputText}
                         inputContainerStyle={styles.inputContainer}
                       />
-                    )}
+                    }
                   </View>
                 )}
               </View>
@@ -604,8 +617,7 @@ export default function SalesEntryForm() {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={handleReset}
-              style={[styles.actionButton, styles.resetButton]}
-            >
+              style={[styles.actionButton, styles.resetButton]}>
               <MaterialCommunityIcons
                 name="refresh"
                 size={24}
@@ -618,12 +630,10 @@ export default function SalesEntryForm() {
               activeOpacity={0.8}
               onPress={handleSaveSale}
               disabled={createEntry.isPending}
-              style={[styles.actionButton, styles.saveButton]}
-            >
-              {createEntry.isPending ? (
+              style={[styles.actionButton, styles.saveButton]}>
+              {createEntry.isPending ?
                 <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <>
+              : <>
                   <MaterialCommunityIcons
                     name="content-save-outline"
                     size={24}
@@ -631,7 +641,7 @@ export default function SalesEntryForm() {
                   />
                   <Text style={styles.saveText}>{t("Save Sale")}</Text>
                 </>
-              )}
+              }
             </TouchableOpacity>
           </View>
 
@@ -650,7 +660,9 @@ export default function SalesEntryForm() {
           <View style={styles.summaryDivider} />
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>{t("Quantity")}</Text>
-            <Text style={styles.summaryValue}>{summary?.totalQuantity ?? 0}</Text>
+            <Text style={styles.summaryValue}>
+              {summary?.totalQuantity ?? 0}
+            </Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryItem}>
@@ -664,10 +676,9 @@ export default function SalesEntryForm() {
         <View style={styles.listSection}>
           <Text style={styles.listTitle}>{t("Recent sales")}</Text>
 
-          {isLoading ? (
+          {isLoading ?
             <ActivityIndicator color={colors.primary} style={styles.loader} />
-          ) : (
-            <View style={styles.listCard}>
+          : <View style={styles.listCard}>
               {entries.length === 0 && (
                 <Text style={styles.emptyText}>
                   No sales yet. Add your first sale above.
@@ -679,8 +690,7 @@ export default function SalesEntryForm() {
                   style={[
                     styles.entryRow,
                     index !== entries.length - 1 && styles.entryDivider,
-                  ]}
-                >
+                  ]}>
                   <View style={styles.entryIcon}>
                     <MaterialCommunityIcons
                       name="shopping-outline"
@@ -696,7 +706,10 @@ export default function SalesEntryForm() {
                         <View
                           style={[
                             styles.colorDot,
-                            { backgroundColor: COLOR_HEX[entry.color] ?? "#94A3B8" },
+                            {
+                              backgroundColor:
+                                COLOR_HEX[entry.color] ?? "#94A3B8",
+                            },
                           ]}
                         />
                       )}
@@ -713,7 +726,7 @@ export default function SalesEntryForm() {
                 </View>
               ))}
             </View>
-          )}
+          }
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -1244,4 +1257,3 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
 });
-
