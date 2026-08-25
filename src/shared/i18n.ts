@@ -8,8 +8,10 @@ const translations: Record<string, string> = {
   "Setting|सेटिङ": "Setting",
   "Add a new sale|नयाँ बिक्री थप्नुहोस्": "Add a new sale",
   "Add a new purchase|नयाँ खरिद थप्नुहोस्": "Add a new purchase",
-  "Track money owed to you|तपाईंलाई तिर्न बाँकी रकम ट्र्याक गर्नुहोस्": "Track money owed to you",
-  "Track what you buy for your shop|पसलका खरिदहरू ट्र्याक गर्नुहोस्": "Track what you buy for your shop",
+  "Track money owed to you|तपाईंलाई तिर्न बाँकी रकम ट्र्याक गर्नुहोस्":
+    "Track money owed to you",
+  "Track what you buy for your shop|पसलका खरिदहरू ट्र्याक गर्नुहोस्":
+    "Track what you buy for your shop",
   "Products|उत्पादनहरू": "Products",
   "Product|उत्पादन": "Product",
   "Quantity|परिमाण": "Quantity",
@@ -58,8 +60,10 @@ const translations: Record<string, string> = {
   "Select extra detail|थप विवरण छान्नुहोस्": "Select extra detail",
   "People|मानिस": "People",
   "Overdue|म्याद नाघेको": "Overdue",
-  "No purchases yet. Add your first entry above.|अहिलेसम्म खरिद छैन। माथि पहिलो प्रविष्टि थप्नुहोस्।": "No purchases yet. Add your first entry above.",
-  "No udharo entries yet. Add your first one above.|अहिलेसम्म उधारो प्रविष्टि छैन। माथि पहिलो थप्नुहोस्।": "No udharo entries yet. Add your first one above.",
+  "No purchases yet. Add your first entry above.|अहिलेसम्म खरिद छैन। माथि पहिलो प्रविष्टि थप्नुहोस्।":
+    "No purchases yet. Add your first entry above.",
+  "No udharo entries yet. Add your first one above.|अहिलेसम्म उधारो प्रविष्टि छैन। माथि पहिलो थप्नुहोस्।":
+    "No udharo entries yet. Add your first one above.",
   "Currently|हाल": "Currently",
   "on|चालु": "on",
   "off|बन्द": "off",
@@ -67,7 +71,9 @@ const translations: Record<string, string> = {
 
 export function translate(text: string, language: "en" | "np"): string {
   if (language === "en") return text;
-  const match = Object.entries(translations).find(([key]) => key.startsWith(`${text}|`));
+  const match = Object.entries(translations).find(([key]) =>
+    key.startsWith(`${text}|`),
+  );
   return match?.[0].split("|")[1] ?? text;
 }
 
