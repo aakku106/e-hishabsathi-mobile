@@ -15,10 +15,8 @@ export const useAuthStore = create<UserSession>((set) => ({
   username: null,
   isAuthenticated: false,
   isHydrated: false,
-  login: ({ pan, username }) =>
-    set({ pan, username, isAuthenticated: true }),
-  logout: () =>
-    set({ pan: null, username: null, isAuthenticated: false }),
+  login: ({ pan, username }) => set({ pan, username, isAuthenticated: true }),
+  logout: () => set({ pan: null, username: null, isAuthenticated: false }),
   hydrate: ({ pan, username }) =>
     set({
       pan,
