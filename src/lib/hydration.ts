@@ -16,10 +16,12 @@ export async function hydrateStores(): Promise<void> {
   ]);
 
   useAuthStore.getState().hydrate({ pan, username });
-  useSettingsStore.getState().hydrate(
-    themeMode === "dark" ? "dark" : "light",
-    language === "np" ? "np" : "en",
-  );
+  useSettingsStore
+    .getState()
+    .hydrate(
+      themeMode === "dark" ? "dark" : "light",
+      language === "np" ? "np" : "en",
+    );
 }
 
 export async function persistThemeMode(mode: ThemeMode): Promise<void> {

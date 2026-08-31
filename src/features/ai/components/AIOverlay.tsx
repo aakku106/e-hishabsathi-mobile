@@ -33,7 +33,11 @@ type SpeechRecognitionLike = {
   onstart: (() => void) | null;
   onend: (() => void) | null;
   onerror: (() => void) | null;
-  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onresult:
+    | ((event: {
+        results: ArrayLike<ArrayLike<{ transcript: string }>>;
+      }) => void)
+    | null;
   start: () => void;
   stop: () => void;
 };
@@ -87,22 +91,45 @@ export default function AIOverlay({
     if (!trimmedQuestion) return;
 
     const normalizedQuestion = trimmedQuestion.toLowerCase();
-    const asksAboutSales = /sale|sell|sold|revenue|income|बिक्री|बेचे|आम्दानी/.test(normalizedQuestion);
-    const asksAboutPurchases = /buy|buys|purchase|purchases|spend|bought|खरिद|किन|खर्च/.test(normalizedQuestion);
-    const asksAboutUdharo = /udharo|udhar|credit|owe|owed|debt|overdue|customer|उधारो|उधार|ऋण|ग्राहक/.test(normalizedQuestion);
-    const asksAboutInventory = /inventory|stock|product|products|item|items|इन्भेन्टरी|स्टक|उत्पादन|वस्तु/.test(normalizedQuestion);
-    const asksAboutProfit = /profit|earning|earnings|margin|नाफा|कमाइ/.test(normalizedQuestion);
-    const asksForOverview = /dashboard|summary|everything|all my|overall|ड्यासबोर्ड|सारांश|सबै/.test(normalizedQuestion);
-    let answer = "I can answer questions about your sales, purchases, Udhaaro, inventory, profit, and dashboard totals.";
+    const asksAboutSales =
+      /sale|sell|sold|revenue|income|बिक्री|बेचे|आम्दानी/.test(
+        normalizedQuestion,
+      );
+    const asksAboutPurchases =
+      /buy|buys|purchase|purchases|spend|bought|खरिद|किन|खर्च/.test(
+        normalizedQuestion,
+      );
+    const asksAboutUdharo =
+      /udharo|udhar|credit|owe|owed|debt|overdue|customer|उधारो|उधार|ऋण|ग्राहक/.test(
+        normalizedQuestion,
+      );
+    const asksAboutInventory =
+      /inventory|stock|product|products|item|items|इन्भेन्टरी|स्टक|उत्पादन|वस्तु/.test(
+        normalizedQuestion,
+      );
+    const asksAboutProfit = /profit|earning|earnings|margin|नाफा|कमाइ/.test(
+      normalizedQuestion,
+    );
+    const asksForOverview =
+      /dashboard|summary|everything|all my|overall|ड्यासबोर्ड|सारांश|सबै/.test(
+        normalizedQuestion,
+      );
+    let answer =
+      "I can answer questions about your sales, purchases, Udhaaro, inventory, profit, and dashboard totals.";
 
     if (asksForOverview) {
-      const profit = (salesSummary?.totalAmount ?? 0) - (purchaseSummary?.totalAmount ?? 0);
+      const profit =
+        (salesSummary?.totalAmount ?? 0) - (purchaseSummary?.totalAmount ?? 0);
       answer = `Overview: ${salesSummary?.entryCount ?? 0} sales worth Rs.${(salesSummary?.totalAmount ?? 0).toLocaleString("en-IN")}, ${purchaseSummary?.entryCount ?? 0} purchases worth Rs.${(purchaseSummary?.totalAmount ?? 0).toLocaleString("en-IN")}, ${udharoSummary?.entryCount ?? 0} Udhaaro records, and estimated profit of Rs.${profit.toLocaleString("en-IN")}.`;
     } else if (asksAboutProfit) {
-      const profit = (salesSummary?.totalAmount ?? 0) - (purchaseSummary?.totalAmount ?? 0);
+      const profit =
+        (salesSummary?.totalAmount ?? 0) - (purchaseSummary?.totalAmount ?? 0);
       answer = `Your estimated profit is Rs.${profit.toLocaleString("en-IN")}. This is sales total minus purchase total.`;
     } else if (asksAboutSales && (salesSummary?.entryCount ?? 0) === 0) {
-      answer = language === "np" ? "तपाईंले अहिलेसम्म केही बिक्री गर्नुभएको छैन।" : "You haven't sold anything yet.";
+      answer =
+        language === "np" ?
+          "तपाईंले अहिलेसम्म केही बिक्री गर्नुभएको छैन।"
+        : "You haven't sold anything yet.";
     } else if (asksAboutSales) {
       answer = `You have ${salesSummary?.entryCount ?? 0} sale${salesSummary?.entryCount === 1 ? "" : "s"}, totaling Rs.${(salesSummary?.totalAmount ?? 0).toLocaleString("en-IN")}.`;
     } else if (asksAboutPurchases && (purchaseSummary?.entryCount ?? 0) === 0) {
@@ -113,7 +140,10 @@ export default function AIOverlay({
       answer = "You don't have any Udhaaro records yet.";
     } else if (asksAboutUdharo) {
       answer = `You have ${udharoSummary?.entryCount ?? 0} Udhaaro record${udharoSummary?.entryCount === 1 ? "" : "s"} totaling Rs.${(udharoSummary?.totalAmount ?? 0).toLocaleString("en-IN")}. ${udharoSummary?.overdueCount ?? 0} ${udharoSummary?.overdueCount === 1 ? "is" : "are"} overdue.`;
-    } else if (asksAboutInventory && (productSummary?.productCount ?? 0) === 0) {
+    } else if (
+      asksAboutInventory &&
+      (productSummary?.productCount ?? 0) === 0
+    ) {
       answer = "You don't have any inventory products yet.";
     } else if (asksAboutInventory) {
       answer = `You have ${productSummary?.productCount ?? 0} product${productSummary?.productCount === 1 ? "" : "s"} with ${productSummary?.totalUnits ?? 0} units in stock. ${productSummary?.lowStockCount ?? 0} ${productSummary?.lowStockCount === 1 ? "product is" : "products are"} low on stock.`;
@@ -130,7 +160,10 @@ export default function AIOverlay({
 
   const handleVoiceInput = () => {
     if (Platform.OS !== "web") {
-      Alert.alert("Voice input unavailable", "Voice input is currently enabled in the web version.");
+      Alert.alert(
+        "Voice input unavailable",
+        "Voice input is currently enabled in the web version.",
+      );
       return;
     }
 
@@ -138,9 +171,13 @@ export default function AIOverlay({
       SpeechRecognition?: new () => SpeechRecognitionLike;
       webkitSpeechRecognition?: new () => SpeechRecognitionLike;
     };
-    const Recognition = browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition;
+    const Recognition =
+      browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition;
     if (!Recognition) {
-      Alert.alert("Voice input unavailable", "Try Chrome or Edge for microphone voice input.");
+      Alert.alert(
+        "Voice input unavailable",
+        "Try Chrome or Edge for microphone voice input.",
+      );
       return;
     }
     if (isListening) {
@@ -160,7 +197,10 @@ export default function AIOverlay({
     recognition.onerror = () => {
       setIsListening(false);
       recognitionRef.current = null;
-      Alert.alert("Voice input failed", "Please allow microphone access and try again.");
+      Alert.alert(
+        "Voice input failed",
+        "Please allow microphone access and try again.",
+      );
     };
     recognition.onresult = (event) => {
       setQuestion(event.results[0]?.[0]?.transcript ?? "");
@@ -218,29 +258,34 @@ export default function AIOverlay({
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
-      >
-      <View style={styles.inputRow}>
-        <TextInput
-          ref={inputRef}
-          placeholder="What would you like to know?"
-          style={styles.input}
-          placeholderTextColor="#9CA3AF"
-          value={question}
-          onChangeText={setQuestion}
-          onSubmitEditing={handleAsk}
-          returnKeyType="send"
-          editable
-          blurOnSubmit={false}
-          autoFocus
-        />
-        <TouchableOpacity style={[styles.micBtn, isListening && styles.micBtnActive]} onPress={handleVoiceInput}>
-          <MaterialCommunityIcons name={isListening ? "stop" : "microphone"} size={20} color="#111" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.sendBtn} onPress={handleAsk}>
-          <MaterialCommunityIcons name="arrow-up" size={18} color="#fff" />
-        </TouchableOpacity>
-      </View>
+        keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}>
+        <View style={styles.inputRow}>
+          <TextInput
+            ref={inputRef}
+            placeholder="What would you like to know?"
+            style={styles.input}
+            placeholderTextColor="#9CA3AF"
+            value={question}
+            onChangeText={setQuestion}
+            onSubmitEditing={handleAsk}
+            returnKeyType="send"
+            editable
+            blurOnSubmit={false}
+            autoFocus
+          />
+          <TouchableOpacity
+            style={[styles.micBtn, isListening && styles.micBtnActive]}
+            onPress={handleVoiceInput}>
+            <MaterialCommunityIcons
+              name={isListening ? "stop" : "microphone"}
+              size={20}
+              color="#111"
+            />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.sendBtn} onPress={handleAsk}>
+            <MaterialCommunityIcons name="arrow-up" size={18} color="#fff" />
+          </TouchableOpacity>
+        </View>
       </KeyboardAvoidingView>
     </Animated.View>
   );

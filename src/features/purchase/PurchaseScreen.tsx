@@ -39,7 +39,11 @@ type SpeechRecognitionLike = {
   onstart: (() => void) | null;
   onend: (() => void) | null;
   onerror: (() => void) | null;
-  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onresult:
+    | ((event: {
+        results: ArrayLike<ArrayLike<{ transcript: string }>>;
+      }) => void)
+    | null;
   start: () => void;
   stop: () => void;
 };
@@ -100,18 +104,24 @@ export default function PurchaseScreen() {
     recognition.onerror = () => {
       setIsListening(false);
       recognitionRef.current = null;
-      Alert.alert("Voice input failed", "Please allow microphone access and try again.");
+      Alert.alert(
+        "Voice input failed",
+        "Please allow microphone access and try again.",
+      );
     };
     recognition.onresult = (event) => {
       const transcript = event.results[0]?.[0]?.transcript ?? "";
       const quantityMatch = transcript.match(/(?:quantity|qty)\s*([\d.]+)/i);
       const priceMatch = transcript.match(/price\s*(?:is|of)?\s*([\d.]+)/i);
-      const productMatch = transcript.match(/product\s*(?:is|called)?\s*([\w -]+?)(?=\s+price|\s+quantity|$)/i);
+      const productMatch = transcript.match(
+        /product\s*(?:is|called)?\s*([\w -]+?)(?=\s+price|\s+quantity|$)/i,
+      );
 
       if (quantityMatch) setQuantity(quantityMatch[1]);
       if (priceMatch) setPrice(priceMatch[1]);
       if (productMatch) setProduct(productMatch[1].trim());
-      if (!quantityMatch && !priceMatch && !productMatch) setProduct(transcript);
+      if (!quantityMatch && !priceMatch && !productMatch)
+        setProduct(transcript);
     };
     recognitionRef.current = recognition;
     recognition.start();
@@ -122,7 +132,8 @@ export default function PurchaseScreen() {
       product,
       quantity: quantity || "0",
       price: price || "0",
-      amount: Number.parseFloat(quantity || "0") * Number.parseFloat(price || "0"),
+      amount:
+        Number.parseFloat(quantity || "0") * Number.parseFloat(price || "0"),
     });
 
     if (!parsed.success) {
@@ -149,14 +160,12 @@ export default function PurchaseScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+        behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
+          showsVerticalScrollIndicator={false}>
           <PageHeader
             title={t("Buy")}
             subtitle={t("Add a new purchase")}
@@ -168,52 +177,123 @@ export default function PurchaseScreen() {
             <View style={styles.sectionHeading}>
               <Text style={styles.sectionTitle}>{t("Products")}</Text>
               <Pressable style={styles.addProductButton}>
-                <MaterialCommunityIcons name="plus" size={24} color={colors.primary} />
+                <MaterialCommunityIcons
+                  name="plus"
+                  size={24}
+                  color={colors.primary}
+                />
                 <Text style={styles.addProductText}>{t("Add Product")}</Text>
               </Pressable>
             </View>
             <Pressable
-              style={[styles.voiceButton, styles.voiceButtonFull, isListening && styles.voiceButtonActive]}
-              onPress={handleVoiceInput}
-            >
+              style={[
+                styles.voiceButton,
+                styles.voiceButtonFull,
+                isListening && styles.voiceButtonActive,
+              ]}
+              onPress={handleVoiceInput}>
               <MaterialCommunityIcons
-                name={isListening ? "stop-circle-outline" : "microphone-outline"}
+                name={
+                  isListening ? "stop-circle-outline" : "microphone-outline"
+                }
                 size={20}
                 color={colors.primary}
               />
               <View>
-                <Text style={styles.voiceTitle}>{isListening ? t("Listening") : t("AI Voice")}</Text>
-                <Text style={styles.voiceSubtitle}>{isListening ? t("Speak now") : t("Fill with voice")}</Text>
+                <Text style={styles.voiceTitle}>
+                  {isListening ? t("Listening") : t("AI Voice")}
+                </Text>
+                <Text style={styles.voiceSubtitle}>
+                  {isListening ? t("Speak now") : t("Fill with voice")}
+                </Text>
               </View>
             </Pressable>
             <View style={styles.form}>
               <View style={styles.itemCard}>
                 <Text style={styles.itemTitle}>{t("Item 1")}</Text>
-                <PurchaseField label={t("Quantity")} placeholder={t("Enter Quantity")} value={quantity} onChangeText={setQuantity} keyboardType="number-pad" error={errors.quantity} />
-                <PurchaseField label={t("Product")} placeholder={t("Enter Product name")} value={product} onChangeText={setProduct} returnKeyType="next" error={errors.product} />
-                <PurchaseField label={t("Price")} placeholder={t("Enter Price")} value={price} onChangeText={setPrice} keyboardType="decimal-pad" returnKeyType="done" error={errors.price} />
-                <PurchaseField label={t("Supplier")} placeholder={t("Enter Supplier name")} value="" onChangeText={() => undefined} />
+                <PurchaseField
+                  label={t("Quantity")}
+                  placeholder={t("Enter Quantity")}
+                  value={quantity}
+                  onChangeText={setQuantity}
+                  keyboardType="number-pad"
+                  error={errors.quantity}
+                />
+                <PurchaseField
+                  label={t("Product")}
+                  placeholder={t("Enter Product name")}
+                  value={product}
+                  onChangeText={setProduct}
+                  returnKeyType="next"
+                  error={errors.product}
+                />
+                <PurchaseField
+                  label={t("Price")}
+                  placeholder={t("Enter Price")}
+                  value={price}
+                  onChangeText={setPrice}
+                  keyboardType="decimal-pad"
+                  returnKeyType="done"
+                  error={errors.price}
+                />
+                <PurchaseField
+                  label={t("Supplier")}
+                  placeholder={t("Enter Supplier name")}
+                  value=""
+                  onChangeText={() => undefined}
+                />
                 <Text style={styles.moreLabel}>{t("More")}</Text>
                 <View style={styles.moreRow}>
                   <View style={styles.selectField}>
-                    <Text style={styles.selectText}>{t("Select extra detail")}</Text>
-                    <MaterialCommunityIcons name="menu-down" size={27} color={colors.textPrimary} />
+                    <Text style={styles.selectText}>
+                      {t("Select extra detail")}
+                    </Text>
+                    <MaterialCommunityIcons
+                      name="menu-down"
+                      size={27}
+                      color={colors.textPrimary}
+                    />
                   </View>
                 </View>
               </View>
             </View>
 
             <View style={styles.totalCard}>
-              <View style={styles.totalIcon}><MaterialCommunityIcons name="receipt-text-outline" size={26} color={colors.primary} /></View>
+              <View style={styles.totalIcon}>
+                <MaterialCommunityIcons
+                  name="receipt-text-outline"
+                  size={26}
+                  color={colors.primary}
+                />
+              </View>
               <Text style={styles.totalLabel}>{t("Total Amount")}</Text>
-              <Text style={styles.totalValue}>{formatCurrency(currentAmount)}</Text>
+              <Text style={styles.totalValue}>
+                {formatCurrency(currentAmount)}
+              </Text>
             </View>
             <View style={styles.actions}>
-              <Pressable style={styles.resetButton} onPress={() => { setQuantity(""); setProduct(""); setPrice(""); setErrors({}); }}>
-                <MaterialCommunityIcons name="refresh" size={26} color={colors.primary} />
+              <Pressable
+                style={styles.resetButton}
+                onPress={() => {
+                  setQuantity("");
+                  setProduct("");
+                  setPrice("");
+                  setErrors({});
+                }}>
+                <MaterialCommunityIcons
+                  name="refresh"
+                  size={26}
+                  color={colors.primary}
+                />
                 <Text style={styles.resetText}>{t("Reset")}</Text>
               </Pressable>
-              <PrimaryButton style={styles.saveButton} title={t("Save Buy")} loading={createEntry.isPending} onPress={handleSubmit} gradient={[colors.primary, colors.primaryDeep]} />
+              <PrimaryButton
+                style={styles.saveButton}
+                title={t("Save Buy")}
+                loading={createEntry.isPending}
+                onPress={handleSubmit}
+                gradient={[colors.primary, colors.primaryDeep]}
+              />
             </View>
             {createEntry.isError && (
               <Text style={styles.errorText}>
@@ -223,17 +303,44 @@ export default function PurchaseScreen() {
           </View>
 
           <View style={styles.summaryCard}>
-            <SummaryMetric label="TOTAL BUYS" value={String(summary?.entryCount ?? 0)} icon="cart-outline" />
-            <SummaryMetric label="QUANTITY" value={String(summary?.totalQuantity ?? 0)} icon="briefcase-outline" />
-            <SummaryMetric label="TOTAL AMOUNT" value={formatCurrency(summary?.totalAmount ?? 0)} icon="currency-inr" accent />
-            <Text style={styles.monthText}>This Month (May)  <MaterialCommunityIcons name="calendar-month-outline" size={18} color={colors.primary} /></Text>
+            <SummaryMetric
+              label="TOTAL BUYS"
+              value={String(summary?.entryCount ?? 0)}
+              icon="cart-outline"
+            />
+            <SummaryMetric
+              label="QUANTITY"
+              value={String(summary?.totalQuantity ?? 0)}
+              icon="briefcase-outline"
+            />
+            <SummaryMetric
+              label="TOTAL AMOUNT"
+              value={formatCurrency(summary?.totalAmount ?? 0)}
+              icon="currency-inr"
+              accent
+            />
+            <Text style={styles.monthText}>
+              This Month (May){" "}
+              <MaterialCommunityIcons
+                name="calendar-month-outline"
+                size={18}
+                color={colors.primary}
+              />
+            </Text>
           </View>
 
           <View style={styles.listSection}>
-            <View style={styles.listHeading}><Text style={styles.listTitle}>{t("Recent Buys")}</Text><MaterialCommunityIcons name="chevron-right" size={28} color={colors.textPrimary} /></View>
-            {isLoading ? (
+            <View style={styles.listHeading}>
+              <Text style={styles.listTitle}>{t("Recent Buys")}</Text>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={28}
+                color={colors.textPrimary}
+              />
+            </View>
+            {isLoading ?
               <ActivityIndicator color={colors.primary} />
-            ) : entries.length === 0 ? (
+            : entries.length === 0 ?
               <View style={styles.emptyCard}>
                 <MaterialCommunityIcons
                   name="cart-outline"
@@ -244,16 +351,14 @@ export default function PurchaseScreen() {
                   No purchases yet. Add your first entry above.
                 </Text>
               </View>
-            ) : (
-              <View style={styles.listCard}>
+            : <View style={styles.listCard}>
                 {entries.map((entry, index) => (
                   <View
                     key={entry.id}
                     style={[
                       styles.entryRow,
                       index !== entries.length - 1 && styles.entryDivider,
-                    ]}
-                  >
+                    ]}>
                     <View style={styles.entryIcon}>
                       <MaterialCommunityIcons
                         name="package-variant-closed"
@@ -273,7 +378,7 @@ export default function PurchaseScreen() {
                   </View>
                 ))}
               </View>
-            )}
+            }
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -316,8 +421,12 @@ function SummaryMetric({
 }) {
   return (
     <View style={styles.metric}>
-      <Text style={[styles.metricLabel, accent && styles.accentText]}>{label}</Text>
-      <Text style={[styles.metricValue, accent && styles.accentText]}>{value}</Text>
+      <Text style={[styles.metricLabel, accent && styles.accentText]}>
+        {label}
+      </Text>
+      <Text style={[styles.metricValue, accent && styles.accentText]}>
+        {value}
+      </Text>
       <View style={styles.metricIcon}>
         <MaterialCommunityIcons name={icon} size={22} color={colors.primary} />
       </View>
@@ -359,12 +468,45 @@ const styles = StyleSheet.create({
   form: {
     gap: Spacing.md,
   },
-  sectionHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: Spacing.xs },
-  sectionTitle: { color: colors.textPrimary, fontSize: FontSize.xl, fontWeight: FontWeight.bold },
-  addProductButton: { flexDirection: "row", alignItems: "center", gap: Spacing.xs, borderWidth: 1.5, borderColor: colors.primary, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm },
-  addProductText: { color: colors.primary, fontSize: FontSize.md, fontWeight: FontWeight.bold },
-  itemCard: { borderWidth: 1, borderColor: colors.border, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.md },
-  itemTitle: { color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: FontWeight.bold, marginBottom: Spacing.xs },
+  sectionHeading: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Spacing.xs,
+  },
+  sectionTitle: {
+    color: colors.textPrimary,
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.bold,
+  },
+  addProductButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+  },
+  addProductText: {
+    color: colors.primary,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+  },
+  itemCard: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    gap: Spacing.md,
+  },
+  itemTitle: {
+    color: colors.textPrimary,
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    marginBottom: Spacing.xs,
+  },
   fieldInput: { flex: 1, gap: Spacing.xs },
   field: {
     gap: Spacing.xs,
@@ -391,30 +533,141 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
   },
-  moreLabel: { color: colors.textPrimary, fontSize: FontSize.md, fontWeight: FontWeight.bold, marginTop: Spacing.xs },
+  moreLabel: {
+    color: colors.textPrimary,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+    marginTop: Spacing.xs,
+  },
   moreRow: { flexDirection: "row", gap: Spacing.md, alignItems: "stretch" },
-  selectField: { flex: 1, minHeight: 58, borderWidth: 1, borderColor: colors.border, borderRadius: Radius.md, paddingHorizontal: Spacing.md, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  selectField: {
+    flex: 1,
+    minHeight: 58,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   selectText: { color: colors.textPrimary, fontSize: FontSize.md },
-  voiceButton: { flex: 0.72, minHeight: 58, borderWidth: 1.5, borderColor: colors.primary, borderRadius: Radius.md, paddingHorizontal: Spacing.sm, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: Spacing.xs },
+  voiceButton: {
+    flex: 0.72,
+    minHeight: 58,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.xs,
+  },
   voiceButtonFull: { flex: 0, width: "100%", marginBottom: Spacing.md },
   voiceButtonActive: { backgroundColor: colors.surfaceAlt },
-  voiceTitle: { color: colors.primary, fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  voiceTitle: {
+    color: colors.primary,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+  },
   voiceSubtitle: { color: colors.textMuted, fontSize: 10 },
-  totalCard: { minHeight: 86, borderRadius: Radius.md, backgroundColor: colors.surfaceAlt, flexDirection: "row", alignItems: "center", padding: Spacing.md, gap: Spacing.md },
-  totalIcon: { width: 56, height: 56, borderRadius: Radius.md, backgroundColor: colors.surface, alignItems: "center", justifyContent: "center" },
-  totalLabel: { flex: 1, color: colors.textPrimary, fontSize: FontSize.lg, fontWeight: FontWeight.bold },
-  totalValue: { color: colors.primaryDeep, fontSize: FontSize["2xl"], fontWeight: FontWeight.bold },
+  totalCard: {
+    minHeight: 86,
+    borderRadius: Radius.md,
+    backgroundColor: colors.surfaceAlt,
+    flexDirection: "row",
+    alignItems: "center",
+    padding: Spacing.md,
+    gap: Spacing.md,
+  },
+  totalIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: Radius.md,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  totalLabel: {
+    flex: 1,
+    color: colors.textPrimary,
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+  },
+  totalValue: {
+    color: colors.primaryDeep,
+    fontSize: FontSize["2xl"],
+    fontWeight: FontWeight.bold,
+  },
   actions: { flexDirection: "row", gap: Spacing.md, alignItems: "center" },
-  resetButton: { flex: 1, minHeight: 58, borderWidth: 1.5, borderColor: colors.primary, borderRadius: Radius.md, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: Spacing.sm },
+  resetButton: {
+    flex: 1,
+    minHeight: 58,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    borderRadius: Radius.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+  },
   saveButton: { flex: 1 },
-  resetText: { color: colors.primary, fontSize: FontSize.md, fontWeight: FontWeight.bold },
-  summaryCard: { marginTop: Spacing.lg, marginHorizontal: Spacing.md, padding: Spacing.lg, backgroundColor: colors.surface, borderRadius: Radius.lg, flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", shadowColor: "#0F172A", shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.04, shadowRadius: 14, elevation: 2 },
-  metric: { width: "31%", alignItems: "center", borderRightWidth: 1, borderRightColor: colors.border },
-  metricLabel: { color: colors.textMuted, fontSize: 11, fontWeight: FontWeight.bold, textAlign: "center" },
-  metricValue: { color: colors.textPrimary, fontSize: FontSize.xl, fontWeight: FontWeight.bold, marginVertical: Spacing.sm, textAlign: "center" },
-  metricIcon: { width: 44, height: 44, borderRadius: Radius.md, backgroundColor: colors.surfaceAlt, alignItems: "center", justifyContent: "center" },
+  resetText: {
+    color: colors.primary,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+  },
+  summaryCard: {
+    marginTop: Spacing.lg,
+    marginHorizontal: Spacing.md,
+    padding: Spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: Radius.lg,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.04,
+    shadowRadius: 14,
+    elevation: 2,
+  },
+  metric: {
+    width: "31%",
+    alignItems: "center",
+    borderRightWidth: 1,
+    borderRightColor: colors.border,
+  },
+  metricLabel: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: FontWeight.bold,
+    textAlign: "center",
+  },
+  metricValue: {
+    color: colors.textPrimary,
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.bold,
+    marginVertical: Spacing.sm,
+    textAlign: "center",
+  },
+  metricIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.md,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   accentText: { color: colors.primary },
-  monthText: { width: "100%", textAlign: "center", color: colors.primaryDeep, fontSize: FontSize.md, marginTop: Spacing.lg },
+  monthText: {
+    width: "100%",
+    textAlign: "center",
+    color: colors.primaryDeep,
+    fontSize: FontSize.md,
+    marginTop: Spacing.lg,
+  },
   listSection: {
     marginTop: Spacing["2xl"],
     marginHorizontal: Spacing.lg,
@@ -425,7 +678,11 @@ const styles = StyleSheet.create({
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
   },
-  listHeading: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  listHeading: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   listCard: {
     backgroundColor: colors.surface,
     borderRadius: Radius.lg,
