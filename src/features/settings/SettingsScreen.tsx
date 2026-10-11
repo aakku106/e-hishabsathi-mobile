@@ -19,12 +19,10 @@ import { useBusiness } from "@/features/business/hooks/useBusiness";
 import { useAuthStore } from "@/store/auth.store";
 import { useSettingsStore } from "@/store/settings.store";
 import { PageHeader } from "@/shared/components/Header/PageHeader";
-import { Colors_SettingsPage } from "@/shared/constants/colors";
+import { Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
-
-const colors = Colors_SettingsPage;
 
 const BUSINESS_TYPE_LABELS: Record<string, string> = {
   retail: "Retail",
@@ -39,7 +37,19 @@ const COPY = {
   np: { settings: "सेटिङहरू", subtitle: "आफ्नो पसल र प्राथमिकता व्यवस्थापन गर्नुहोस्", profile: "व्यवसाय प्रोफाइल", manage: "व्यवस्थापन", preferences: "प्राथमिकताहरू", general: "सामान्य", about: "बारेमा", inventory: "इन्भेन्टरी", products: "उत्पादन र स्टक", tax: "कर / VAT", vat: "मासिक VAT सारांश", dark: "डार्क मोड", currently: "हाल", currency: "मुद्रा", account: "खाता", notifications: "सूचनाहरू", language: "भाषा परिवर्तन", terms: "नियम तथा सर्तहरू", privacy: "गोपनीयता नीति", appName: "एपको नाम", version: "संस्करण", logout: "लगआउट", english: "English", nepali: "नेपाली" },
 } as const;
 
-function SettingsLink({ icon, label, value }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value?: string }) {
+function SettingsLink({
+  icon,
+  label,
+  value,
+  colors,
+  styles,
+}: {
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  label: string;
+  value?: string;
+  colors: typeof Colors_SettingsPage;
+  styles: ReturnType<typeof createStyles>;
+}) {
   return (
     <View style={styles.settingRow}>
       <View style={styles.rowLeading}>
@@ -56,6 +66,8 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { data: business } = useBusiness();
   const { themeMode, toggleTheme, currency, language, setLanguage } = useSettingsStore();
+  const colors = getThemedColors(Colors_SettingsPage, themeMode === "dark");
+  const styles = createStyles(colors);
   const copy = COPY[language];
   const logout = useAuthStore((state) => state.logout);
 
@@ -224,9 +236,9 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{copy.general}</Text>
           <View style={styles.card}>
-            <SettingsLink icon="account-outline" label={copy.account} value={business?.name ?? "-"} />
+            <SettingsLink icon="account-outline" label={copy.account} value={business?.name ?? "-"} colors={colors} styles={styles} />
             <View style={styles.rowDivider} />
-            <SettingsLink icon="bell-outline" label={copy.notifications} />
+            <SettingsLink icon="bell-outline" label={copy.notifications} colors={colors} styles={styles} />
             <View style={styles.rowDivider} />
             <Pressable style={styles.settingRow} onPress={handleLanguageChange}>
               <View style={styles.rowLeading}>
@@ -237,9 +249,9 @@ export default function SettingsScreen() {
               <MaterialCommunityIcons name="chevron-right" size={22} color={colors.textMuted} />
             </Pressable>
             <View style={styles.rowDivider} />
-            <SettingsLink icon="file-document-outline" label={copy.terms} />
+            <SettingsLink icon="file-document-outline" label={copy.terms} colors={colors} styles={styles} />
             <View style={styles.rowDivider} />
-            <SettingsLink icon="lock-outline" label={copy.privacy} />
+            <SettingsLink icon="lock-outline" label={copy.privacy} colors={colors} styles={styles} />
             <View style={styles.rowDivider} />
             <Pressable style={styles.settingRow} onPress={handleLogout}>
               <View style={styles.rowLeading}>
@@ -279,7 +291,8 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: typeof Colors_SettingsPage) {
+  return StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -447,4 +460,5 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
   },
-});
+  });
+}

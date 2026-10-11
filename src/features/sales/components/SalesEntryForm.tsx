@@ -14,12 +14,13 @@ import {
 
 import { Dropdown, DropdownOption } from "@/shared/components/DatePicker/DropDown";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
-import { Colors_SalesPage } from "@/shared/constants/colors";
+import { Colors_SalesPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { formatCurrency } from "@/shared/utils/formatter";
 import { useCopy } from "@/shared/i18n";
+import { useTheme } from "@/providers/ThemeProvider";
 
 import {
   useCreateSalesEntry,
@@ -27,8 +28,6 @@ import {
   useSalesSummary,
 } from "../hooks/useSalesEntries";
 import { CreateSalesEntrySchema, CreateSalesEntryFormValues } from "../validation";
-
-const colors = Colors_SalesPage;
 
 type SpeechRecognitionLike = {
   lang: string;
@@ -108,6 +107,9 @@ type ProductDraft = {
 
 export default function SalesEntryForm() {
   const { t, language } = useCopy();
+  const { isDark } = useTheme();
+  const colors = getThemedColors(Colors_SalesPage, isDark);
+  const styles = createStyles(colors);
   const emptyProduct = (): ProductDraft => ({
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     product: "",
@@ -327,42 +329,6 @@ export default function SalesEntryForm() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => {
-              const targetProduct = products[products.length - 1];
-              if (targetProduct) handleVoiceInput(targetProduct.id);
-            }}
-            style={[
-              styles.voiceButton,
-              styles.voiceButtonFull,
-              listeningProductId === products[products.length - 1]?.id &&
-                styles.voiceButtonActive,
-            ]}
-          >
-            <MaterialCommunityIcons
-              name={
-                listeningProductId === products[products.length - 1]?.id
-                  ? "stop-circle-outline"
-                  : "microphone-outline"
-              }
-              size={19}
-              color={colors.primary}
-            />
-            <View>
-              <Text style={styles.voiceTitle}>
-                {listeningProductId === products[products.length - 1]?.id
-                  ? t("Listening")
-                  : t("AI Voice")}
-              </Text>
-              <Text style={styles.voiceSubtitle}>
-                {listeningProductId === products[products.length - 1]?.id
-                  ? t("Speak now")
-                  : `${t("Fill with voice")} - ${t("Item")} ${products.length}`}
-              </Text>
-            </View>
-          </TouchableOpacity>
-
           {products.map((p, index) => {
             const hasExtraDetail = !!p.extraDetail?.value;
             const isColor = p.extraDetail?.value === "color";
@@ -488,6 +454,36 @@ export default function SalesEntryForm() {
                         dropdownListStyle={styles.dropdownList}
                       />
                     </View>
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => handleVoiceInput(p.id)}
+                      style={[
+                        styles.voiceButton,
+                        listeningProductId === p.id && styles.voiceButtonActive,
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name={
+                          listeningProductId === p.id
+                            ? "stop-circle-outline"
+                            : "microphone-outline"
+                        }
+                        size={19}
+                        color={colors.primary}
+                      />
+                      <View>
+                        <Text style={styles.voiceTitle}>
+                          {listeningProductId === p.id
+                            ? t("Listening")
+                            : t("AI Voice")}
+                        </Text>
+                        <Text style={styles.voiceSubtitle}>
+                          {listeningProductId === p.id
+                            ? t("Speak now")
+                            : t("Fill with voice")}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
 
                   </View>
                 </View>
@@ -720,7 +716,8 @@ export default function SalesEntryForm() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: typeof Colors_SalesPage) {
+  return StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -814,7 +811,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     borderWidth: BorderWidth.thin,
     borderColor: colors.border,
-    backgroundColor: "#F3FFF7",
+    backgroundColor: colors.surfaceAlt,
   },
 
   productCardHeader: {
@@ -901,12 +898,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: Spacing.xs,
-  },
-
-  voiceButtonFull: {
-    flex: 0,
-    width: "100%",
-    marginBottom: Spacing.md,
   },
 
   voiceButtonActive: {
@@ -1243,5 +1234,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xl,
     paddingHorizontal: Spacing.lg,
   },
-});
+  });
+}
 

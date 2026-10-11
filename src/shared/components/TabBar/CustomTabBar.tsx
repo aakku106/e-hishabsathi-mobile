@@ -3,6 +3,7 @@ import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { Colors_NavBar } from "@/shared/constants/colors";
+import { useTheme } from "@/providers/ThemeProvider";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Layout, Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
@@ -55,6 +56,8 @@ const ROUTE_ICON_ACTIVE_MAP: Record<
 
 export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
   const { t } = useCopy();
+  const { isDark } = useTheme();
+  const styles = createStyles(isDark);
   return (
     <View style={styles.outerContainer}>
       <View style={styles.navBar}>
@@ -70,7 +73,7 @@ export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
 
           const colorKey = ROUTE_COLOR_MAP[route.name];
           const activeColor = colorKey ? Colors_NavBar.selected[colorKey] : "#4F46E5";
-          const softColor = ROUTE_SOFT_MAP[route.name] ?? "#EEF2FF";
+          const softColor = isDark ? "#1A1A1A" : ROUTE_SOFT_MAP[route.name] ?? "#EEF2FF";
 
           const iconName: keyof typeof MaterialCommunityIcons.glyphMap =
             (isFocused
@@ -119,7 +122,8 @@ export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
   );
 };
 
-const styles = StyleSheet.create({
+function createStyles(isDark: boolean) {
+  return StyleSheet.create({
   outerContainer: {
     position: "absolute",
     bottom: Spacing.xl,
@@ -130,15 +134,16 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   navBar: {
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: Colors_NavBar.barBackground,
+    backgroundColor: isDark ? "#111111" : Colors_NavBar.barBackground,
     borderRadius: Radius.xl,
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xs,
     borderWidth: BorderWidth.thin,
-    borderColor: Colors_NavBar.barBorder,
+    borderColor: isDark ? "#333333" : Colors_NavBar.barBorder,
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.12,
@@ -162,12 +167,16 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: FontSize.xs,
+    lineHeight: 16,
     fontWeight: FontWeight.medium,
     textAlign: "center",
+    letterSpacing: 0.5,
+    flexShrink: 1,
   },
   labelActive: {
     fontWeight: FontWeight.semibold,
   },
-});
+  });
+}
 
 export default CustomTabBar;

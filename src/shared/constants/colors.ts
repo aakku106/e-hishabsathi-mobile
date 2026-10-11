@@ -16,6 +16,23 @@ type PageColors = {
   warning: string;
 };
 
+export function getThemedColors<T extends PageColors>(colors: T, isDark: boolean): T {
+  if (!isDark) return colors;
+
+  return {
+    ...colors,
+    background: "#000000",
+    surface: "#111111",
+    surfaceAlt: "#1A1A1A",
+    textPrimary: "#FFFFFF",
+    textSecondary: "#E5E5E5",
+    textMuted: "#A3A3A3",
+    border: "#333333",
+    inputBG: "#111111",
+    primarySoft: "#1A1A1A",
+  };
+}
+
 const basePage = {
   surface: "#FFFFFF",
   onPrimary: "#FFFFFF",

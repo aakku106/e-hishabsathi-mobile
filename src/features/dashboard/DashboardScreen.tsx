@@ -1,19 +1,16 @@
-import { SafeAreaView, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native";
 
-import { Colors_DashboardPage } from "@/shared/constants/colors";
+import { Colors_DashboardPage, getThemedColors } from "@/shared/constants/colors";
+import { useTheme } from "@/providers/ThemeProvider";
 import DashboardOverview from "./components/DashboardOverview";
 
 export default function DashboardScreen() {
+  const { isDark } = useTheme();
+  const colors = getThemedColors(Colors_DashboardPage, isDark);
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <DashboardOverview />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors_DashboardPage.background,
-  },
-});

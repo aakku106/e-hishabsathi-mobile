@@ -14,12 +14,13 @@ import {
 import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 import { PageHeader } from "@/shared/components/Header/PageHeader";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
-import { Colors_UdharoPage } from "@/shared/constants/colors";
+import { Colors_UdharoPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { formatCurrency } from "@/shared/utils/formatter";
 import { useCopy } from "@/shared/i18n";
+import { useTheme } from "@/providers/ThemeProvider";
 
 import {
   useCreateUdharoEntry,
@@ -27,8 +28,6 @@ import {
   useUdharoSummary,
 } from "../hooks/useUdharoEntries";
 import { CreateUdharoEntrySchema } from "../validation";
-
-const colors = Colors_UdharoPage;
 
 type SpeechRecognitionLike = {
   lang: string;
@@ -56,6 +55,9 @@ const STATUS_BADGE: Record<string, { bg: string; text: string }> = {
 
 export default function UdharoEntryForm() {
   const { t, language } = useCopy();
+  const { isDark } = useTheme();
+  const colors = getThemedColors(Colors_UdharoPage, isDark);
+  const styles = createStyles(colors);
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -165,20 +167,6 @@ export default function UdharoEntryForm() {
       />
 
       <View style={styles.formCard}>
-        <Pressable
-          style={[styles.voiceButton, styles.voiceButtonFull]}
-          onPress={handleVoiceInput}
-        >
-          <MaterialCommunityIcons
-            name={isListening ? "stop-circle-outline" : "microphone-outline"}
-            size={18}
-            color={colors.primary}
-          />
-          <Text style={styles.voiceText}>
-            {isListening ? t("Listening") : t("AI Voice")}
-          </Text>
-        </Pressable>
-
         <View style={styles.fieldGroup}>
           <View style={styles.inputBlock}>
             <LabeledInput
@@ -233,6 +221,16 @@ export default function UdharoEntryForm() {
                 size={22}
                 color={colors.primary}
               />
+            </Pressable>
+            <Pressable style={styles.voiceButton} onPress={handleVoiceInput}>
+              <MaterialCommunityIcons
+                name={isListening ? "stop-circle-outline" : "microphone-outline"}
+                size={18}
+                color={colors.primary}
+              />
+              <Text style={styles.voiceText}>
+                {isListening ? t("Listening") : t("AI Voice")}
+              </Text>
             </Pressable>
           </View>
           {showMore && (
@@ -335,7 +333,8 @@ export default function UdharoEntryForm() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: typeof Colors_UdharoPage) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -410,6 +409,7 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
   },
   voiceButton: {
+    flex: 1,
     minHeight: 38,
     borderWidth: 1,
     borderColor: colors.primary,
@@ -418,11 +418,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.xs,
-  },
-  voiceButtonFull: {
-    width: "100%",
-    justifyContent: "center",
-    marginBottom: Spacing.xs,
   },
   voiceText: {
     color: colors.primary,
@@ -552,4 +547,5 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xl,
     paddingHorizontal: Spacing.lg,
   },
-});
+  });
+}
