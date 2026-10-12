@@ -23,12 +23,10 @@ import { useBusiness } from "@/features/business/hooks/useBusiness";
 import { useAuthStore } from "@/store/auth.store";
 import { useSettingsStore } from "@/store/settings.store";
 import { PageHeader } from "@/shared/components/Header/PageHeader";
-import { Colors_SettingsPage } from "@/shared/constants/colors";
+import { Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
-
-const colors = Colors_SettingsPage;
 
 const BUSINESS_TYPE_LABELS: Record<string, string> = {
   retail: "Retail",
@@ -301,7 +299,7 @@ export default function SettingsScreen() {
               value={business?.name ?? "-"}
             />
             <View style={styles.rowDivider} />
-            <SettingsLink icon="bell-outline" label={copy.notifications} />
+            <SettingsLink icon="bell-outline" label={copy.notifications} colors={colors} styles={styles} />
             <View style={styles.rowDivider} />
             <Pressable style={styles.settingRow} onPress={handleLanguageChange}>
               <View style={styles.rowLeading}>
@@ -324,9 +322,9 @@ export default function SettingsScreen() {
               />
             </Pressable>
             <View style={styles.rowDivider} />
-            <SettingsLink icon="file-document-outline" label={copy.terms} />
+            <SettingsLink icon="file-document-outline" label={copy.terms} colors={colors} styles={styles} />
             <View style={styles.rowDivider} />
-            <SettingsLink icon="lock-outline" label={copy.privacy} />
+            <SettingsLink icon="lock-outline" label={copy.privacy} colors={colors} styles={styles} />
             <View style={styles.rowDivider} />
             <Pressable style={styles.settingRow} onPress={handleLogout}>
               <View style={styles.rowLeading}>
@@ -379,7 +377,8 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: typeof Colors_SettingsPage) {
+  return StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -547,4 +546,5 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
   },
-});
+  });
+}

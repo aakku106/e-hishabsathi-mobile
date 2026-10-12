@@ -16,12 +16,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 import { PageHeader } from "@/shared/components/Header/PageHeader";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
-import { Colors_PurchasesPage } from "@/shared/constants/colors";
+import { Colors_PurchasesPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { formatCurrency } from "@/shared/utils/formatter";
 import { useCopy } from "@/shared/i18n";
+import { useTheme } from "@/providers/ThemeProvider";
 
 import {
   useCreatePurchaseEntry,
@@ -29,8 +30,6 @@ import {
   usePurchaseSummary,
 } from "./hooks/usePurchaseEntries";
 import { CreatePurchaseEntrySchema } from "./validation";
-
-const colors = Colors_PurchasesPage;
 
 type SpeechRecognitionLike = {
   lang: string;
@@ -50,6 +49,9 @@ type SpeechRecognitionLike = {
 
 export default function PurchaseScreen() {
   const { t, language } = useCopy();
+  const { isDark } = useTheme();
+  const colors = getThemedColors(Colors_PurchasesPage, isDark);
+  const styles = createStyles(colors);
   const [quantity, setQuantity] = useState("");
   const [product, setProduct] = useState("");
   const [price, setPrice] = useState("");
@@ -254,6 +256,20 @@ export default function PurchaseScreen() {
                       color={colors.textPrimary}
                     />
                   </View>
+                  <Pressable
+                    style={[styles.voiceButton, isListening && styles.voiceButtonActive]}
+                    onPress={handleVoiceInput}
+                  >
+                    <MaterialCommunityIcons
+                      name={isListening ? "stop-circle-outline" : "microphone-outline"}
+                      size={20}
+                      color={colors.primary}
+                    />
+                    <View>
+                      <Text style={styles.voiceTitle}>{isListening ? t("Listening") : t("AI Voice")}</Text>
+                      <Text style={styles.voiceSubtitle}>{isListening ? t("Speak now") : t("Fill with voice")}</Text>
+                    </View>
+                  </Pressable>
                 </View>
               </View>
             </View>
@@ -391,6 +407,10 @@ type PurchaseFieldProps = React.ComponentProps<typeof LabeledInput> & {
 };
 
 function PurchaseField({ error, ...props }: PurchaseFieldProps) {
+  const { isDark } = useTheme();
+  const colors = getThemedColors(Colors_PurchasesPage, isDark);
+  const styles = createStyles(colors);
+
   return (
     <View style={styles.fieldInput}>
       <LabeledInput
@@ -419,6 +439,10 @@ function SummaryMetric({
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   accent?: boolean;
 }) {
+  const { isDark } = useTheme();
+  const colors = getThemedColors(Colors_PurchasesPage, isDark);
+  const styles = createStyles(colors);
+
   return (
     <View style={styles.metric}>
       <Text style={[styles.metricLabel, accent && styles.accentText]}>
@@ -434,7 +458,8 @@ function SummaryMetric({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: typeof Colors_PurchasesPage) {
+  return StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -743,4 +768,5 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     textAlign: "center",
   },
-});
+  });
+}

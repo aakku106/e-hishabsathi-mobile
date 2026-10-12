@@ -17,7 +17,7 @@ import {
   DropdownOption,
 } from "@/shared/components/DatePicker/DropDown";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
-import { Colors_SalesPage } from "@/shared/constants/colors";
+import { Colors_SalesPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
@@ -33,8 +33,6 @@ import {
   CreateSalesEntryFormValues,
   CreateSalesEntrySchema,
 } from "../validation";
-
-const colors = Colors_SalesPage;
 
 type SpeechRecognitionLike = {
   lang: string;
@@ -118,6 +116,9 @@ type ProductDraft = {
 
 export default function SalesEntryForm() {
   const { t, language } = useCopy();
+  const { isDark } = useTheme();
+  const colors = getThemedColors(Colors_SalesPage, isDark);
+  const styles = createStyles(colors);
   const emptyProduct = (): ProductDraft => ({
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     product: "",
@@ -733,7 +734,8 @@ export default function SalesEntryForm() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: typeof Colors_SalesPage) {
+  return StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -827,7 +829,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     borderWidth: BorderWidth.thin,
     borderColor: colors.border,
-    backgroundColor: "#F3FFF7",
+    backgroundColor: colors.surfaceAlt,
   },
 
   productCardHeader: {
@@ -914,12 +916,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: Spacing.xs,
-  },
-
-  voiceButtonFull: {
-    flex: 0,
-    width: "100%",
-    marginBottom: Spacing.md,
   },
 
   voiceButtonActive: {

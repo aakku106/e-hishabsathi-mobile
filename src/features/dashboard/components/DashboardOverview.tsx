@@ -11,7 +11,8 @@ import {
 } from "react-native";
 import Svg, { Circle, Line, Polygon, Polyline } from "react-native-svg";
 
-import { Colors_DashboardPage } from "@/shared/constants/colors";
+import { Colors_DashboardPage, getThemedColors } from "@/shared/constants/colors";
+import { useTheme } from "@/providers/ThemeProvider";
 import { Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
@@ -31,6 +32,9 @@ type ToggleProps = {
 };
 
 function Toggle({ active, left, right, leftLabel = left, rightLabel = right, onChange }: ToggleProps) {
+  const { isDark } = useTheme();
+  const colors = getThemedColors(Colors_DashboardPage, isDark);
+  const styles = createStyles(colors);
   const [progress] = useState(
     () => new Animated.Value(active === left ? 0 : 1),
   );
@@ -85,6 +89,9 @@ function Toggle({ active, left, right, leftLabel = left, rightLabel = right, onC
 
 export default function DashboardOverview() {
   const { t } = useCopy();
+  const { isDark } = useTheme();
+  const colors = getThemedColors(Colors_DashboardPage, isDark);
+  const styles = createStyles(colors);
   const [period, setPeriod] = useState<DashboardPeriod>("today");
   const [periodMenuOpen, setPeriodMenuOpen] = useState(false);
   const { stats, bars, trend } = useDashboardData(period);
@@ -125,13 +132,13 @@ export default function DashboardOverview() {
       <View style={styles.appHeader}>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.headerIconButton} accessibilityLabel="Open menu">
-            <MaterialCommunityIcons name="menu" size={28} color={Colors_DashboardPage.textPrimary} />
+            <MaterialCommunityIcons name="menu" size={28} color={colors.textPrimary} />
           </TouchableOpacity>
           <View style={styles.dashboardPill}>
             <Text style={styles.brandName}>{t("Dashboard")}</Text>
           </View>
           <TouchableOpacity style={styles.headerIconButton} accessibilityLabel="Open notifications">
-            <MaterialCommunityIcons name="bell-outline" size={27} color={Colors_DashboardPage.textPrimary} />
+            <MaterialCommunityIcons name="bell-outline" size={27} color={colors.textPrimary} />
             <View style={styles.notificationDot} />
           </TouchableOpacity>
         </View>
@@ -140,14 +147,14 @@ export default function DashboardOverview() {
       <View style={styles.todayRow}>
         <Pressable style={styles.periodSelector} onPress={() => setPeriodMenuOpen((open) => !open)}>
           <Text style={styles.todayText}>{t(period === "today" ? "Today" : period === "week" ? "This Week" : period === "month" ? "This Month" : "This Year")}</Text>
-          <MaterialCommunityIcons name={periodMenuOpen ? "chevron-up" : "chevron-down"} size={20} color={Colors_DashboardPage.textPrimary} />
+          <MaterialCommunityIcons name={periodMenuOpen ? "chevron-up" : "chevron-down"} size={20} color={colors.textPrimary} />
         </Pressable>
         {periodMenuOpen && (
           <View style={styles.periodMenu}>
             {(["today", "week", "month", "year"] as DashboardPeriod[]).map((option) => (
               <Pressable key={option} style={[styles.periodOption, period === option && styles.periodOptionActive]} onPress={() => { setPeriod(option); setPeriodMenuOpen(false); }}>
                 <Text style={[styles.periodOptionText, period === option && styles.periodOptionTextActive]}>{t(option === "today" ? "Today" : option === "week" ? "This Week" : option === "month" ? "This Month" : "This Year")}</Text>
-                {period === option && <MaterialCommunityIcons name="check" size={18} color={Colors_DashboardPage.greenPrimary} />}
+                {period === option && <MaterialCommunityIcons name="check" size={18} color={colors.greenPrimary} />}
               </Pressable>
             ))}
           </View>
@@ -268,11 +275,11 @@ export default function DashboardOverview() {
 
         <Animated.View style={[styles.trendChart, { opacity: trendFade }]}>
           <Svg width="100%" height="170" viewBox="0 0 700 170">
-            <Line x1="0" y1="28" x2="700" y2="28" stroke="#DDE8DF" strokeDasharray="5 5" />
-            <Line x1="0" y1="85" x2="700" y2="85" stroke="#DDE8DF" strokeDasharray="5 5" />
-            <Line x1="0" y1="142" x2="700" y2="142" stroke="#DDE8DF" strokeDasharray="5 5" />
-            <Polygon points="0,75 116,112 233,137 350,91 466,67 583,34 700,94 700,142 0,142" fill="#E4F3E6" />
-            <Polyline points="0,75 116,112 233,137 350,91 466,67 583,34 700,94" fill="none" stroke="#159447" strokeWidth="3" />
+            <Line x1="0" y1="28" x2="700" y2="28" stroke={colors.border} strokeDasharray="5 5" />
+            <Line x1="0" y1="85" x2="700" y2="85" stroke={colors.border} strokeDasharray="5 5" />
+            <Line x1="0" y1="142" x2="700" y2="142" stroke={colors.border} strokeDasharray="5 5" />
+            <Polygon points="0,75 116,112 233,137 350,91 466,67 583,34 700,94 700,142 0,142" fill={colors.surfaceAlt} />
+            <Polyline points="0,75 116,112 233,137 350,91 466,67 583,34 700,94" fill="none" stroke={colors.greenPrimary} strokeWidth="3" />
             {[{ x: 0, y: 75 }, { x: 116, y: 112 }, { x: 233, y: 137 }, { x: 350, y: 91 }, { x: 466, y: 67 }, { x: 583, y: 34 }, { x: 700, y: 94 }].map((point) => (
               <Circle key={`${point.x}-${point.y}`} cx={point.x} cy={point.y} r="6" fill="#159447" stroke="#FFFFFF" strokeWidth="2" />
             ))}
@@ -307,14 +314,15 @@ export default function DashboardOverview() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: typeof Colors_DashboardPage) {
+  return StyleSheet.create({
   screen: {
     flex: 1,
     position: "relative",
   },
   container: {
     flex: 1,
-    backgroundColor: Colors_DashboardPage.background,
+    backgroundColor: colors.background,
   },
   content: {
     flexGrow: 1,
@@ -327,7 +335,7 @@ const styles = StyleSheet.create({
     width: 58,
     height: 58,
     borderRadius: 29,
-    backgroundColor: Colors_DashboardPage.greenPrimary,
+    backgroundColor: colors.greenPrimary,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#0F172A",
@@ -344,7 +352,7 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   appHeader: {
-    backgroundColor: Colors_DashboardPage.surface,
+    backgroundColor: colors.surface,
     paddingHorizontal: Spacing.md,
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.sm,
@@ -361,7 +369,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   brandName: {
-    color: Colors_DashboardPage.greenPrimary,
+    color: colors.greenPrimary,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
     textAlign: "center",
@@ -371,7 +379,7 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.lg,
     minHeight: 58,
     borderRadius: Radius.pill,
-    backgroundColor: "#EAF8EC",
+    backgroundColor: colors.surfaceAlt,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -382,7 +390,7 @@ const styles = StyleSheet.create({
     width: 9,
     height: 9,
     borderRadius: 5,
-    backgroundColor: Colors_DashboardPage.greenPrimary,
+    backgroundColor: colors.greenPrimary,
   },
   periodRow: {
     marginTop: Spacing.sm,
@@ -395,15 +403,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     borderRadius: Radius.pill,
     borderWidth: 1,
-    borderColor: "#CDECCF",
-    backgroundColor: "#EAF8EC",
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: Spacing.sm,
   },
   periodText: {
-    color: Colors_DashboardPage.greenPrimary,
+    color: colors.greenPrimary,
     fontSize: FontSize.md,
     fontWeight: FontWeight.semibold,
   },
@@ -417,13 +425,13 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   periodSelector: { flexDirection: "row", alignItems: "center", gap: Spacing.xs, paddingVertical: Spacing.xs },
-  periodMenu: { position: "absolute", top: 38, left: 0, minWidth: 150, padding: Spacing.xs, backgroundColor: Colors_DashboardPage.surface, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors_DashboardPage.border, shadowColor: "#0F172A", shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 6 },
+  periodMenu: { position: "absolute", top: 38, left: 0, minWidth: 150, padding: Spacing.xs, backgroundColor: colors.surface, borderRadius: Radius.md, borderWidth: 1, borderColor: colors.border, shadowColor: "#0F172A", shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 6 },
   periodOption: { minHeight: 40, paddingHorizontal: Spacing.sm, borderRadius: Radius.sm, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  periodOptionActive: { backgroundColor: "#EAF8EC" },
-  periodOptionText: { color: Colors_DashboardPage.textPrimary, fontSize: FontSize.sm },
-  periodOptionTextActive: { color: Colors_DashboardPage.greenPrimary, fontWeight: FontWeight.bold },
+  periodOptionActive: { backgroundColor: colors.surfaceAlt },
+  periodOptionText: { color: colors.textPrimary, fontSize: FontSize.sm },
+  periodOptionTextActive: { color: colors.greenPrimary, fontWeight: FontWeight.bold },
   todayText: {
-    color: Colors_DashboardPage.textPrimary,
+    color: colors.textPrimary,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
   },
@@ -448,12 +456,12 @@ const styles = StyleSheet.create({
     minHeight: 116,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors_DashboardPage.surface,
+    backgroundColor: colors.surface,
     borderRadius: Radius.xl,
     padding: Spacing.lg,
     gap: Spacing.xs,
     borderWidth: 1,
-    borderColor: "#F0F2F1",
+    borderColor: colors.border,
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.04,
@@ -473,12 +481,12 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   statLabel: {
-    color: Colors_DashboardPage.textMuted,
+    color: colors.textMuted,
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
   },
   statValue: {
-    color: Colors_DashboardPage.textPrimary,
+    color: colors.textPrimary,
     fontSize: FontSize["2xl"],
     fontWeight: FontWeight.bold,
     letterSpacing: 0,
@@ -490,25 +498,25 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   changeBadgeUp: {
-    backgroundColor: "#D1FAE5",
+    backgroundColor: colors.surfaceAlt,
   },
   changeBadgeDown: {
-    backgroundColor: "#FEE2E2",
+    backgroundColor: colors.surfaceAlt,
   },
   changeText: {
     fontSize: FontSize.xs,
     fontWeight: FontWeight.bold,
   },
   changeTextUp: {
-    color: Colors_DashboardPage.greenPrimary,
+    color: colors.greenPrimary,
   },
   changeTextDown: {
-    color: Colors_DashboardPage.redPrimary,
+    color: colors.redPrimary,
   },
   chartCard: {
     marginTop: Spacing["2xl"],
     marginHorizontal: Spacing.lg,
-    backgroundColor: Colors_DashboardPage.surface,
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: "#E7ECE8",
     paddingTop: Spacing.lg,
@@ -520,7 +528,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   chartTitle: {
-    color: Colors_DashboardPage.textPrimary,
+    color: colors.textPrimary,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
   },
@@ -528,7 +536,7 @@ const styles = StyleSheet.create({
     width: 124,
     height: 34,
     borderRadius: Radius.pill,
-    backgroundColor: Colors_DashboardPage.surfaceAlt,
+    backgroundColor: colors.surfaceAlt,
     flexDirection: "row",
     alignItems: "center",
     overflow: "hidden",
@@ -545,7 +553,7 @@ const styles = StyleSheet.create({
     bottom: 3,
     left: 3,
     borderRadius: Radius.pill,
-    backgroundColor: Colors_DashboardPage.surface,
+    backgroundColor: colors.surface,
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
@@ -556,11 +564,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
-    color: Colors_DashboardPage.textMuted,
+    color: colors.textMuted,
     zIndex: 1,
   },
   toggleLabelActive: {
-    color: Colors_DashboardPage.textPrimary,
+    color: colors.textPrimary,
     fontWeight: FontWeight.semibold,
   },
   barChartWrap: {
@@ -576,7 +584,7 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   axisLabel: {
-    color: Colors_DashboardPage.textMuted,
+    color: colors.textMuted,
     fontSize: FontSize.xs,
     fontWeight: FontWeight.medium,
   },
@@ -597,18 +605,18 @@ const styles = StyleSheet.create({
   bar: {
     width: 18,
     borderRadius: Radius.pill,
-    backgroundColor: Colors_DashboardPage.primary,
+    backgroundColor: colors.primary,
     minHeight: 6,
   },
   barLabel: {
-    color: Colors_DashboardPage.textMuted,
+    color: colors.textMuted,
     fontSize: FontSize.xs,
     fontWeight: FontWeight.medium,
   },
   trendCard: {
     marginTop: Spacing.lg,
     marginHorizontal: Spacing.lg,
-    backgroundColor: Colors_DashboardPage.surface,
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: "#E7ECE8",
     paddingTop: Spacing.lg,
@@ -632,10 +640,10 @@ const styles = StyleSheet.create({
   trendDot: {
     width: 32,
     borderRadius: Radius.pill,
-    backgroundColor: Colors_DashboardPage.primarySoft,
+    backgroundColor: colors.primarySoft,
   },
   trendLabel: {
-    color: Colors_DashboardPage.textMuted,
+    color: colors.textMuted,
     fontSize: FontSize.xs,
     fontWeight: FontWeight.medium,
     textAlign: "center",
@@ -653,13 +661,14 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
   },
   trendValueLabel: {
-    color: Colors_DashboardPage.textMuted,
+    color: colors.textMuted,
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
   },
   trendValueText: {
-    color: Colors_DashboardPage.textPrimary,
+    color: colors.textPrimary,
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
   },
-});
+  });
+}
