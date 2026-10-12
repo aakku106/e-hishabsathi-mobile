@@ -36,7 +36,11 @@ type SpeechRecognitionLike = {
   onstart: (() => void) | null;
   onend: (() => void) | null;
   onerror: (() => void) | null;
-  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
+  onresult:
+    | ((event: {
+        results: ArrayLike<ArrayLike<{ transcript: string }>>;
+      }) => void)
+    | null;
   start: () => void;
   stop: () => void;
 };
@@ -73,7 +77,10 @@ export default function UdharoEntryForm() {
 
   const handleVoiceInput = () => {
     if (Platform.OS !== "web") {
-      Alert.alert("Voice input unavailable", "Voice input is currently enabled in the web version.");
+      Alert.alert(
+        "Voice input unavailable",
+        "Voice input is currently enabled in the web version.",
+      );
       return;
     }
 
@@ -81,9 +88,13 @@ export default function UdharoEntryForm() {
       SpeechRecognition?: new () => SpeechRecognitionLike;
       webkitSpeechRecognition?: new () => SpeechRecognitionLike;
     };
-    const Recognition = browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition;
+    const Recognition =
+      browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition;
     if (!Recognition) {
-      Alert.alert("Voice input unavailable", "Try Chrome or Edge for microphone voice input.");
+      Alert.alert(
+        "Voice input unavailable",
+        "Try Chrome or Edge for microphone voice input.",
+      );
       return;
     }
     if (isListening) {
@@ -103,20 +114,32 @@ export default function UdharoEntryForm() {
     recognition.onerror = () => {
       setIsListening(false);
       recognitionRef.current = null;
-      Alert.alert("Voice input failed", "Please allow microphone access and try again.");
+      Alert.alert(
+        "Voice input failed",
+        "Please allow microphone access and try again.",
+      );
     };
     recognition.onresult = (event) => {
       const transcript = event.results[0]?.[0]?.transcript ?? "";
-      const amountMatch = transcript.match(/(?:amount|money|rupees|rs)\s*(?:is|of)?\s*([\d.]+)/i);
-      const phoneMatch = transcript.match(/(?:phone|mobile|number)\s*(?:is)?\s*([\d -]{7,})/i);
-      const dateMatch = transcript.match(/(?:due date|date)\s*(?:is|on)?\s*([\d/-]+)/i);
-      const nameMatch = transcript.match(/(?:name|customer)\s*(?:is|called)?\s*([\w ]+?)(?=\s+(?:amount|phone|mobile|due date|date)|$)/i);
+      const amountMatch = transcript.match(
+        /(?:amount|money|rupees|rs)\s*(?:is|of)?\s*([\d.]+)/i,
+      );
+      const phoneMatch = transcript.match(
+        /(?:phone|mobile|number)\s*(?:is)?\s*([\d -]{7,})/i,
+      );
+      const dateMatch = transcript.match(
+        /(?:due date|date)\s*(?:is|on)?\s*([\d/-]+)/i,
+      );
+      const nameMatch = transcript.match(
+        /(?:name|customer)\s*(?:is|called)?\s*([\w ]+?)(?=\s+(?:amount|phone|mobile|due date|date)|$)/i,
+      );
 
       if (amountMatch) setAmount(amountMatch[1]);
       if (phoneMatch) setPhoneNumber(phoneMatch[1].replace(/\D/g, ""));
       if (dateMatch) setDueDate(dateMatch[1]);
       if (nameMatch) setName(nameMatch[1].trim());
-      if (!amountMatch && !phoneMatch && !dateMatch && !nameMatch) setName(transcript);
+      if (!amountMatch && !phoneMatch && !dateMatch && !nameMatch)
+        setName(transcript);
       setShowMore(Boolean(phoneMatch || dateMatch));
     };
     recognitionRef.current = recognition;
@@ -157,8 +180,7 @@ export default function UdharoEntryForm() {
       style={styles.container}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
+      keyboardShouldPersistTaps="handled">
       <PageHeader
         title={t("Udharo")}
         subtitle={t("Track money owed to you")}
@@ -167,6 +189,19 @@ export default function UdharoEntryForm() {
       />
 
       <View style={styles.formCard}>
+        <Pressable
+          style={[styles.voiceButton, styles.voiceButtonFull]}
+          onPress={handleVoiceInput}>
+          <MaterialCommunityIcons
+            name={isListening ? "stop-circle-outline" : "microphone-outline"}
+            size={18}
+            color={colors.primary}
+          />
+          <Text style={styles.voiceText}>
+            {isListening ? t("Listening") : t("AI Voice")}
+          </Text>
+        </Pressable>
+
         <View style={styles.fieldGroup}>
           <View style={styles.inputBlock}>
             <LabeledInput
@@ -213,8 +248,7 @@ export default function UdharoEntryForm() {
           <View style={styles.moreHeader}>
             <Pressable
               style={styles.moreToggle}
-              onPress={() => setShowMore((value) => !value)}
-            >
+              onPress={() => setShowMore((value) => !value)}>
               <Text style={styles.moreTitle}>{t("More")}</Text>
               <MaterialCommunityIcons
                 name={showMore ? "chevron-up" : "chevron-down"}
@@ -236,10 +270,35 @@ export default function UdharoEntryForm() {
           {showMore && (
             <View style={styles.moreFields}>
               <View style={styles.inputBlock}>
-                <LabeledInput label={t("Phone Number")} placeholder={t("Enter phone number")} value={phoneNumber} onChangeText={setPhoneNumber} keyboardType="phone-pad" labelColor={colors.textPrimary} inputBgColor={colors.inputBG} borderColor={colors.border} placeholderColor={colors.textMuted} labelStyle={styles.inputLabel} inputStyle={styles.inputText} inputContainerStyle={styles.inputContainer} />
+                <LabeledInput
+                  label={t("Phone Number")}
+                  placeholder={t("Enter phone number")}
+                  value={phoneNumber}
+                  onChangeText={setPhoneNumber}
+                  keyboardType="phone-pad"
+                  labelColor={colors.textPrimary}
+                  inputBgColor={colors.inputBG}
+                  borderColor={colors.border}
+                  placeholderColor={colors.textMuted}
+                  labelStyle={styles.inputLabel}
+                  inputStyle={styles.inputText}
+                  inputContainerStyle={styles.inputContainer}
+                />
               </View>
               <View style={styles.inputBlock}>
-                <LabeledInput label={t("Due Date")} placeholder="YYYY-MM-DD" value={dueDate} onChangeText={setDueDate} labelColor={colors.textPrimary} inputBgColor={colors.inputBG} borderColor={colors.border} placeholderColor={colors.textMuted} labelStyle={styles.inputLabel} inputStyle={styles.inputText} inputContainerStyle={styles.inputContainer} />
+                <LabeledInput
+                  label={t("Due Date")}
+                  placeholder="YYYY-MM-DD"
+                  value={dueDate}
+                  onChangeText={setDueDate}
+                  labelColor={colors.textPrimary}
+                  inputBgColor={colors.inputBG}
+                  borderColor={colors.border}
+                  placeholderColor={colors.textMuted}
+                  labelStyle={styles.inputLabel}
+                  inputStyle={styles.inputText}
+                  inputContainerStyle={styles.inputContainer}
+                />
               </View>
             </View>
           )}
@@ -280,10 +339,9 @@ export default function UdharoEntryForm() {
       <View style={styles.listSection}>
         <Text style={styles.sectionTitle}>{t("Recent udharo")}</Text>
 
-        {isLoading ? (
+        {isLoading ?
           <ActivityIndicator color={colors.primary} />
-        ) : (
-          <View style={styles.listCard}>
+        : <View style={styles.listCard}>
             {udharoEntries.length === 0 && (
               <Text style={styles.emptyText}>
                 No udharo entries yet. Add your first one above.
@@ -297,8 +355,7 @@ export default function UdharoEntryForm() {
                   style={[
                     styles.entryRow,
                     index !== udharoEntries.length - 1 && styles.entryDivider,
-                  ]}
-                >
+                  ]}>
                   <View style={styles.entryIcon}>
                     <MaterialCommunityIcons
                       name="account-outline"
@@ -310,8 +367,13 @@ export default function UdharoEntryForm() {
                   <View style={styles.entryContent}>
                     <Text style={styles.entryName}>{entry.name}</Text>
                     <View style={styles.statusBadgeWrap}>
-                      <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
-                        <Text style={[styles.statusText, { color: badge.text }]}>
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          { backgroundColor: badge.bg },
+                        ]}>
+                        <Text
+                          style={[styles.statusText, { color: badge.text }]}>
                           {STATUS_LABELS[entry.status] ?? "On track"}
                         </Text>
                       </View>
@@ -327,7 +389,7 @@ export default function UdharoEntryForm() {
               );
             })}
           </View>
-        )}
+        }
       </View>
     </ScrollView>
   );

@@ -14,9 +14,7 @@ export const CreateSalesEntrySchema = z.object({
   color: z.string().trim().optional().nullable(),
 });
 
-export type CreateSalesEntryFormValues = z.infer<
-  typeof CreateSalesEntrySchema
->;
+export type CreateSalesEntryFormValues = z.infer<typeof CreateSalesEntrySchema>;
 
 export function parseSalesEntryInput(input: CreateSalesEntryFormValues) {
   return CreateSalesEntrySchema.parse(input);

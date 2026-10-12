@@ -14,5 +14,8 @@ export function formatCurrencyAmount(
 }
 
 export function sumAmounts(values: number[]): number {
-  return values.reduce((sum, value) => sum + (Number.isFinite(value) ? value : 0), 0);
+  return values.reduce(
+    (sum, value) => sum + (Number.isFinite(value) ? value : 0),
+    0,
+  );
 }
