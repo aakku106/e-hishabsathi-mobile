@@ -1,7 +1,11 @@
 import type { SQLiteDatabase } from "expo-sqlite";
 import React, { PropsWithChildren, useEffect, useState } from "react";
 
-import { closeDatabase, initDatabase } from "@/lib/sqlite";
+import {
+  closeDatabase,
+  DatabaseLockedError,
+  initDatabase,
+} from "@/lib/sqlite";
 import { logger } from "@/shared/utils/logger";
 import {
   SQLiteContext,
@@ -29,7 +33,12 @@ export const SQLiteProvider: React.FC<PropsWithChildren> = ({ children }) => {
         setValue({ db, ready: true, error: null });
       })
       .catch((error: Error) => {
-        logger.error("Failed to initialize database", error);
+        if (error instanceof DatabaseLockedError) {
+          // Expected on web when the app is open in more than one tab.
+          logger.warn(error.message);
+        } else {
+          logger.error("Failed to initialize database", error);
+        }
         if (!mounted) return;
         setValue({ db: null, ready: true, error });
       });

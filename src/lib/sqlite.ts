@@ -1,1 +1,6 @@
-export { getDatabase, initDatabase, closeDatabase } from "@/database/sqlite";
+export {
+  DatabaseLockedError,
+  getDatabase,
+  initDatabase,
+  closeDatabase,
+} from "@/database/sqlite";
