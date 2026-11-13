@@ -20,6 +20,7 @@ import {
 } from "@/database/helpers/settings";
 import { persistThemeMode } from "@/lib/hydration";
 import { useBusiness } from "@/features/business/hooks/useBusiness";
+import { useTheme } from "@/providers/ThemeProvider";
 import { useAuthStore } from "@/store/auth.store";
 import { useSettingsStore } from "@/store/settings.store";
 import { PageHeader } from "@/shared/components/Header/PageHeader";
@@ -91,15 +92,21 @@ const COPY = {
   },
 } as const;
 
+type SettingsLinkProps = {
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  label: string;
+  value?: string;
+  colors: typeof Colors_SettingsPage;
+  styles: ReturnType<typeof createStyles>;
+};
+
 function SettingsLink({
   icon,
   label,
   value,
-}: {
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
-  label: string;
-  value?: string;
-}) {
+  colors,
+  styles,
+}: SettingsLinkProps) {
   return (
     <View style={styles.settingRow}>
       <View style={styles.rowLeading}>
@@ -128,6 +135,9 @@ export default function SettingsScreen() {
   const { themeMode, toggleTheme, currency, language, setLanguage } =
     useSettingsStore();
   const copy = COPY[language];
+  const { isDark } = useTheme();
+  const colors = getThemedColors(Colors_SettingsPage, isDark);
+  const styles = createStyles(colors);
   const logout = useAuthStore((state) => state.logout);
 
   const handleLogout = () => {
@@ -297,9 +307,16 @@ export default function SettingsScreen() {
               icon="account-outline"
               label={copy.account}
               value={business?.name ?? "-"}
+              colors={colors}
+              styles={styles}
             />
             <View style={styles.rowDivider} />
-            <SettingsLink icon="bell-outline" label={copy.notifications} colors={colors} styles={styles} />
+            <SettingsLink
+              icon="bell-outline"
+              label={copy.notifications}
+              colors={colors}
+              styles={styles}
+            />
             <View style={styles.rowDivider} />
             <Pressable style={styles.settingRow} onPress={handleLanguageChange}>
               <View style={styles.rowLeading}>
@@ -322,9 +339,19 @@ export default function SettingsScreen() {
               />
             </Pressable>
             <View style={styles.rowDivider} />
-            <SettingsLink icon="file-document-outline" label={copy.terms} colors={colors} styles={styles} />
+            <SettingsLink
+              icon="file-document-outline"
+              label={copy.terms}
+              colors={colors}
+              styles={styles}
+            />
             <View style={styles.rowDivider} />
-            <SettingsLink icon="lock-outline" label={copy.privacy} colors={colors} styles={styles} />
+            <SettingsLink
+              icon="lock-outline"
+              label={copy.privacy}
+              colors={colors}
+              styles={styles}
+            />
             <View style={styles.rowDivider} />
             <Pressable style={styles.settingRow} onPress={handleLogout}>
               <View style={styles.rowLeading}>
