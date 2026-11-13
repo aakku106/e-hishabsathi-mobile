@@ -45,7 +45,7 @@ export const SQLiteProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
     return () => {
       mounted = false;
-      closeDatabase();
+      void closeDatabase();
     };
   }, []);
 

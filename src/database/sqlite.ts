@@ -89,8 +89,10 @@ export async function initDatabase(): Promise<SQLiteDatabase> {
 
 export async function closeDatabase(): Promise<void> {
   if (database) {
-    database.closeSync();
+    const db = database;
     database = null;
     initPromise = null;
+    // `closeAsync` keeps web off the synchronous SQLite bridge.
+    await db.closeAsync();
   }
 }

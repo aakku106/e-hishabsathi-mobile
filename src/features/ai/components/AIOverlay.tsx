@@ -1,5 +1,7 @@
+import { USE_NATIVE_DRIVER } from "@/shared/constants/animation";
 import { Colors_DashboardPage } from "@/shared/constants/colors";
 import { Radius } from "@/shared/constants/radius";
+import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -75,13 +77,13 @@ export default function AIOverlay({
       Animated.timing(translateY, {
         toValue: 0,
         duration: 320,
-        useNativeDriver: true,
+        useNativeDriver: USE_NATIVE_DRIVER,
       }).start();
     } else {
       Animated.timing(translateY, {
         toValue: sheetHeight,
         duration: 240,
-        useNativeDriver: true,
+        useNativeDriver: USE_NATIVE_DRIVER,
       }).start(() => onClose());
     }
   }, [visible, onClose, sheetHeight, translateY]);
@@ -211,8 +213,13 @@ export default function AIOverlay({
 
   return (
     <Animated.View
-      pointerEvents={visible ? "auto" : "none"}
-      style={[styles.container, { transform: [{ translateY }] }]}>
+      style={[
+        styles.container,
+        {
+          transform: [{ translateY }],
+          pointerEvents: visible ? "auto" : "none",
+        },
+      ]}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.closeBtn}
@@ -220,7 +227,7 @@ export default function AIOverlay({
             Animated.timing(translateY, {
               toValue: sheetHeight,
               duration: 220,
-              useNativeDriver: true,
+              useNativeDriver: USE_NATIVE_DRIVER,
             }).start(() => onClose());
           }}>
           <MaterialCommunityIcons name="close" size={22} color="#fff" />
@@ -307,10 +314,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#0F0F0F",
     borderTopLeftRadius: Radius.md,
     borderTopRightRadius: Radius.md,
-    shadowColor: "#000",
-    shadowOpacity: 0.6,
-    shadowRadius: 12,
-    elevation: 12,
+    boxShadow: boxShadow({ blur: 12, color: "#000", opacity: 0.6 }),
     zIndex: 999,
   },
   header: {

@@ -14,6 +14,7 @@ import {
 
 import { Colors_SalesPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
+import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 
@@ -223,11 +224,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg,
     borderWidth: BorderWidth.base,
     paddingVertical: Spacing.xs,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    boxShadow: boxShadow({ y: 4, blur: 8, color: "#000", opacity: 0.2 }),
   },
   optionItem: {
     flexDirection: "row",

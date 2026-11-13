@@ -16,6 +16,7 @@ import { PageHeader } from "@/shared/components/Header/PageHeader";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
 import { Colors_InventoryPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
+import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { formatCurrency } from "@/shared/utils/formatter";
@@ -358,11 +359,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     paddingVertical: Spacing.lg,
     paddingHorizontal: Spacing.sm,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.05,
-    shadowRadius: 16,
-    elevation: 2,
+    boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
   },
   summaryItem: {
     flex: 1,
@@ -441,11 +438,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: Spacing.lg,
     gap: Spacing.lg,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.05,
-    shadowRadius: 16,
-    elevation: 2,
+    boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
   },
   field: {
     gap: Spacing.xs,

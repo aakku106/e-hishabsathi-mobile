@@ -19,6 +19,7 @@ import {
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
 import { Colors_SalesPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
+import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useTheme } from "@/providers/ThemeProvider";
@@ -791,11 +792,7 @@ function createStyles(colors: typeof Colors_SalesPage) {
     padding: Spacing.md,
     borderWidth: BorderWidth.thin,
     borderColor: colors.border,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.05,
-    shadowRadius: 16,
-    elevation: 2,
+    boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
   },
 
   productHeaderRow: {
@@ -855,11 +852,7 @@ function createStyles(colors: typeof Colors_SalesPage) {
   inputContainer: {
     backgroundColor: colors.inputBG,
     borderColor: colors.border,
-    shadowOpacity: 0,
-    shadowColor: "transparent",
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 0,
-    elevation: 0,
+    boxShadow: boxShadow({ blur: 0, color: "transparent", opacity: 0 }),
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.md,
     borderWidth: BorderWidth.thin,
@@ -1135,11 +1128,7 @@ function createStyles(colors: typeof Colors_SalesPage) {
     borderColor: colors.border,
     paddingVertical: Spacing.lg,
     paddingHorizontal: Spacing.sm,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.05,
-    shadowRadius: 16,
-    elevation: 2,
+    boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
   },
 
   summaryItem: {

@@ -11,9 +11,11 @@ import {
 } from "react-native";
 import Svg, { Circle, Line, Polygon, Polyline } from "react-native-svg";
 
+import { USE_NATIVE_DRIVER } from "@/shared/constants/animation";
 import { Colors_DashboardPage, getThemedColors } from "@/shared/constants/colors";
 import { useTheme } from "@/providers/ThemeProvider";
 import { Radius } from "@/shared/constants/radius";
+import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useCopy } from "@/shared/i18n";
@@ -43,7 +45,7 @@ function Toggle({ active, left, right, leftLabel = left, rightLabel = right, onC
     Animated.timing(progress, {
       toValue: active === left ? 0 : 1,
       duration: 260,
-      useNativeDriver: true,
+      useNativeDriver: USE_NATIVE_DRIVER,
     }).start();
   }, [active, left, progress]);
 
@@ -208,13 +210,13 @@ export default function DashboardOverview() {
               Animated.timing(chartFade, {
                 toValue: 0,
                 duration: 180,
-                useNativeDriver: true,
+                useNativeDriver: USE_NATIVE_DRIVER,
               }).start(() => {
                 setIncomeMode(v);
                 Animated.timing(chartFade, {
                   toValue: 1,
                   duration: 220,
-                  useNativeDriver: true,
+                  useNativeDriver: USE_NATIVE_DRIVER,
                 }).start();
               });
             }}
@@ -260,13 +262,13 @@ export default function DashboardOverview() {
               Animated.timing(trendFade, {
                 toValue: 0,
                 duration: 160,
-                useNativeDriver: true,
+                useNativeDriver: USE_NATIVE_DRIVER,
               }).start(() => {
                 setTrendMode(v);
                 Animated.timing(trendFade, {
                   toValue: 1,
                   duration: 200,
-                  useNativeDriver: true,
+                  useNativeDriver: USE_NATIVE_DRIVER,
                 }).start();
               });
             }}
@@ -338,11 +340,7 @@ function createStyles(colors: typeof Colors_DashboardPage) {
     backgroundColor: colors.greenPrimary,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 8,
+    boxShadow: boxShadow({ y: 5, blur: 10, color: "#0F172A", opacity: 0.2 }),
     zIndex: 10,
   },
   floatingAIText: {
@@ -425,7 +423,7 @@ function createStyles(colors: typeof Colors_DashboardPage) {
     zIndex: 5,
   },
   periodSelector: { flexDirection: "row", alignItems: "center", gap: Spacing.xs, paddingVertical: Spacing.xs },
-  periodMenu: { position: "absolute", top: 38, left: 0, minWidth: 150, padding: Spacing.xs, backgroundColor: colors.surface, borderRadius: Radius.md, borderWidth: 1, borderColor: colors.border, shadowColor: "#0F172A", shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 6 },
+  periodMenu: { position: "absolute", top: 38, left: 0, minWidth: 150, padding: Spacing.xs, backgroundColor: colors.surface, borderRadius: Radius.md, borderWidth: 1, borderColor: colors.border, boxShadow: boxShadow({ y: 5, blur: 12, color: "#0F172A", opacity: 0.12 }) },
   periodOption: { minHeight: 40, paddingHorizontal: Spacing.sm, borderRadius: Radius.sm, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   periodOptionActive: { backgroundColor: colors.surfaceAlt },
   periodOptionText: { color: colors.textPrimary, fontSize: FontSize.sm },
@@ -462,11 +460,7 @@ function createStyles(colors: typeof Colors_DashboardPage) {
     gap: Spacing.xs,
     borderWidth: 1,
     borderColor: colors.border,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    elevation: 2,
+    boxShadow: boxShadow({ y: 6, blur: 12, color: "#0F172A", opacity: 0.04 }),
   },
   statIcon: {
     width: 40,
@@ -554,11 +548,7 @@ function createStyles(colors: typeof Colors_DashboardPage) {
     left: 3,
     borderRadius: Radius.pill,
     backgroundColor: colors.surface,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 2,
+    boxShadow: boxShadow({ y: 2, blur: 6, color: "#0F172A", opacity: 0.12 }),
   },
   toggleLabel: {
     textAlign: "center",

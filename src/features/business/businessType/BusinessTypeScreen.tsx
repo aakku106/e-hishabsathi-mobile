@@ -15,6 +15,7 @@ import { PageHeader } from "@/shared/components/Header/PageHeader";
 import { BusinessTypes, type BusinessType } from "@/shared/constants/businessTypes";
 import { Colors_LoginPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
+import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 
@@ -144,16 +145,12 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
     paddingHorizontal: Spacing.lg,
     gap: Spacing.md,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    elevation: 1,
+    boxShadow: boxShadow({ y: 4, blur: 10, color: "#0F172A", opacity: 0.04 }),
   },
   optionCardSelected: {
     borderColor: colors.primary,
     backgroundColor: colors.primarySoft,
-    shadowOpacity: 0.08,
+    boxShadow: boxShadow({ y: 4, blur: 10, color: "#0F172A", opacity: 0.08 }),
   },
   optionIcon: {
     width: 44,

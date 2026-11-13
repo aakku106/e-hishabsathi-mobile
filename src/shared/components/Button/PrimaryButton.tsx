@@ -12,6 +12,7 @@ import {
 } from "react-native";
 
 import { Radius } from "@/shared/constants/radius";
+import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 
@@ -59,11 +60,7 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
 
 const styles = StyleSheet.create({
   wrapper: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 14,
-    elevation: 4,
+    boxShadow: boxShadow({ y: 6, blur: 14, color: "#000", opacity: 0.18 }),
   },
   button: {
     minHeight: 52,

@@ -26,6 +26,7 @@ import { useSettingsStore } from "@/store/settings.store";
 import { PageHeader } from "@/shared/components/Header/PageHeader";
 import { Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
+import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 
@@ -431,11 +432,7 @@ function createStyles(colors: typeof Colors_SettingsPage) {
     borderColor: colors.border,
     padding: Spacing.lg,
     gap: Spacing.md,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.05,
-    shadowRadius: 16,
-    elevation: 2,
+    boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
   },
   profileRow: {
     flexDirection: "row",
@@ -565,8 +562,8 @@ function createStyles(colors: typeof Colors_SettingsPage) {
     paddingHorizontal: Spacing["2xl"],
     borderRadius: Radius.pill,
     borderWidth: BorderWidth.thin,
-    borderColor: "#FECACA",
-    backgroundColor: "#FEF2F2",
+    borderColor: colors.dangerBorder,
+    backgroundColor: colors.dangerSoft,
   },
   logoutText: {
     color: colors.danger,

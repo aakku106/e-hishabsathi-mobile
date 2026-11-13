@@ -15,6 +15,7 @@ import { PageHeader } from "@/shared/components/Header/PageHeader";
 import { Dropdown, type DropdownOption } from "@/shared/components/DatePicker/DropDown";
 import { Colors_TaxPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
+import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { formatCurrency } from "@/shared/utils/formatter";
@@ -185,11 +186,7 @@ const styles = StyleSheet.create({
     minWidth: 200,
     borderRadius: Radius.md,
     borderWidth: BorderWidth.thin,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
+    boxShadow: boxShadow({ y: 4, blur: 10, color: "#0F172A", opacity: 0.05 }),
   },
   loader: {
     marginTop: Spacing["3xl"],
@@ -200,11 +197,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg,
     padding: Spacing.xl,
     gap: Spacing.xs,
-    shadowColor: colors.primaryDeep,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 18,
-    elevation: 5,
+    boxShadow: boxShadow({ y: 8, blur: 18, color: colors.primaryDeep, opacity: 0.25 }),
   },
   heroLabel: {
     color: "rgba(255,255,255,0.85)",
@@ -238,11 +231,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: Spacing.lg,
     gap: Spacing.xs,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 2,
+    boxShadow: boxShadow({ y: 4, blur: 12, color: "#0F172A", opacity: 0.05 }),
   },
   gridIcon: {
     width: 32,

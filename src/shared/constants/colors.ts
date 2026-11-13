@@ -13,6 +13,8 @@ type PageColors = {
   inputBG: string;
   success: string;
   danger: string;
+  dangerSoft: string;
+  dangerBorder: string;
   warning: string;
 };
 
@@ -30,6 +32,8 @@ export function getThemedColors<T extends PageColors>(colors: T, isDark: boolean
     border: "#333333",
     inputBG: "#111111",
     primarySoft: "#1A1A1A",
+    dangerSoft: "#2A1315",
+    dangerBorder: "#7F1D1D",
   };
 }
 
@@ -43,6 +47,8 @@ const basePage = {
   inputBG: "#FFFFFF",
   success: "#059669",
   danger: "#DC2626",
+  dangerSoft: "#FEF2F2",
+  dangerBorder: "#FECACA",
   warning: "#D97706",
 } as const;
 

@@ -10,6 +10,7 @@ import {
 } from "react-native";
 
 import { Radius } from "@/shared/constants/radius";
+import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 
@@ -84,11 +85,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
     paddingBottom: Spacing["2xl"],
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.16,
-    shadowRadius: 20,
-    elevation: 6,
+    boxShadow: boxShadow({ y: 8, blur: 20, color: "#000", opacity: 0.16 }),
   },
   topRow: {
     flexDirection: "row",

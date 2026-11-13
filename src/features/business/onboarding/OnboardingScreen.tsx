@@ -15,6 +15,7 @@ import { LabeledInput } from "@/shared/components/Input/LabledInput";
 import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 import { Colors_LoginPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
+import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 
@@ -158,11 +159,7 @@ const styles = StyleSheet.create({
     borderWidth: BorderWidth.thin,
     borderColor: colors.border,
     padding: Spacing.xl,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.07,
-    shadowRadius: 20,
-    elevation: 4,
+    boxShadow: boxShadow({ y: 10, blur: 20, color: "#0F172A", opacity: 0.07 }),
     gap: Spacing.lg,
   },
   form: {

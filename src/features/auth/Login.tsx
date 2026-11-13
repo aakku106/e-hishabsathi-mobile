@@ -19,6 +19,7 @@ import { APP } from "@/config/app";
 import { setSetting, SETTING_KEYS } from "@/database/helpers/settings";
 import { Colors_LoginPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
+import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useAuthStore } from "@/store/auth.store";
@@ -228,11 +229,7 @@ const styles = StyleSheet.create({
     paddingBottom: 116,
     paddingHorizontal: Spacing.xl,
     borderRadius: 32,
-    shadowColor: colors.heroBottom,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.24,
-    shadowRadius: 20,
-    elevation: 8,
+    boxShadow: boxShadow({ y: 12, blur: 20, color: colors.heroBottom, opacity: 0.24 }),
   },
   logoBadge: {
     width: 92,
@@ -268,11 +265,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing["2xl"],
     paddingBottom: Spacing.xl,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.08,
-    shadowRadius: 24,
-    elevation: 6,
+    boxShadow: boxShadow({ y: 12, blur: 24, color: "#0F172A", opacity: 0.08 }),
   },
   header: {
     gap: Spacing.xs,
@@ -347,11 +340,7 @@ const styles = StyleSheet.create({
   },
   signInButton: {
     marginTop: Spacing["3xl"],
-    shadowColor: colors.primaryDeep,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 6,
+    boxShadow: boxShadow({ y: 8, blur: 16, color: colors.primaryDeep, opacity: 0.3 }),
   },
   signInGradient: {
     minHeight: 64,

@@ -18,6 +18,7 @@ import { PageHeader } from "@/shared/components/Header/PageHeader";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
 import { Colors_PurchasesPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
+import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { formatCurrency } from "@/shared/utils/formatter";
@@ -484,11 +485,7 @@ function createStyles(colors: typeof Colors_PurchasesPage) {
     borderColor: colors.border,
     padding: Spacing.md,
     gap: Spacing.lg,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.05,
-    shadowRadius: 16,
-    elevation: 2,
+    boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
   },
   form: {
     gap: Spacing.md,
@@ -652,11 +649,7 @@ function createStyles(colors: typeof Colors_PurchasesPage) {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.04,
-    shadowRadius: 14,
-    elevation: 2,
+    boxShadow: boxShadow({ y: 5, blur: 14, color: "#0F172A", opacity: 0.04 }),
   },
   metric: {
     width: "31%",

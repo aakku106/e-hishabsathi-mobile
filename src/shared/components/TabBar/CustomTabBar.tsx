@@ -5,6 +5,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors_NavBar } from "@/shared/constants/colors";
 import { useTheme } from "@/providers/ThemeProvider";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
+import { boxShadow } from "@/shared/constants/shadows";
 import { Layout, Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useCopy } from "@/shared/i18n";
@@ -144,11 +145,7 @@ function createStyles(isDark: boolean) {
     paddingVertical: Spacing.xs,
     borderWidth: BorderWidth.thin,
     borderColor: isDark ? "#333333" : Colors_NavBar.barBorder,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 10,
+    boxShadow: boxShadow({ y: 10, blur: 24, color: "#0F172A", opacity: 0.12 }),
   },
   tabItem: {
     flex: 1,
