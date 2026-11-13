@@ -29,12 +29,12 @@ const BUSINESS_TYPE_OPTIONS: {
   hint: string;
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
 }[] = [
-  { value: BusinessTypes.retail, label: "Retail", hint: "Sells goods to end customers", icon: "store-outline" },
-  { value: BusinessTypes.wholesale, label: "Wholesale", hint: "Sells goods in bulk to shops", icon: "truck-outline" },
-  { value: BusinessTypes.restaurant, label: "Restaurant", hint: "Food and drink services", icon: "silverware-fork-knife" },
-  { value: BusinessTypes.service, label: "Service", hint: "Provides services instead of goods", icon: "tools" },
-  { value: BusinessTypes.other, label: "Other", hint: "Anything else", icon: "dots-horizontal-circle-outline" },
-];
+    { value: BusinessTypes.retail, label: "Retail", hint: "Sells goods to end customers", icon: "store-outline" },
+    { value: BusinessTypes.wholesale, label: "Wholesale", hint: "Sells goods in bulk to shops", icon: "truck-outline" },
+    { value: BusinessTypes.restaurant, label: "Restaurant", hint: "Food and drink services", icon: "silverware-fork-knife" },
+    { value: BusinessTypes.service, label: "Service", hint: "Provides services instead of goods", icon: "tools" },
+    { value: BusinessTypes.other, label: "Other", hint: "Anything else", icon: "dots-horizontal-circle-outline" },
+  ];
 
 export default function BusinessTypeScreen() {
   const router = useRouter();

@@ -14,12 +14,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 import { PageHeader } from "@/shared/components/Header/PageHeader";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
-import { Colors_InventoryPage } from "@/shared/constants/colors";
+import { Colors_InventoryPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { formatCurrency } from "@/shared/utils/formatter";
+import { useTheme } from "@/providers/ThemeProvider";
 
 import {
   useAdjustProductStock,
@@ -29,11 +30,17 @@ import {
 } from "./hooks/useInventory";
 import { CreateProductSchema } from "./validation";
 
-const colors = Colors_InventoryPage;
 const LOW_STOCK_THRESHOLD = 10;
+
+const lowStockColors = {
+  light: { bg: "#FEF3C7", border: "#FDE68A", text: "#92400E" },
+  dark: { bg: "#3D2A00", border: "#854D0E", text: "#FDE68A" },
+};
 
 export default function InventoryScreen() {
   const router = useRouter();
+  const { isDark } = useTheme();
+  const colors = getThemedColors(Colors_InventoryPage, isDark);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
@@ -46,6 +53,8 @@ export default function InventoryScreen() {
   const { data: summary } = useProductSummary();
   const createProduct = useCreateProduct();
   const adjustStock = useAdjustProductStock();
+
+  const styles = createStyles(colors, isDark);
 
   const handleAddProduct = () => {
     const parsed = CreateProductSchema.safeParse({
@@ -114,13 +123,30 @@ export default function InventoryScreen() {
         </View>
 
         {!!(summary?.lowStockCount ?? 0) && (
-          <View style={styles.lowStockNote}>
+          <View
+            style={[
+              styles.lowStockNote,
+              {
+                backgroundColor: isDark ?
+                  lowStockColors.dark.bg
+                : lowStockColors.light.bg,
+                borderColor: isDark ?
+                  lowStockColors.dark.border
+                : lowStockColors.light.border,
+              },
+            ]}>
             <MaterialCommunityIcons
               name="alert-circle-outline"
               size={16}
-              color="#B45309"
+              color={isDark ? lowStockColors.dark.text : lowStockColors.light.text}
             />
-            <Text style={styles.lowStockNoteText}>
+            <Text
+              style={[
+                styles.lowStockNoteText,
+                {
+                  color: isDark ? lowStockColors.dark.text : lowStockColors.light.text,
+                },
+              ]}>
               {summary?.lowStockCount} product(s) have low stock (below{" "}
               {LOW_STOCK_THRESHOLD} units).
             </Text>
@@ -292,8 +318,7 @@ export default function InventoryScreen() {
                         style={[
                           styles.stockText,
                           lowStock && styles.stockTextLow,
-                        ]}
-                      >
+                        ]}>
                         Stock: {product.stockQuantity}{" "}
                         {lowStock ? "(low)" : ""}
                       </Text>
@@ -339,207 +364,206 @@ export default function InventoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    flexGrow: 1,
-    paddingBottom: Spacing["4xl"],
-  },
-  summaryCard: {
-    marginTop: Spacing.xl,
-    marginHorizontal: Spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: BorderWidth.thin,
-    borderColor: colors.border,
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.sm,
-    boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
-  },
-  summaryItem: {
-    flex: 1,
-    alignItems: "center",
-    gap: Spacing.xxs,
-  },
-  summaryLabel: {
-    color: colors.textMuted,
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semibold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  summaryValue: {
-    color: colors.textPrimary,
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
-    textAlign: "center",
-  },
-  summaryDivider: {
-    width: BorderWidth.thin,
-    alignSelf: "stretch",
-    backgroundColor: colors.border,
-  },
-  lowStockNote: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-    marginTop: Spacing.lg,
-    marginHorizontal: Spacing.lg,
-    backgroundColor: "#FEF3C7",
-    borderRadius: Radius.md,
-    borderWidth: BorderWidth.thin,
-    borderColor: "#FDE68A",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-  },
-  lowStockNoteText: {
-    flex: 1,
-    color: "#92400E",
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
-  },
-  toggleButton: {
-    marginTop: Spacing.lg,
-    marginHorizontal: Spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: BorderWidth.thin,
-    borderColor: colors.border,
-  },
-  toggleIcon: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  toggleButtonText: {
-    color: colors.textPrimary,
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semibold,
-  },
-  formCard: {
-    marginTop: Spacing.lg,
-    marginHorizontal: Spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: BorderWidth.thin,
-    borderColor: colors.border,
-    padding: Spacing.lg,
-    gap: Spacing.lg,
-    boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
-  },
-  field: {
-    gap: Spacing.xs,
-  },
-  inputContainer: {
-    borderRadius: Radius.md,
-    borderWidth: BorderWidth.thin,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    minHeight: 52,
-  },
-  inputLabel: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semibold,
-    lineHeight: 20,
-  },
-  inputText: {
-    color: colors.textPrimary,
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.regular,
-  },
-  errorText: {
-    color: colors.danger,
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.medium,
-  },
-  listSection: {
-    marginTop: Spacing["2xl"],
-    marginHorizontal: Spacing.lg,
-    gap: Spacing.md,
-  },
-  sectionTitle: {
-    color: colors.textPrimary,
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-  },
-  listCard: {
-    backgroundColor: colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: BorderWidth.thin,
-    borderColor: colors.border,
-    overflow: "hidden",
-  },
-  productRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    gap: Spacing.md,
-  },
-  productDivider: {
-    borderBottomWidth: BorderWidth.thin,
-    borderBottomColor: colors.border,
-  },
-  productIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  productContent: {
-    flex: 1,
-    gap: 2,
-  },
-  productName: {
-    color: colors.textPrimary,
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semibold,
-  },
-  productMeta: {
-    color: colors.textMuted,
-    fontSize: FontSize.sm,
-  },
-  stockText: {
-    color: colors.textSecondary,
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
-  },
-  stockTextLow: {
-    color: colors.danger,
-  },
-  stockControls: {
-    flexDirection: "row",
-    gap: Spacing.sm,
-  },
-  stockButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: colors.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyText: {
-    color: colors.textMuted,
-    fontSize: FontSize.md,
-    textAlign: "center",
-    paddingVertical: Spacing.xl,
-    paddingHorizontal: Spacing.lg,
-  },
-});
+function createStyles(colors: typeof Colors_InventoryPage, isDark: boolean) {
+  return StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      flexGrow: 1,
+      paddingBottom: Spacing["4xl"],
+    },
+    summaryCard: {
+      marginTop: Spacing.xl,
+      marginHorizontal: Spacing.lg,
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.surface,
+      borderRadius: Radius.lg,
+      borderWidth: BorderWidth.thin,
+      borderColor: colors.border,
+      paddingVertical: Spacing.lg,
+      paddingHorizontal: Spacing.sm,
+      boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
+    },
+    summaryItem: {
+      flex: 1,
+      alignItems: "center",
+      gap: Spacing.xxs,
+    },
+    summaryLabel: {
+      color: colors.textMuted,
+      fontSize: FontSize.xs,
+      fontWeight: FontWeight.semibold,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+    },
+    summaryValue: {
+      color: colors.textPrimary,
+      fontSize: FontSize.xl,
+      fontWeight: FontWeight.bold,
+      textAlign: "center",
+    },
+    summaryDivider: {
+      width: BorderWidth.thin,
+      alignSelf: "stretch",
+      backgroundColor: colors.border,
+    },
+    lowStockNote: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.sm,
+      marginTop: Spacing.lg,
+      marginHorizontal: Spacing.lg,
+      borderRadius: Radius.md,
+      borderWidth: BorderWidth.thin,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.sm,
+    },
+    lowStockNoteText: {
+      flex: 1,
+      fontSize: FontSize.sm,
+      fontWeight: FontWeight.medium,
+    },
+    toggleButton: {
+      marginTop: Spacing.lg,
+      marginHorizontal: Spacing.lg,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: Spacing.sm,
+      paddingVertical: Spacing.sm,
+      borderRadius: Radius.pill,
+      backgroundColor: colors.surface,
+      borderWidth: BorderWidth.thin,
+      borderColor: colors.border,
+    },
+    toggleIcon: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      backgroundColor: colors.primarySoft,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    toggleButtonText: {
+      color: colors.textPrimary,
+      fontSize: FontSize.md,
+      fontWeight: FontWeight.semibold,
+    },
+    formCard: {
+      marginTop: Spacing.lg,
+      marginHorizontal: Spacing.lg,
+      backgroundColor: colors.surface,
+      borderRadius: Radius.lg,
+      borderWidth: BorderWidth.thin,
+      borderColor: colors.border,
+      padding: Spacing.lg,
+      gap: Spacing.lg,
+      boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
+    },
+    field: {
+      gap: Spacing.xs,
+    },
+    inputContainer: {
+      borderRadius: Radius.md,
+      borderWidth: BorderWidth.thin,
+      paddingVertical: Spacing.md,
+      paddingHorizontal: Spacing.lg,
+      minHeight: 52,
+    },
+    inputLabel: {
+      fontSize: FontSize.md,
+      fontWeight: FontWeight.semibold,
+      lineHeight: 20,
+    },
+    inputText: {
+      color: colors.textPrimary,
+      fontSize: FontSize.lg,
+      fontWeight: FontWeight.regular,
+    },
+    errorText: {
+      color: colors.danger,
+      fontSize: FontSize.sm,
+      fontWeight: FontWeight.medium,
+    },
+    listSection: {
+      marginTop: Spacing["2xl"],
+      marginHorizontal: Spacing.lg,
+      gap: Spacing.md,
+    },
+    sectionTitle: {
+      color: colors.textPrimary,
+      fontSize: FontSize.lg,
+      fontWeight: FontWeight.bold,
+    },
+    listCard: {
+      backgroundColor: colors.surface,
+      borderRadius: Radius.lg,
+      borderWidth: BorderWidth.thin,
+      borderColor: colors.border,
+      overflow: "hidden",
+    },
+    productRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.md,
+      gap: Spacing.md,
+    },
+    productDivider: {
+      borderBottomWidth: BorderWidth.thin,
+      borderBottomColor: colors.border,
+    },
+    productIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 12,
+      backgroundColor: colors.primarySoft,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    productContent: {
+      flex: 1,
+      gap: 2,
+    },
+    productName: {
+      color: colors.textPrimary,
+      fontSize: FontSize.md,
+      fontWeight: FontWeight.semibold,
+    },
+    productMeta: {
+      color: colors.textMuted,
+      fontSize: FontSize.sm,
+    },
+    stockText: {
+      color: colors.textSecondary,
+      fontSize: FontSize.sm,
+      fontWeight: FontWeight.semibold,
+    },
+    stockTextLow: {
+      color: colors.danger,
+    },
+    stockControls: {
+      flexDirection: "row",
+      gap: Spacing.sm,
+    },
+    stockButton: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      backgroundColor: colors.primarySoft,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    emptyText: {
+      color: colors.textMuted,
+      fontSize: FontSize.md,
+      textAlign: "center",
+      paddingVertical: Spacing.xl,
+      paddingHorizontal: Spacing.lg,
+    },
+  });
+}
