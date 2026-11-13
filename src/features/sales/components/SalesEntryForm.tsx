@@ -21,6 +21,7 @@ import { Colors_SalesPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { useTheme } from "@/providers/ThemeProvider";
 import { useCopy } from "@/shared/i18n";
 import { formatCurrency } from "@/shared/utils/formatter";
 
@@ -918,6 +919,12 @@ function createStyles(colors: typeof Colors_SalesPage) {
     gap: Spacing.xs,
   },
 
+  voiceButtonFull: {
+    flex: 0,
+    width: "100%",
+    marginBottom: Spacing.md,
+  },
+
   voiceButtonActive: {
     backgroundColor: colors.primarySoft,
   },
@@ -1252,4 +1259,5 @@ function createStyles(colors: typeof Colors_SalesPage) {
     paddingVertical: Spacing.xl,
     paddingHorizontal: Spacing.lg,
   },
-});
+  });
+}

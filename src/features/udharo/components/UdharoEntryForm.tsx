@@ -481,6 +481,10 @@ function createStyles(colors: typeof Colors_UdharoPage) {
     alignItems: "center",
     gap: Spacing.xs,
   },
+  voiceButtonFull: {
+    flex: 0,
+    width: "100%",
+  },
   voiceText: {
     color: colors.primary,
     fontSize: FontSize.sm,
