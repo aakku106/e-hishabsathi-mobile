@@ -1,6 +1,7 @@
 import { getDatabase } from "@/database/sqlite";
 import { mapCamelCase } from "@/database/helpers";
 import { ENTITY_TYPE, enqueueRecord } from "@/database/edge";
+import { applyStockDelta, findOrCreateProduct } from "@/database/products";
 import { generateUuid } from "@/shared/utils/uuid";
 
 import type {
@@ -11,6 +12,7 @@ import type {
 type PurchaseRow = {
   id: number;
   product: string;
+  product_id: number | null;
   quantity: number;
   price: number;
   amount: number;
@@ -22,7 +24,7 @@ export async function fetchPurchaseEntries(): Promise<PurchaseEntry[]> {
   if (!db) return [];
 
   const rows = await db.getAllAsync<PurchaseRow>(
-    "SELECT id, product, quantity, price, amount, purchased_at FROM purchase_entries ORDER BY purchased_at DESC, id DESC LIMIT 100",
+    "SELECT id, product, product_id, quantity, price, amount, purchased_at FROM purchase_entries ORDER BY purchased_at DESC, id DESC LIMIT 100",
   );
 
   return rows.map((row) =>
@@ -39,14 +41,39 @@ export async function createPurchaseEntry(
   const clientUuid = generateUuid();
 
   await db.withTransactionAsync(async () => {
+    // A purchase is what puts stock on the shelf, so it always resolves to a
+    // product row (creating one for a name that isn't in inventory yet).
+    const productId =
+      input.productId ??
+      (await findOrCreateProduct(db, input.product, {
+        price: input.price,
+        costPrice: input.price,
+      }));
+
     await db.runAsync(
-      `INSERT INTO purchase_entries (product, quantity, price, amount, client_uuid, purchased_at)
-       VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+      `INSERT INTO purchase_entries (product, product_id, quantity, price, amount, client_uuid, purchased_at)
+       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
       input.product,
+      productId,
       input.quantity,
       input.price,
       input.amount,
       clientUuid,
+    );
+
+    await applyStockDelta(db, productId, input.quantity);
+
+    // The latest purchase price becomes the cost price used for profit, and
+    // doubles as the default selling price while the product has none.
+    await db.runAsync(
+      `UPDATE products
+       SET cost_price = ?,
+           price = CASE WHEN price <= 0 THEN ? ELSE price END,
+           updated_at = datetime('now')
+       WHERE id = ?`,
+      input.price,
+      input.price,
+      productId,
     );
 
     await enqueueRecord({
@@ -54,6 +81,7 @@ export async function createPurchaseEntry(
       entityType: ENTITY_TYPE.PURCHASE_BATCH,
       payloadJson: JSON.stringify({
         product: input.product,
+        productId,
         quantity: input.quantity,
         price: input.price,
         amount: input.amount,
@@ -67,7 +95,19 @@ export async function deletePurchaseEntry(id: number): Promise<void> {
   const db = getDatabase();
   if (!db) return;
 
-  await db.runAsync("DELETE FROM purchase_entries WHERE id = ?", id);
+  await db.withTransactionAsync(async () => {
+    const row = await db.getFirstAsync<{
+      product_id: number | null;
+      quantity: number;
+    }>("SELECT product_id, quantity FROM purchase_entries WHERE id = ?", id);
+
+    await db.runAsync("DELETE FROM purchase_entries WHERE id = ?", id);
+
+    // Removing a purchase removes the stock it brought in.
+    if (row?.product_id) {
+      await applyStockDelta(db, row.product_id, -row.quantity);
+    }
+  });
 }
 
 export async function fetchPurchaseSummary(): Promise<{

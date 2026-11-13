@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 export const MIGRATIONS: { version: number; name: string; sql: string }[] = [
   {
@@ -142,6 +142,48 @@ export const MIGRATIONS: { version: number; name: string; sql: string }[] = [
         remote_ref TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
+    `,
+  },
+  {
+    version: 6,
+    name: "link_inventory_to_ledger",
+    sql: `
+      ALTER TABLE sales_entries ADD COLUMN product_id INTEGER REFERENCES products (id) ON DELETE SET NULL;
+      ALTER TABLE purchase_entries ADD COLUMN product_id INTEGER REFERENCES products (id) ON DELETE SET NULL;
+      ALTER TABLE sales_entries ADD COLUMN client_batch_id TEXT;
+      ALTER TABLE udharo_entries ADD COLUMN customer_id TEXT REFERENCES local_udaaro_customers (id) ON DELETE SET NULL;
+      ALTER TABLE udharo_entries ADD COLUMN client_batch_id TEXT;
+      ALTER TABLE local_udaaro_ledger ADD COLUMN udharo_entry_id INTEGER REFERENCES udharo_entries (id) ON DELETE SET NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_sales_entries_product ON sales_entries (product_id);
+      CREATE INDEX IF NOT EXISTS idx_purchase_entries_product ON purchase_entries (product_id);
+      CREATE INDEX IF NOT EXISTS idx_sales_entries_batch ON sales_entries (client_batch_id);
+      CREATE INDEX IF NOT EXISTS idx_udharo_entries_customer ON udharo_entries (customer_id);
+      CREATE INDEX IF NOT EXISTS idx_udaaro_ledger_entry ON local_udaaro_ledger (udharo_entry_id);
+
+      UPDATE sales_entries
+      SET product_id = (
+        SELECT id FROM products
+        WHERE products.name = sales_entries.product COLLATE NOCASE
+        LIMIT 1
+      )
+      WHERE product_id IS NULL;
+
+      UPDATE purchase_entries
+      SET product_id = (
+        SELECT id FROM products
+        WHERE products.name = purchase_entries.product COLLATE NOCASE
+        LIMIT 1
+      )
+      WHERE product_id IS NULL;
+
+      UPDATE udharo_entries
+      SET customer_id = (
+        SELECT id FROM local_udaaro_customers
+        WHERE local_udaaro_customers.full_name = udharo_entries.name COLLATE NOCASE
+        LIMIT 1
+      )
+      WHERE customer_id IS NULL;
     `,
   },
 ];

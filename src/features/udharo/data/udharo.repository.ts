@@ -1,6 +1,6 @@
 import { getDatabase } from "@/database/sqlite";
 import { mapCamelCase } from "@/database/helpers";
-import { generateUuid } from "@/shared/utils/uuid";
+import { createLedgerEntry, findOrCreateCustomer } from "@/database/edge";
 
 import { UDHARO_ENTRIES } from "./udharo.mock";
 import type {
@@ -16,6 +16,8 @@ type UdharoRow = {
   amount: number;
   due_date: string | null;
   status: string;
+  customer_id: string | null;
+  phone_number: string | null;
   created_at: string;
 };
 
@@ -25,6 +27,8 @@ const FALLBACK_ENTRIES: UdharoEntry[] = UDHARO_ENTRIES.map((entry, index) => ({
   amount: Number.parseFloat(entry.amount.replace(/[^0-9.-]/g, "")) || 0,
   dueDate: null,
   status: "on_track",
+  customerId: null,
+  phoneNumber: null,
   createdAt: new Date().toISOString(),
 }));
 
@@ -38,7 +42,11 @@ export async function fetchUdharoEntries(): Promise<UdharoEntry[]> {
   if (!db) return FALLBACK_ENTRIES;
 
   const rows = await db.getAllAsync<UdharoRow>(
-    "SELECT id, name, amount, due_date, status, created_at FROM udharo_entries ORDER BY created_at DESC, id DESC LIMIT 100",
+    `SELECT u.id, u.name, u.amount, u.due_date, u.status, u.customer_id, u.created_at,
+            c.phone_number
+     FROM udharo_entries u
+     LEFT JOIN local_udaaro_customers c ON c.id = u.customer_id
+     ORDER BY u.created_at DESC, u.id DESC LIMIT 100`,
   );
 
   return rows.map((row) => {
@@ -55,56 +63,41 @@ export async function createUdharoEntry(
   const db = getDatabase();
   if (!db) throw new Error("Database is not ready yet");
 
+  const entryDate = new Date().toISOString().slice(0, 10);
+
   await db.withTransactionAsync(async () => {
-    await db.runAsync(
-      `INSERT INTO udharo_entries (name, amount, due_date, status, created_at)
-       VALUES (?, ?, ?, ?, datetime('now'))`,
+    // One customer row per name, shared with credit sales.
+    const customerId = await findOrCreateCustomer({
+      fullName: input.name,
+      phoneNumber: input.phoneNumber ?? null,
+    });
+
+    const entry = await db.runAsync(
+      `INSERT INTO udharo_entries (name, amount, due_date, status, customer_id, created_at)
+       VALUES (?, ?, ?, ?, ?, datetime('now'))`,
       input.name,
       input.amount,
       input.dueDate ?? null,
       input.status ?? "on_track",
-    );
-
-    const existing = await db.getFirstAsync<{ id: string }>(
-      "SELECT id FROM local_udaaro_customers WHERE full_name = ?",
-      input.name,
-    );
-    let customerId = existing?.id ?? null;
-    if (!customerId) {
-      customerId = generateUuid();
-      await db.runAsync(
-        "INSERT INTO local_udaaro_customers (id, full_name, phone_number) VALUES (?, ?, ?)",
-        customerId,
-        input.name,
-        input.phoneNumber ?? null,
-      );
-    } else if (input.phoneNumber) {
-      await db.runAsync(
-        "UPDATE local_udaaro_customers SET phone_number = ? WHERE id = ?",
-        input.phoneNumber,
-        customerId,
-      );
-    }
-
-    const entryDate = new Date().toISOString().slice(0, 10);
-    await db.runAsync(
-      `INSERT INTO local_udaaro_ledger (id, customer_id, transaction_type, amount, transaction_date)
-       VALUES (?, ?, 'CREDIT_GIVEN', ?, ?)`,
-      generateUuid(),
       customerId,
-      input.amount,
-      entryDate,
     );
+
+    await createLedgerEntry({
+      customerId,
+      transactionType: "CREDIT_GIVEN",
+      amount: input.amount,
+      transactionDate: entryDate,
+      udharoEntryId: entry.lastInsertRowId,
+    });
 
     if (input.status === "paid") {
-      await db.runAsync(
-        `INSERT INTO local_udaaro_ledger (id, customer_id, transaction_type, amount, transaction_date)
-         VALUES (?, ?, 'PAYMENT_RECEIVED', ?, ?)`,
-        generateUuid(),
+      await createLedgerEntry({
         customerId,
-        input.amount,
-        entryDate,
-      );
+        transactionType: "PAYMENT_RECEIVED",
+        amount: input.amount,
+        transactionDate: entryDate,
+        udharoEntryId: entry.lastInsertRowId,
+      });
     }
   });
 }
@@ -113,7 +106,14 @@ export async function deleteUdharoEntry(id: number): Promise<void> {
   const db = getDatabase();
   if (!db) return;
 
-  await db.runAsync("DELETE FROM udharo_entries WHERE id = ?", id);
+  await db.withTransactionAsync(async () => {
+    // The ledger rows belong to this entry, so they go with it.
+    await db.runAsync(
+      "DELETE FROM local_udaaro_ledger WHERE udharo_entry_id = ?",
+      id,
+    );
+    await db.runAsync("DELETE FROM udharo_entries WHERE id = ?", id);
+  });
 }
 
 export async function fetchUdharoSummary(): Promise<UdharoSummary> {

@@ -35,7 +35,10 @@ export function useCreatePurchaseEntry() {
     mutationFn: (input: CreatePurchaseEntryInput) =>
       createPurchaseEntry(input),
     onSuccess: () => {
+      // A purchase adds stock and changes the dashboard totals.
       queryClient.invalidateQueries({ queryKey: purchaseQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -47,6 +50,8 @@ export function useDeletePurchaseEntry() {
     mutationFn: (id: number) => deletePurchaseEntry(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: purchaseQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }

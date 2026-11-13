@@ -61,12 +61,18 @@ export async function updateProduct(
 
   await db.runAsync(
     `UPDATE products
-     SET name = ?, category = ?, price = ?, cost_price = ?, updated_at = datetime('now')
+     SET name = COALESCE(?, name),
+         category = ?,
+         price = COALESCE(?, price),
+         cost_price = ?,
+         stock_quantity = COALESCE(?, stock_quantity),
+         updated_at = datetime('now')
      WHERE id = ?`,
-    input.name ?? "",
+    input.name ?? null,
     input.category ?? null,
-    input.price ?? 0,
+    input.price ?? null,
     input.costPrice ?? null,
+    input.stockQuantity ?? null,
     id,
   );
 }

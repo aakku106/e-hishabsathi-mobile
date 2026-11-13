@@ -23,6 +23,8 @@ export type CreateLedgerEntryInput = {
   amount: number;
   transactionDate: string;
   notes?: string | null;
+  /** Links the ledger row to the udharo entry it settles or creates. */
+  udharoEntryId?: number | null;
 };
 
 function mapLedgerRow(row: LedgerRow): LocalUdaaroLedgerEntry {
@@ -46,14 +48,15 @@ export async function createLedgerEntry(
 
   const id = generateUuid();
   await db.runAsync(
-    `INSERT INTO local_udaaro_ledger (id, customer_id, transaction_type, amount, transaction_date, notes)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO local_udaaro_ledger (id, customer_id, transaction_type, amount, transaction_date, notes, udharo_entry_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
     id,
     input.customerId,
     input.transactionType,
     input.amount,
     input.transactionDate,
     input.notes ?? null,
+    input.udharoEntryId ?? null,
   );
   return id;
 }

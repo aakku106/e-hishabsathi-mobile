@@ -1,12 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  createSalesBatch,
   createSalesEntry,
   deleteSalesEntry,
   fetchSalesEntries,
   fetchSalesSummary,
 } from "../data/sales.repository";
-import type { CreateSalesEntryInput, SalesSummary } from "../types";
+import type {
+  CreateSalesBatchInput,
+  CreateSalesEntryInput,
+  SalesSummary,
+} from "../types";
 
 export const salesQueryKeys = {
   all: ["sales"] as const,
@@ -35,6 +40,24 @@ export function useCreateSalesEntry() {
     mutationFn: (input: CreateSalesEntryInput) => createSalesEntry(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: salesQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
+export function useCreateSalesBatch() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateSalesBatchInput) => createSalesBatch(input),
+    onSuccess: () => {
+      // A checkout moves inventory, may create an udharo receivable, and
+      // changes the dashboard totals.
+      queryClient.invalidateQueries({ queryKey: salesQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["udharo"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -46,6 +69,8 @@ export function useDeleteSalesEntry() {
     mutationFn: (id: number) => deleteSalesEntry(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: salesQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }

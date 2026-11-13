@@ -17,6 +17,10 @@ import {
   DropdownOption,
 } from "@/shared/components/DatePicker/DropDown";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
+import {
+  ProductPicker,
+  type PickerProduct,
+} from "@/shared/components/ProductPicker/ProductPicker";
 import { Colors_SalesPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
@@ -26,8 +30,10 @@ import { useTheme } from "@/providers/ThemeProvider";
 import { useCopy } from "@/shared/i18n";
 import { formatCurrency } from "@/shared/utils/formatter";
 
+import { useProducts } from "@/features/inventory/hooks/useInventory";
+
 import {
-  useCreateSalesEntry,
+  useCreateSalesBatch,
   useSalesEntries,
   useSalesSummary,
 } from "../hooks/useSalesEntries";
@@ -109,6 +115,8 @@ const COLOR_HEX: Record<string, string> = Object.fromEntries(
 type ProductDraft = {
   id: string;
   product: string;
+  productId: number | null;
+  stock: number | null;
   quantity: string;
   price: string;
   extraDetail: DropdownOption | null;
@@ -124,6 +132,8 @@ export default function SalesEntryForm() {
   const emptyProduct = (): ProductDraft => ({
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     product: "",
+    productId: null,
+    stock: null,
     quantity: "",
     price: "",
     extraDetail: null,
@@ -135,6 +145,8 @@ export default function SalesEntryForm() {
     emptyProduct(),
   ]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [paymentType, setPaymentType] = useState<"cash" | "udharo">("cash");
+  const [customer, setCustomer] = useState("");
   const [listeningProductId, setListeningProductId] = useState<string | null>(
     null,
   );
@@ -149,7 +161,8 @@ export default function SalesEntryForm() {
 
   const { data: entries = [], isLoading } = useSalesEntries();
   const { data: summary } = useSalesSummary();
-  const createEntry = useCreateSalesEntry();
+  const { data: inventory = [] } = useProducts();
+  const createSale = useCreateSalesBatch();
 
   const handleExtraDetailSelect = (
     id: string,
@@ -171,8 +184,40 @@ export default function SalesEntryForm() {
     value: string | DropdownOption | null,
   ) => {
     setProducts((prev) =>
+      prev.map((p) => {
+        if (p.id !== id) return p;
+        if (field === "product") {
+          // Link automatically when the typed name matches inventory exactly;
+          // otherwise the repository resolves (or creates) it by name on save.
+          const text = typeof value === "string" ? value : "";
+          const match = inventory.find(
+            (product) =>
+              product.name.toLowerCase() === text.trim().toLowerCase(),
+          );
+          return {
+            ...p,
+            product: text,
+            productId: match?.id ?? null,
+            stock: match?.stockQuantity ?? null,
+          };
+        }
+        return { ...p, [field]: value } as ProductDraft;
+      }),
+    );
+  };
+
+  const handleSelectProduct = (id: string, product: PickerProduct) => {
+    setProducts((prev) =>
       prev.map((p) =>
-        p.id === id ? ({ ...p, [field]: value } as ProductDraft) : p,
+        p.id === id ?
+          {
+            ...p,
+            product: product.name,
+            productId: product.id,
+            stock: product.stockQuantity,
+            price: p.price.trim() ? p.price : String(product.price),
+          }
+        : p,
       ),
     );
   };
@@ -196,6 +241,8 @@ export default function SalesEntryForm() {
   const handleReset = () => {
     setProducts([emptyProduct()]);
     setErrors({});
+    setPaymentType("cash");
+    setCustomer("");
   };
 
   const handleVoiceInput = (id: string) => {
@@ -296,16 +343,25 @@ export default function SalesEntryForm() {
       }
     }
 
+    if (paymentType === "udharo" && !customer.trim()) {
+      fieldErrors.customer = "Customer name is required for an udharo sale";
+    }
+
     setErrors(fieldErrors);
     if (validated.length !== products.length) return;
+    if (Object.keys(fieldErrors).length > 0) return;
 
-    validated.forEach((data, index) => {
-      createEntry.mutate(data, {
-        onSuccess: () => {
-          if (index === validated.length - 1) handleReset();
-        },
-      });
-    });
+    createSale.mutate(
+      {
+        items: validated.map((data, index) => ({
+          ...data,
+          productId: products[index]?.productId ?? null,
+        })),
+        customer: paymentType === "udharo" ? customer.trim() : null,
+        paymentType,
+      },
+      { onSuccess: handleReset },
+    );
   };
 
   return (
@@ -434,17 +490,25 @@ export default function SalesEntryForm() {
 
                 <View style={styles.fieldRow}>
                   <View style={styles.fieldContent}>
-                    <LabeledInput
+                    <ProductPicker
                       label={t("Product")}
                       placeholder={t("Enter Product name")}
                       value={p.product}
                       onChangeText={(v) =>
                         handleUpdateProduct(p.id, "product", v)
                       }
+                      products={inventory}
+                      onSelectProduct={(product) =>
+                        handleSelectProduct(p.id, product)
+                      }
+                      stockQuantity={p.stock}
+                      requestedQuantity={Number(p.quantity) || 0}
+                      mutedColor={colors.textMuted}
+                      dangerColor={colors.danger}
                       labelColor={colors.textPrimary}
                       inputBgColor={colors.inputBG}
                       borderColor={colors.border}
-                      placeholderColor="rgba(31,31,31,0.55)"
+                      placeholderColor={colors.textMuted}
                       containerStyle={styles.inputBlock}
                       labelStyle={styles.inputLabel}
                       inputStyle={styles.inputText}
@@ -597,6 +661,81 @@ export default function SalesEntryForm() {
             );
           })}
 
+          <View style={styles.paymentSection}>
+            <Text style={styles.inputLabel}>{t("Payment")}</Text>
+            <View style={styles.paymentRow}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setPaymentType("cash")}
+                style={[
+                  styles.paymentOption,
+                  paymentType === "cash" && styles.paymentOptionActive,
+                ]}>
+                <MaterialCommunityIcons
+                  name="cash"
+                  size={18}
+                  color={
+                    paymentType === "cash" ? "#FFFFFF" : colors.textPrimary
+                  }
+                />
+                <Text
+                  style={[
+                    styles.paymentText,
+                    paymentType === "cash" && styles.paymentTextActive,
+                  ]}>
+                  {t("Cash")}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setPaymentType("udharo")}
+                style={[
+                  styles.paymentOption,
+                  paymentType === "udharo" && styles.paymentOptionActive,
+                ]}>
+                <MaterialCommunityIcons
+                  name="account-clock-outline"
+                  size={18}
+                  color={
+                    paymentType === "udharo" ? "#FFFFFF" : colors.textPrimary
+                  }
+                />
+                <Text
+                  style={[
+                    styles.paymentText,
+                    paymentType === "udharo" && styles.paymentTextActive,
+                  ]}>
+                  {t("Udharo")}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {paymentType === "udharo" && (
+              <View style={styles.fieldRow}>
+                <View style={styles.fieldContent}>
+                  <LabeledInput
+                    label={t("Customer")}
+                    placeholder={t("Enter customer name")}
+                    value={customer}
+                    onChangeText={setCustomer}
+                    labelColor={colors.textPrimary}
+                    inputBgColor={colors.inputBG}
+                    borderColor={colors.border}
+                    placeholderColor={colors.textMuted}
+                    containerStyle={styles.inputBlock}
+                    labelStyle={styles.inputLabel}
+                    inputStyle={styles.inputText}
+                    inputContainerStyle={styles.inputContainer}
+                  />
+                  {!!errors.customer && (
+                    <Text style={styles.errorText}>{errors.customer}</Text>
+                  )}
+                </View>
+              </View>
+            )}
+          </View>
+
           <View style={styles.divider} />
 
           <View style={styles.totalBox}>
@@ -632,9 +771,9 @@ export default function SalesEntryForm() {
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={handleSaveSale}
-              disabled={createEntry.isPending}
+              disabled={createSale.isPending}
               style={[styles.actionButton, styles.saveButton]}>
-              {createEntry.isPending ?
+              {createSale.isPending ?
                 <ActivityIndicator color="#FFFFFF" />
               : <>
                   <MaterialCommunityIcons
@@ -648,7 +787,7 @@ export default function SalesEntryForm() {
             </TouchableOpacity>
           </View>
 
-          {createEntry.isError && (
+          {createSale.isError && (
             <Text style={styles.errorText}>
               Could not save the entry. Please try again.
             </Text>
@@ -1034,6 +1173,44 @@ function createStyles(colors: typeof Colors_SalesPage) {
     color: colors.textPrimary,
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
+  },
+
+  paymentSection: {
+    marginTop: Spacing.md,
+    gap: Spacing.sm,
+  },
+
+  paymentRow: {
+    flexDirection: "row",
+    gap: Spacing.sm,
+  },
+
+  paymentOption: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.xs,
+    paddingVertical: Spacing.md,
+    borderRadius: Radius.md,
+    borderWidth: BorderWidth.thin,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+
+  paymentOptionActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+
+  paymentText: {
+    color: colors.textPrimary,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
+  },
+
+  paymentTextActive: {
+    color: "#FFFFFF",
   },
 
   divider: {

@@ -35,6 +35,7 @@ export function useCreateUdharoEntry() {
     mutationFn: (input: CreateUdharoEntryInput) => createUdharoEntry(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: udharoQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -46,6 +47,7 @@ export function useDeleteUdharoEntry() {
     mutationFn: (id: number) => deleteUdharoEntry(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: udharoQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }

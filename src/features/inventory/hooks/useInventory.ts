@@ -37,6 +37,7 @@ export function useCreateProduct() {
     mutationFn: (input: CreateProductInput) => createProduct(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -49,6 +50,7 @@ export function useUpdateProduct() {
       updateProduct(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -60,6 +62,7 @@ export function useDeleteProduct() {
     mutationFn: (id: number) => deleteProduct(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }
@@ -72,6 +75,7 @@ export function useAdjustProductStock() {
       adjustProductStock(id, delta),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }

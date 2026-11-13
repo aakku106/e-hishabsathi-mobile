@@ -16,6 +16,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 import { PageHeader } from "@/shared/components/Header/PageHeader";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
+import {
+  ProductPicker,
+  type PickerProduct,
+} from "@/shared/components/ProductPicker/ProductPicker";
 import { Colors_PurchasesPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
@@ -24,6 +28,7 @@ import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { formatCurrency } from "@/shared/utils/formatter";
 import { useCopy } from "@/shared/i18n";
 import { useTheme } from "@/providers/ThemeProvider";
+import { useProducts } from "@/features/inventory/hooks/useInventory";
 
 import {
   useCreatePurchaseEntry,
@@ -55,6 +60,8 @@ export default function PurchaseScreen() {
   const styles = createStyles(colors);
   const [quantity, setQuantity] = useState("");
   const [product, setProduct] = useState("");
+  const [productId, setProductId] = useState<number | null>(null);
+  const [stock, setStock] = useState<number | null>(null);
   const [price, setPrice] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isListening, setIsListening] = useState(false);
@@ -62,9 +69,30 @@ export default function PurchaseScreen() {
 
   const { data: entries = [], isLoading } = usePurchaseEntries();
   const { data: summary } = usePurchaseSummary();
+  const { data: inventory = [] } = useProducts();
   const createEntry = useCreatePurchaseEntry();
   const currentAmount =
     Number.parseFloat(quantity || "0") * Number.parseFloat(price || "0");
+
+  const handleProductChange = (value: string) => {
+    setProduct(value);
+    // Link automatically when the typed name matches inventory exactly;
+    // otherwise the repository resolves (or creates) it by name on save.
+    const match = inventory.find(
+      (item) => item.name.toLowerCase() === value.trim().toLowerCase(),
+    );
+    setProductId(match?.id ?? null);
+    setStock(match?.stockQuantity ?? null);
+  };
+
+  const handleSelectProduct = (selected: PickerProduct) => {
+    setProduct(selected.name);
+    setProductId(selected.id);
+    setStock(selected.stockQuantity);
+    if (!price.trim()) {
+      setPrice(String(selected.costPrice ?? selected.price));
+    }
+  };
 
   const handleVoiceInput = () => {
     if (Platform.OS !== "web") {
@@ -150,13 +178,18 @@ export default function PurchaseScreen() {
     }
 
     setErrors({});
-    createEntry.mutate(parsed.data, {
-      onSuccess: () => {
-        setQuantity("");
-        setProduct("");
-        setPrice("");
+    createEntry.mutate(
+      { ...parsed.data, productId },
+      {
+        onSuccess: () => {
+          setQuantity("");
+          setProduct("");
+          setProductId(null);
+          setStock(null);
+          setPrice("");
+        },
       },
-    });
+    );
   };
 
   return (
@@ -222,14 +255,31 @@ export default function PurchaseScreen() {
                   keyboardType="number-pad"
                   error={errors.quantity}
                 />
-                <PurchaseField
-                  label={t("Product")}
-                  placeholder={t("Enter Product name")}
-                  value={product}
-                  onChangeText={setProduct}
-                  returnKeyType="next"
-                  error={errors.product}
-                />
+                <View style={styles.fieldInput}>
+                  <ProductPicker
+                    label={t("Product")}
+                    placeholder={t("Enter Product name")}
+                    value={product}
+                    onChangeText={handleProductChange}
+                    products={inventory}
+                    onSelectProduct={handleSelectProduct}
+                    stockQuantity={stock}
+                    requestedQuantity={Number(quantity) || 0}
+                    mutedColor={colors.textMuted}
+                    dangerColor={colors.danger}
+                    labelColor={colors.textPrimary}
+                    inputBgColor={colors.inputBG}
+                    borderColor={colors.border}
+                    placeholderColor={colors.textMuted}
+                    labelStyle={styles.inputLabel}
+                    inputStyle={styles.inputText}
+                    inputContainerStyle={styles.inputContainer}
+                    returnKeyType="next"
+                  />
+                  {!!errors.product && (
+                    <Text style={styles.errorText}>{errors.product}</Text>
+                  )}
+                </View>
                 <PurchaseField
                   label={t("Price")}
                   placeholder={t("Enter Price")}

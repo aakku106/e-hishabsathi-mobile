@@ -6,6 +6,8 @@ export type UdharoEntry = {
   amount: number;
   dueDate: string | null;
   status: UdharoStatus;
+  customerId: string | null;
+  phoneNumber: string | null;
   createdAt: string;
 };
 

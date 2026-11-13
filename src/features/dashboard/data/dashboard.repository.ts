@@ -18,8 +18,11 @@ export type DashboardPeriod = "today" | "week" | "month" | "year";
 type StatsQuery = {
   totalSales: number;
   totalPurchases: number;
-  totalBuys: number;
+  totalCost: number;
   totalUdharo: number;
+  udharoCount: number;
+  stockValue: number;
+  lowStockCount: number;
 };
 function periodStart(period: DashboardPeriod) {
   const now = dayjs();
@@ -38,8 +41,12 @@ async function queryStats(period: DashboardPeriod): Promise<StatsQuery | null> {
     `SELECT
       (SELECT COALESCE(SUM(amount), 0) FROM sales_entries WHERE sold_at >= ?) as totalSales,
       (SELECT COALESCE(SUM(amount), 0) FROM purchase_entries WHERE purchased_at >= ?) as totalPurchases,
-      (SELECT COUNT(*) FROM purchase_entries WHERE purchased_at >= ?) as totalBuys,
-      (SELECT COUNT(*) FROM udharo_entries WHERE created_at >= ?) as totalUdharo`,
+      (SELECT COALESCE(SUM(COALESCE(cost_price, 0) * quantity), 0) FROM sales_entries WHERE sold_at >= ?) as totalCost,
+      (SELECT COALESCE(SUM(amount), 0) FROM udharo_entries WHERE created_at >= ?) as totalUdharo,
+      (SELECT COUNT(*) FROM udharo_entries WHERE created_at >= ?) as udharoCount,
+      (SELECT COALESCE(SUM(COALESCE(cost_price, 0) * stock_quantity), 0) FROM products) as stockValue,
+      (SELECT COUNT(*) FROM products WHERE stock_quantity < 10) as lowStockCount`,
+    start,
     start,
     start,
     start,
@@ -95,22 +102,27 @@ export async function fetchDashboardData(period: DashboardPeriod = "today"): Pro
       changeType: "up",
     },
     {
-      label: "Total Buys",
-      value: String(statsRow?.totalBuys ?? 0),
+      label: "Total Profit",
+      value: formatCurrency(
+        (statsRow?.totalSales ?? 0) - (statsRow?.totalCost ?? 0),
+      ),
       change: "0%",
       changeType: "up",
     },
     {
-      label: "Total Ud h aro",
-      value: String(statsRow?.totalUdharo ?? 0),
+      label: "Total Udharo",
+      value: formatCurrency(statsRow?.totalUdharo ?? 0),
       change: "0%",
       changeType: "down",
     },
     {
-      label: "Total Profit",
-      value: formatCurrency((statsRow?.totalSales ?? 0) - (statsRow?.totalPurchases ?? 0)),
-      change: "0%",
-      changeType: "up",
+      label: "Stock Value",
+      value: formatCurrency(statsRow?.stockValue ?? 0),
+      change:
+        (statsRow?.lowStockCount ?? 0) > 0 ?
+          `${statsRow?.lowStockCount} low`
+        : "",
+      changeType: "down",
     },
   ];
 

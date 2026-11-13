@@ -188,7 +188,11 @@ export default function DashboardOverview() {
                       : styles.changeTextDown,
                     ]}>
                     {stat.change}
-                    {stat.changeType === "up" ? " ↑" : " ↓"}
+                    {stat.change.endsWith("%") ?
+                      stat.changeType === "up" ?
+                        " ↑"
+                      : " ↓"
+                    : ""}
                   </Text>
                 </View>
               )}

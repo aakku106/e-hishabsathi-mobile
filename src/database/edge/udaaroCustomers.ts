@@ -36,6 +36,36 @@ export async function createCustomer(
   return id;
 }
 
+/**
+ * Finds a customer by name (case-insensitive) or creates one. Used by the
+ * udharo screen and by credit sales, so both paths share a single customer
+ * identity instead of duplicating names.
+ */
+export async function findOrCreateCustomer(
+  input: CreateCustomerInput,
+): Promise<string> {
+  const db = getDatabase();
+  if (!db) throw new Error("Database is not ready yet");
+
+  const existing = await db.getFirstAsync<{ id: string }>(
+    "SELECT id FROM local_udaaro_customers WHERE full_name = ? COLLATE NOCASE LIMIT 1",
+    input.fullName.trim(),
+  );
+
+  if (existing) {
+    if (input.phoneNumber) {
+      await db.runAsync(
+        "UPDATE local_udaaro_customers SET phone_number = ? WHERE id = ?",
+        input.phoneNumber,
+        existing.id,
+      );
+    }
+    return existing.id;
+  }
+
+  return createCustomer({ ...input, fullName: input.fullName.trim() });
+}
+
 export async function fetchCustomers(): Promise<LocalUdaaroCustomer[]> {
   const db = getDatabase();
   if (!db) return [];

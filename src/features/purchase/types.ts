@@ -1,6 +1,7 @@
 export type PurchaseEntry = {
   id: number;
   product: string;
+  productId: number | null;
   quantity: number;
   price: number;
   amount: number;
@@ -9,6 +10,7 @@ export type PurchaseEntry = {
 
 export type CreatePurchaseEntryInput = {
   product: string;
+  productId?: number | null;
   quantity: number;
   price: number;
   amount: number;
