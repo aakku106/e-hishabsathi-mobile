@@ -4,14 +4,7 @@ import { getDatabase } from "@/database/sqlite";
 import { lastMonths, lastWeekdayLabels } from "@/shared/utils/date";
 import { formatCurrency } from "@/shared/utils/formatter";
 
-import {
-  DASHBOARD_STATS,
-  INCOME_BARS,
-  MONTH_TREND,
-  type DashboardBar,
-  type DashboardStat,
-  type DashboardTrendPoint,
-} from "./dashboard.mock";
+import type { DashboardBar, DashboardStat, DashboardTrendPoint } from "./dashboard.mock";
 
 export type DashboardPeriod = "today" | "week" | "month" | "year";
 
@@ -24,6 +17,7 @@ type StatsQuery = {
   stockValue: number;
   lowStockCount: number;
 };
+
 function periodStart(period: DashboardPeriod) {
   const now = dayjs();
   if (period === "today") return now.startOf("day");
@@ -63,8 +57,8 @@ async function queryIncomeBars(period: DashboardPeriod): Promise<{ weekday: numb
   const start = periodStart(period).toISOString();
   return db.getAllAsync<{ weekday: number; amount: number }>(
     `SELECT CAST(strftime('%w', sold_at) AS INTEGER) as weekday, COALESCE(SUM(amount), 0) as amount
-    FROM sales_entries WHERE sold_at >= ? GROUP BY weekday`,
-      start,
+     FROM sales_entries WHERE sold_at >= ? GROUP BY weekday`,
+    start,
   );
 }
 
@@ -86,7 +80,9 @@ export async function fetchDashboardData(period: DashboardPeriod = "today"): Pro
   trend: DashboardTrendPoint[];
 }> {
   const db = getDatabase();
-  if (!db) return { stats: DASHBOARD_STATS, bars: INCOME_BARS, trend: MONTH_TREND };
+  if (!db) {
+    return { stats: [], bars: [], trend: [] };
+  }
 
   const [statsRow, incomeBars, monthTrend] = await Promise.all([
     queryStats(period),
@@ -103,9 +99,7 @@ export async function fetchDashboardData(period: DashboardPeriod = "today"): Pro
     },
     {
       label: "Total Profit",
-      value: formatCurrency(
-        (statsRow?.totalSales ?? 0) - (statsRow?.totalCost ?? 0),
-      ),
+      value: formatCurrency((statsRow?.totalSales ?? 0) - (statsRow?.totalCost ?? 0)),
       change: "0%",
       changeType: "up",
     },
@@ -118,10 +112,7 @@ export async function fetchDashboardData(period: DashboardPeriod = "today"): Pro
     {
       label: "Stock Value",
       value: formatCurrency(statsRow?.stockValue ?? 0),
-      change:
-        (statsRow?.lowStockCount ?? 0) > 0 ?
-          `${statsRow?.lowStockCount} low`
-        : "",
+      change: (statsRow?.lowStockCount ?? 0) > 0 ? `${statsRow?.lowStockCount} low` : "",
       changeType: "down",
     },
   ];

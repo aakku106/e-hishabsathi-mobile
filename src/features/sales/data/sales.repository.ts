@@ -9,7 +9,6 @@ import {
 import { applyStockDelta, findOrCreateProduct } from "@/database/products";
 import { generateUuid } from "@/shared/utils/uuid";
 
-import { SALES_ENTRIES } from "./sales.mock";
 import type {
   CreateSalesBatchInput,
   CreateSalesEntryInput,
@@ -33,25 +32,9 @@ type SalesRow = {
   sold_at: string;
 };
 
-const FALLBACK_ENTRIES: SalesEntry[] = SALES_ENTRIES.map((entry, index) => ({
-  id: index + 1,
-  product: entry.product,
-  productId: null,
-  quantity: entry.quantity,
-  price: entry.quantity > 0 ? entry.amount / entry.quantity : 0,
-  amount: entry.amount,
-  customer: null,
-  costPrice: null,
-  extraDetail: null,
-  extraValue: null,
-  color: null,
-  clientBatchId: null,
-  soldAt: new Date().toISOString(),
-}));
-
 export async function fetchSalesEntries(): Promise<SalesEntry[]> {
   const db = getDatabase();
-  if (!db) return FALLBACK_ENTRIES;
+  if (!db) return [];
 
   const rows = await db.getAllAsync<SalesRow>(
     "SELECT id, product, product_id, quantity, price, amount, customer, cost_price, extra_detail, extra_value, color, client_batch_id, sold_at FROM sales_entries ORDER BY sold_at DESC, id DESC LIMIT 100",

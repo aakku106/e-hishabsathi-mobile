@@ -2,7 +2,6 @@ import { getDatabase } from "@/database/sqlite";
 import { mapCamelCase } from "@/database/helpers";
 import { createLedgerEntry, findOrCreateCustomer } from "@/database/edge";
 
-import { UDHARO_ENTRIES } from "./udharo.mock";
 import type {
   CreateUdharoEntryInput,
   UdharoEntry,
@@ -21,17 +20,6 @@ type UdharoRow = {
   created_at: string;
 };
 
-const FALLBACK_ENTRIES: UdharoEntry[] = UDHARO_ENTRIES.map((entry, index) => ({
-  id: index + 1,
-  name: entry.name,
-  amount: Number.parseFloat(entry.amount.replace(/[^0-9.-]/g, "")) || 0,
-  dueDate: null,
-  status: "on_track",
-  customerId: null,
-  phoneNumber: null,
-  createdAt: new Date().toISOString(),
-}));
-
 function toStatus(value: string): UdharoStatus {
   if (value === "overdue" || value === "paid") return value;
   return "on_track";
@@ -39,7 +27,7 @@ function toStatus(value: string): UdharoStatus {
 
 export async function fetchUdharoEntries(): Promise<UdharoEntry[]> {
   const db = getDatabase();
-  if (!db) return FALLBACK_ENTRIES;
+  if (!db) return [];
 
   const rows = await db.getAllAsync<UdharoRow>(
     `SELECT u.id, u.name, u.amount, u.due_date, u.status, u.customer_id, u.created_at,
@@ -119,14 +107,7 @@ export async function deleteUdharoEntry(id: number): Promise<void> {
 export async function fetchUdharoSummary(): Promise<UdharoSummary> {
   const db = getDatabase();
   if (!db) {
-    return {
-      totalAmount: FALLBACK_ENTRIES.reduce(
-        (sum, entry) => sum + entry.amount,
-        0,
-      ),
-      entryCount: FALLBACK_ENTRIES.length,
-      overdueCount: 0,
-    };
+    return { totalAmount: 0, entryCount: 0, overdueCount: 0 };
   }
 
   const row = await db.getFirstAsync<{

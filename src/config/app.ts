@@ -13,4 +13,4 @@ export const APP_DB_NAME = APP.dbName;
  * Seeds the SQLite database with demo records on first launch.
  * Turn off before shipping to production.
  */
-export const SEED_DEMO_DATA = true;
+export const SEED_DEMO_DATA = false;
