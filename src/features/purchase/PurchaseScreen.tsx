@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -56,8 +56,11 @@ type SpeechRecognitionLike = {
 export default function PurchaseScreen() {
   const { t, language } = useCopy();
   const { isDark } = useTheme();
-  const colors = getThemedColors(Colors_PurchasesPage, isDark);
-  const styles = createStyles(colors);
+  const colors = useMemo(
+    () => getThemedColors(Colors_PurchasesPage, isDark),
+    [isDark],
+  );
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [quantity, setQuantity] = useState("");
   const [product, setProduct] = useState("");
   const [productId, setProductId] = useState<number | null>(null);
@@ -459,8 +462,11 @@ type PurchaseFieldProps = React.ComponentProps<typeof LabeledInput> & {
 
 function PurchaseField({ error, ...props }: PurchaseFieldProps) {
   const { isDark } = useTheme();
-  const colors = getThemedColors(Colors_PurchasesPage, isDark);
-  const styles = createStyles(colors);
+  const colors = useMemo(
+    () => getThemedColors(Colors_PurchasesPage, isDark),
+    [isDark],
+  );
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <View style={styles.fieldInput}>
@@ -491,8 +497,11 @@ function SummaryMetric({
   accent?: boolean;
 }) {
   const { isDark } = useTheme();
-  const colors = getThemedColors(Colors_PurchasesPage, isDark);
-  const styles = createStyles(colors);
+  const colors = useMemo(
+    () => getThemedColors(Colors_PurchasesPage, isDark),
+    [isDark],
+  );
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <View style={styles.metric}>

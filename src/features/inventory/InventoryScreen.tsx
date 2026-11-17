@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -43,7 +43,10 @@ const lowStockColors = {
 export default function InventoryScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
-  const colors = getThemedColors(Colors_InventoryPage, isDark);
+  const colors = useMemo(
+    () => getThemedColors(Colors_InventoryPage, isDark),
+    [isDark],
+  );
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
@@ -71,7 +74,7 @@ export default function InventoryScreen() {
   const createProduct = useCreateProduct();
   const adjustStock = useAdjustProductStock();
 
-  const styles = createStyles(colors, isDark);
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   const handleAddProduct = () => {
     const parsed = CreateProductSchema.safeParse({

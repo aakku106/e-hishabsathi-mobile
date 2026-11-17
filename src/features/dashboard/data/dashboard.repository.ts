@@ -9,7 +9,7 @@ import type {
   DashboardBar,
   DashboardStat,
   DashboardTrendPoint,
-} from "./dashboard.mock";
+} from "../types";
 
 export type DashboardPeriod = "today" | "week" | "month" | "year";
 
@@ -147,12 +147,14 @@ export async function fetchDashboardData(
   );
   const maxBarAmount = Math.max(1, ...incomeBars.map((bar) => bar.amount));
   const bars: DashboardBar[] = lastWeekdayLabels().map(
-    ({ label, weekday }) => ({
-      label,
-      value: Math.round(
-        ((weekdayAmounts.get(weekday) ?? 0) / maxBarAmount) * 22,
-      ),
-    }),
+    ({ label, weekday }) => {
+      const amount = weekdayAmounts.get(weekday) ?? 0;
+      return {
+        label,
+        value: Math.round((amount / maxBarAmount) * 22),
+        amount,
+      };
+    },
   );
 
   const trendMap = new Map(
@@ -163,10 +165,14 @@ export async function fetchDashboardData(
     ...monthTrend.map((point) => point.amount),
   );
   const trend: DashboardTrendPoint[] = lastMonths(7).map(
-    ({ label, month }) => ({
-      label,
-      value: Math.round(((trendMap.get(month) ?? 0) / maxTrendAmount) * 68),
-    }),
+    ({ label, month }) => {
+      const amount = trendMap.get(month) ?? 0;
+      return {
+        label,
+        value: Math.round((amount / maxTrendAmount) * 68),
+        amount,
+      };
+    },
   );
 
   return { stats, bars, trend };

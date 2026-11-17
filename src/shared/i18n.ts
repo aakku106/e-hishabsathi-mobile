@@ -65,6 +65,9 @@ const translations: Record<string, string> = {
   "No udharo entries yet. Add your first one above.|अहिलेसम्म उधारो प्रविष्टि छैन। माथि पहिलो थप्नुहोस्।":
     "No udharo entries yet. Add your first one above.",
   "Currently|हाल": "Currently",
+  "Best month|उत्कृष्ट महिना": "Best month",
+  "No data yet|अहिलेसम्म डेटा छैन": "No data yet",
+  "No sales data yet|अहिलेसम्म बिक्री डेटा छैन": "No sales data yet",
   "on|चालु": "on",
   "off|बन्द": "off",
 };

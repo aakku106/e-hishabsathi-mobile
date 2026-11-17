@@ -4,7 +4,7 @@ import { useSQLite } from "@/shared/hooks/useSQLite";
 
 import { fetchDashboardData } from "../data/dashboard.repository";
 import type { DashboardPeriod } from "../data/dashboard.repository";
-import type { DashboardBar, DashboardStat, DashboardTrendPoint } from "../data/dashboard.mock";
+import type { DashboardBar, DashboardStat, DashboardTrendPoint } from "../types";
 
 type DashboardData = {
   stats: DashboardStat[];

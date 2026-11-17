@@ -45,6 +45,7 @@ const styles = StyleSheet.create({
 ### Recommended pattern
 
 - Use the page token set that matches the screen you are styling, for example `Colors_SalesPage` or `Colors_DashboardPage`.
+- For theme-aware styles, call `StyleSheet.create` inside `useMemo` keyed by `isDark` (or the resolved colors object). react-native-web compiles every new style object and inserts CSS rules, so calling `StyleSheet.create` during render leaks styles on every re-render.
 - Keep component-level defaults in shared components, but let screens override them with `style` and `textStyle` props when needed.
 - Add new tokens by extending the relevant constants file instead of scattering raw hex values through the app.
 

@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useMemo } from "react";
 
 import { APP } from "@/config/app";
 import {
@@ -139,8 +140,11 @@ export default function SettingsScreen() {
     useSettingsStore();
   const copy = COPY[language];
   const { isDark } = useTheme();
-  const colors = getThemedColors(Colors_SettingsPage, isDark);
-  const styles = createStyles(colors);
+  const colors = useMemo(
+    () => getThemedColors(Colors_SettingsPage, isDark),
+    [isDark],
+  );
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const logout = useAuthStore((state) => state.logout);
 
   const handleLogout = () => {

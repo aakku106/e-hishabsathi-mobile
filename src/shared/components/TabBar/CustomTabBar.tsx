@@ -58,7 +58,7 @@ const ROUTE_ICON_ACTIVE_MAP: Record<
 export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
   const { t } = useCopy();
   const { isDark } = useTheme();
-  const styles = createStyles(isDark);
+  const styles = React.useMemo(() => createStyles(isDark), [isDark]);
   return (
     <View style={styles.outerContainer}>
       <View style={styles.navBar}>

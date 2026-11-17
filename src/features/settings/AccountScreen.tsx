@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -102,8 +102,11 @@ export default function AccountScreen() {
   const queryClient = useQueryClient();
   const { data: business } = useBusiness();
   const { isDark } = useTheme();
-  const colors = getThemedColors(Colors_SettingsPage, isDark);
-  const styles = createStyles(colors);
+  const colors = useMemo(
+    () => getThemedColors(Colors_SettingsPage, isDark),
+    [isDark],
+  );
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const language = useSettingsStore((state) => state.language);
   const pan = useAuthStore((state) => state.pan);
   const username = useAuthStore((state) => state.username);

@@ -127,8 +127,11 @@ type ProductDraft = {
 export default function SalesEntryForm() {
   const { t, language } = useCopy();
   const { isDark } = useTheme();
-  const colors = getThemedColors(Colors_SalesPage, isDark);
-  const styles = createStyles(colors);
+  const colors = useMemo(
+    () => getThemedColors(Colors_SalesPage, isDark),
+    [isDark],
+  );
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const emptyProduct = (): ProductDraft => ({
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     product: "",

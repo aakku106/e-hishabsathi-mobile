@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -20,6 +20,7 @@ import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useCopy } from "@/shared/i18n";
+import { formatCurrency } from "@/shared/utils/formatter";
 
 import AIOverlay from "@/features/ai/components/AIOverlay";
 import { useDashboardData } from "../hooks/useDashboardData";
@@ -36,8 +37,11 @@ type ToggleProps = {
 
 function Toggle({ active, left, right, leftLabel = left, rightLabel = right, onChange }: ToggleProps) {
   const { isDark } = useTheme();
-  const colors = getThemedColors(Colors_DashboardPage, isDark);
-  const styles = createStyles(colors);
+  const colors = useMemo(
+    () => getThemedColors(Colors_DashboardPage, isDark),
+    [isDark],
+  );
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [progress] = useState(
     () => new Animated.Value(active === left ? 0 : 1),
   );
@@ -93,8 +97,11 @@ function Toggle({ active, left, right, leftLabel = left, rightLabel = right, onC
 export default function DashboardOverview() {
   const { t } = useCopy();
   const { isDark } = useTheme();
-  const colors = getThemedColors(Colors_DashboardPage, isDark);
-  const styles = createStyles(colors);
+  const colors = useMemo(
+    () => getThemedColors(Colors_DashboardPage, isDark),
+    [isDark],
+  );
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [period, setPeriod] = useState<DashboardPeriod>("today");
   const [periodMenuOpen, setPeriodMenuOpen] = useState(false);
   const {
@@ -114,25 +121,62 @@ export default function DashboardOverview() {
 
   const [chartFade] = useState(() => new Animated.Value(1));
   const [trendFade] = useState(() => new Animated.Value(1));
-  // Animated heights for each bar
-  const [barHeights] = useState(() =>
-    bars.map((b) => new Animated.Value(Math.max(6, b.value * 7))),
+  // Animated heights for each bar. Kept stable for the lifetime of a dataset
+  // so renders never create new Animated.Value objects.
+  const barHeights = useMemo(
+    () => bars.map((bar) => new Animated.Value(Math.max(6, bar.value * 7))),
+    [bars],
   );
+
+  const maxBarAmount = useMemo(
+    () => Math.max(0, ...bars.map((bar) => bar.amount)),
+    [bars],
+  );
+  const axisAmounts = useMemo(
+    () =>
+      [1, 0.75, 0.5, 0.25, 0].map((factor) =>
+        Math.round(maxBarAmount * factor),
+      ),
+    [maxBarAmount],
+  );
+
+  const trendPoints = useMemo(
+    () =>
+      trend.map((point, index) => ({
+        x: (index / Math.max(1, trend.length - 1)) * 700,
+        y: 142 - (point.value / 68) * 130,
+        label: point.label,
+      })),
+    [trend],
+  );
+  const trendLine = trendPoints
+    .map((point) => `${point.x},${point.y}`)
+    .join(" ");
+  const trendArea = trendPoints.length > 0 ? `0,142 ${trendLine} 700,142` : "";
+  const bestTrend = useMemo(() => {
+    if (trend.length === 0) return null;
+    return trend.reduce((best, point) =>
+      point.amount > best.amount ? point : best,
+    );
+  }, [trend]);
 
   // Animate bars when incomeMode or the underlying data changes
   useEffect(() => {
-    const animations = bars.map((bar, i) => {
+    const animations = bars.flatMap((bar, i) => {
+      const value = barHeights[i];
+      if (!value) return [];
       const target =
         (incomeMode === "Income" ? bar.value : Math.round(bar.value * 0.6)) * 7;
-      const value = barHeights[i] ?? new Animated.Value(6);
-      return Animated.timing(value, {
-        toValue: Math.max(6, target),
-        duration: 360,
-        useNativeDriver: false,
-      });
+      return [
+        Animated.timing(value, {
+          toValue: Math.max(6, target),
+          duration: 360,
+          useNativeDriver: false,
+        }),
+      ];
     });
 
-    Animated.parallel(animations).start();
+    if (animations.length > 0) Animated.parallel(animations).start();
   }, [incomeMode, bars, barHeights]);
 
   return (
@@ -265,17 +309,17 @@ export default function DashboardOverview() {
 
         <View style={styles.barChartWrap}>
           <Animated.View style={[styles.axisLabels, { opacity: chartFade }]}>
-            <Text style={styles.axisLabel}>Rs. 30,000</Text>
-            <Text style={styles.axisLabel}>Rs. 20,000</Text>
-            <Text style={styles.axisLabel}>Rs. 10,000</Text>
-            <Text style={styles.axisLabel}>Rs. 5,000</Text>
-            <Text style={styles.axisLabel}>Rs.0</Text>
+            {axisAmounts.map((amount, index) => (
+              <Text key={index} style={styles.axisLabel}>
+                {formatCurrency(amount)}
+              </Text>
+            ))}
           </Animated.View>
 
           <Animated.View style={[styles.barArea, { opacity: chartFade }]}>
             {bars.map((bar, index) => {
-              const animatedHeight =
-                barHeights[index] ?? new Animated.Value(6);
+              const animatedHeight = barHeights[index];
+              if (!animatedHeight) return null;
               return (
                 <View key={bar.label} style={styles.barColumn}>
                   <Animated.View
@@ -316,24 +360,42 @@ export default function DashboardOverview() {
         </View>
 
         <Animated.View style={[styles.trendChart, { opacity: trendFade }]}>
-          <Svg width="100%" height="170" viewBox="0 0 700 170">
-            <Line x1="0" y1="28" x2="700" y2="28" stroke={colors.border} strokeDasharray="5 5" />
-            <Line x1="0" y1="85" x2="700" y2="85" stroke={colors.border} strokeDasharray="5 5" />
-            <Line x1="0" y1="142" x2="700" y2="142" stroke={colors.border} strokeDasharray="5 5" />
-            <Polygon points="0,75 116,112 233,137 350,91 466,67 583,34 700,94 700,142 0,142" fill={colors.surfaceAlt} />
-            <Polyline points="0,75 116,112 233,137 350,91 466,67 583,34 700,94" fill="none" stroke={colors.greenPrimary} strokeWidth="3" />
-            {[{ x: 0, y: 75 }, { x: 116, y: 112 }, { x: 233, y: 137 }, { x: 350, y: 91 }, { x: 466, y: 67 }, { x: 583, y: 34 }, { x: 700, y: 94 }].map((point) => (
-              <Circle key={`${point.x}-${point.y}`} cx={point.x} cy={point.y} r="6" fill="#159447" stroke="#FFFFFF" strokeWidth="2" />
-            ))}
-          </Svg>
+          {trendPoints.length > 0 ? (
+            <Svg width="100%" height="170" viewBox="0 0 700 170">
+              <Line x1="0" y1="28" x2="700" y2="28" stroke={colors.border} strokeDasharray="5 5" />
+              <Line x1="0" y1="85" x2="700" y2="85" stroke={colors.border} strokeDasharray="5 5" />
+              <Line x1="0" y1="142" x2="700" y2="142" stroke={colors.border} strokeDasharray="5 5" />
+              <Polygon points={trendArea} fill={colors.surfaceAlt} />
+              <Polyline points={trendLine} fill="none" stroke={colors.greenPrimary} strokeWidth="3" />
+              {trendPoints.map((point) => (
+                <Circle
+                  key={`${point.x}-${point.label}`}
+                  cx={point.x}
+                  cy={point.y}
+                  r="6"
+                  fill={colors.greenPrimary}
+                  stroke={colors.surface}
+                  strokeWidth="2"
+                />
+              ))}
+            </Svg>
+          ) : (
+            <View style={styles.emptyChart}>
+              <Text style={styles.dataStatusText}>{t("No sales data yet")}</Text>
+            </View>
+          )}
           <View style={styles.trendLabelsRow}>
             {trend.map((point) => <Text key={point.label} style={styles.trendLabel}>{point.label}</Text>)}
           </View>
         </Animated.View>
 
         <View style={styles.trendValueRow}>
-          <Text style={styles.trendValueLabel}>Best month</Text>
-          <Text style={styles.trendValueText}>Rs. 34,430</Text>
+          <Text style={styles.trendValueLabel}>{t("Best month")}</Text>
+          <Text style={styles.trendValueText}>
+            {bestTrend && bestTrend.amount > 0
+              ? `${t(bestTrend.label)} · ${formatCurrency(bestTrend.amount)}`
+              : t("No data yet")}
+          </Text>
         </View>
       </View>
 
@@ -702,6 +764,11 @@ function createStyles(colors: typeof Colors_DashboardPage) {
   trendChart: {
     height: 195,
     paddingTop: Spacing.sm,
+  },
+  emptyChart: {
+    height: 170,
+    alignItems: "center",
+    justifyContent: "center",
   },
   trendColumn: {
     width: 40,

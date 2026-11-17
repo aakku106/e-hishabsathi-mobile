@@ -84,6 +84,8 @@ export default function AIOverlay({
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const inputRef = useRef<TextInput>(null);
+  const onCloseRef = useRef(onClose);
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [messages, setMessages] = useState<AssistantMessage[]>([
     {
       id: "welcome",
@@ -97,22 +99,36 @@ export default function AIOverlay({
   const { data: productSummary } = useProductSummary();
   const language = useSettingsStore((state) => state.language);
 
+  // Keep the latest callback without restarting the animation whenever the
+  // parent passes a new inline `onClose` function.
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    return () => {
+      if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+    };
+  }, []);
+
   // Show/hide animations
   useEffect(() => {
     if (visible) {
       isDismissing.value = false;
       translateY.value = withSpring(0, SPRING_CONFIG);
       backdropOpacity.value = withTiming(0.4, { duration: 200 });
-    } else {
-      isDismissing.value = true;
-      translateY.value = withSpring(SHEET_HEIGHT, SPRING_CONFIG);
-      backdropOpacity.value = withTiming(0, { duration: 200 });
-      // Call onClose after animation
-      setTimeout(() => runOnJS(onClose)(), 400);
+      return;
     }
-  // Shared values are stable references; only visible/onClose are true deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, onClose]);
+
+    isDismissing.value = true;
+    translateY.value = withSpring(SHEET_HEIGHT, SPRING_CONFIG);
+    backdropOpacity.value = withTiming(0, { duration: 200 });
+    if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+    dismissTimerRef.current = setTimeout(
+      () => runOnJS(onCloseRef.current)(),
+      400,
+    );
+  }, [visible, backdropOpacity, isDismissing, translateY]);
 
   // Animated styles
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
@@ -144,7 +160,11 @@ export default function AIOverlay({
         translateY.value = withSpring(SHEET_HEIGHT, SPRING_CONFIG);
         // eslint-disable-next-line react-hooks/immutability
         backdropOpacity.value = withTiming(0, { duration: 250 });
-        setTimeout(() => runOnJS(onClose)(), 350);
+        if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+        dismissTimerRef.current = setTimeout(
+          () => runOnJS(onCloseRef.current)(),
+          350,
+        );
       } else {
         translateY.value = withSpring(0, SPRING_CONFIG);
       }
@@ -252,9 +272,12 @@ export default function AIOverlay({
     <>
       {/* Backdrop */}
       <Animated.View
-        style={[styles.backdrop, backdropAnimatedStyle]}
+        style={[
+          styles.backdrop,
+          backdropAnimatedStyle,
+          { pointerEvents: visible ? "auto" : "none" },
+        ]}
         onTouchStart={dismissKeyboard}
-        pointerEvents={visible ? "auto" : "none"}
       />
 
       {/* Bottom Sheet */}

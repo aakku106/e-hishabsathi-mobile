@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -61,8 +61,11 @@ const STATUS_BADGE: Record<string, { bg: string; text: string }> = {
 export default function UdharoEntryForm() {
   const { t, language } = useCopy();
   const { isDark } = useTheme();
-  const colors = getThemedColors(Colors_UdharoPage, isDark);
-  const styles = createStyles(colors);
+  const colors = useMemo(
+    () => getThemedColors(Colors_UdharoPage, isDark),
+    [isDark],
+  );
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
