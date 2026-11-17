@@ -440,6 +440,7 @@ export default function SalesEntryForm() {
           {products.map((p, index) => {
             const hasExtraDetail = !!p.extraDetail?.value;
             const isColor = p.extraDetail?.value === "color";
+            const selectedColorValue = p.selectedColor.value;
 
             return (
               <View key={p.id} style={styles.productCard}>
@@ -589,8 +590,9 @@ export default function SalesEntryForm() {
 
                         <View style={styles.colorGrid}>
                           {colorOptions.map((color) => {
+                            const colorValue = color.value;
                             const selected =
-                              p.selectedColor.value === color.value;
+                              p.selectedColor.value === colorValue;
                             return (
                               <TouchableOpacity
                                 key={color.value}
@@ -604,7 +606,7 @@ export default function SalesEntryForm() {
                                 }
                                 style={[
                                   styles.colorCircle,
-                                  { backgroundColor: color.value },
+                                  { backgroundColor: colorValue },
                                   selected && styles.selectedColor,
                                 ]}>
                                 {selected && (
@@ -623,7 +625,7 @@ export default function SalesEntryForm() {
                           <View
                             style={[
                               styles.selectedColorCircle,
-                              { backgroundColor: p.selectedColor.value },
+                              { backgroundColor: selectedColorValue },
                             ]}
                           />
                           <Text style={styles.selectedColorText}>
