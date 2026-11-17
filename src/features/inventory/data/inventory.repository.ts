@@ -1,5 +1,5 @@
+import { PRODUCT_STOCK_VALUE_EXPRESSION } from "@/database/products";
 import { getDatabase } from "@/database/sqlite";
-import { mapCamelCase } from "@/database/helpers";
 
 import type {
   CreateProductInput,
@@ -19,22 +19,64 @@ type ProductRow = {
 };
 
 const LOW_STOCK_THRESHOLD = 10;
+export const PRODUCTS_PAGE_SIZE = 50;
 
 function mapProduct(row: ProductRow): Product {
-  const product = mapCamelCase<Omit<Product, "stockQuantity">>(
-    row as unknown as Record<string, unknown>,
-  );
-  return { ...product, stockQuantity: row.stock_quantity };
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    price: row.price,
+    costPrice: row.cost_price,
+    stockQuantity: row.stock_quantity,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
 export async function fetchProducts(): Promise<Product[]> {
   const db = getDatabase();
-  if (!db) return [];
+  if (!db) throw new Error("Database is not ready yet");
 
   const rows = await db.getAllAsync<ProductRow>(
     "SELECT id, name, category, price, cost_price, stock_quantity, created_at, updated_at FROM products ORDER BY name COLLATE NOCASE ASC",
   );
   return rows.map(mapProduct);
+}
+
+export async function fetchProductsPage(
+  limit: number,
+  offset: number,
+): Promise<Product[]> {
+  const db = getDatabase();
+  if (!db) throw new Error("Database is not ready yet");
+
+  const rows = await db.getAllAsync<ProductRow>(
+    `SELECT id, name, category, price, cost_price, stock_quantity, created_at, updated_at
+     FROM products
+     ORDER BY name COLLATE NOCASE ASC
+     LIMIT ? OFFSET ?`,
+    limit,
+    offset,
+  );
+  return rows.map(mapProduct);
+}
+
+export async function fetchProductSummary(): Promise<ProductSummary> {
+  const db = getDatabase();
+  if (!db) throw new Error("Database is not ready yet");
+
+  const row = await db.getFirstAsync<ProductSummary>(
+    `SELECT COUNT(*) as productCount,
+            COALESCE(SUM(stock_quantity), 0) as totalUnits,
+            COALESCE(SUM(${PRODUCT_STOCK_VALUE_EXPRESSION}), 0) as totalStockValue,
+            COALESCE(SUM(CASE WHEN stock_quantity < ? THEN 1 ELSE 0 END), 0) as lowStockCount
+     FROM products`,
+    LOW_STOCK_THRESHOLD,
+  );
+
+  if (!row) throw new Error("Inventory summary query returned no result");
+  return row;
 }
 
 export async function createProduct(input: CreateProductInput): Promise<void> {
@@ -96,32 +138,4 @@ export async function adjustProductStock(
     delta,
     id,
   );
-}
-
-export async function fetchProductSummary(): Promise<ProductSummary> {
-  const db = getDatabase();
-  if (!db) {
-    return { productCount: 0, totalUnits: 0, totalStockValue: 0, lowStockCount: 0 };
-  }
-
-  const row = await db.getFirstAsync<{
-    productCount: number;
-    totalUnits: number;
-    totalStockValue: number;
-    lowStockCount: number;
-  }>(
-    `SELECT COUNT(*) as productCount,
-            COALESCE(SUM(stock_quantity), 0) as totalUnits,
-            COALESCE(SUM(price * stock_quantity), 0) as totalStockValue,
-            COALESCE(SUM(CASE WHEN stock_quantity < ? THEN 1 ELSE 0 END), 0) as lowStockCount
-     FROM products`,
-    LOW_STOCK_THRESHOLD,
-  );
-
-  return {
-    productCount: row?.productCount ?? 0,
-    totalUnits: row?.totalUnits ?? 0,
-    totalStockValue: row?.totalStockValue ?? 0,
-    lowStockCount: row?.lowStockCount ?? 0,
-  };
 }

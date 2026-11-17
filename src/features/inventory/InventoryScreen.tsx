@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
-  ScrollView,
+  FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -28,7 +28,7 @@ import { formatCurrency } from "@/shared/utils/formatter";
 import {
   useAdjustProductStock,
   useCreateProduct,
-  useProducts,
+  usePagedProducts,
   useProductSummary,
 } from "./hooks/useInventory";
 import { CreateProductSchema } from "./validation";
@@ -52,8 +52,22 @@ export default function InventoryScreen() {
   const [stock, setStock] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { data: products = [], isLoading } = useProducts();
-  const { data: summary } = useProductSummary();
+  const {
+    products,
+    isLoading,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    error: productsError,
+    refetch: refetchProducts,
+  } = usePagedProducts();
+  const {
+    data: summary,
+    isLoading: isSummaryLoading,
+    error: summaryError,
+    refetch: refetchSummary,
+  } = useProductSummary();
+  const dataError = productsError ?? summaryError;
   const createProduct = useCreateProduct();
   const adjustStock = useAdjustProductStock();
 
@@ -93,286 +107,342 @@ export default function InventoryScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <ScrollView
+      <FlatList
+        data={products}
+        keyExtractor={(product) => String(product.id)}
+        renderItem={({ item: product, index }) => {
+          const lowStock = product.stockQuantity < LOW_STOCK_THRESHOLD;
+          return (
+            <View
+              style={[
+                styles.productRow,
+                index === 0 && styles.productRowFirst,
+                index === products.length - 1 &&
+                  !hasNextPage &&
+                  styles.productRowLast,
+              ]}>
+              <View style={styles.productIcon}>
+                <MaterialCommunityIcons
+                  name="package-variant-closed"
+                  size={18}
+                  color={colors.primary}
+                />
+              </View>
+              <View style={styles.productContent}>
+                <Text style={styles.productName}>{product.name}</Text>
+                <Text style={styles.productMeta}>
+                  {product.category ?? "No category"} ·{" "}
+                  {formatCurrency(product.price)}
+                </Text>
+                <Text
+                  style={[
+                    styles.stockText,
+                    lowStock && styles.stockTextLow,
+                  ]}>
+                  Stock: {product.stockQuantity} {lowStock ? "(low)" : ""}
+                </Text>
+              </View>
+
+              <View style={styles.stockControls}>
+                <TouchableOpacity
+                  style={styles.stockButton}
+                  activeOpacity={0.8}
+                  onPress={() =>
+                    adjustStock.mutate({ id: product.id, delta: -1 })
+                  }
+                  disabled={product.stockQuantity <= 0}>
+                  <MaterialCommunityIcons
+                    name="minus"
+                    size={16}
+                    color={colors.textPrimary}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.stockButton}
+                  activeOpacity={0.8}
+                  onPress={() =>
+                    adjustStock.mutate({ id: product.id, delta: 1 })
+                  }>
+                  <MaterialCommunityIcons
+                    name="plus"
+                    size={16}
+                    color={colors.textPrimary}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        }}
+        ItemSeparatorComponent={() => (
+          <View style={styles.productDivider} />
+        )}
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}>
-        <PageHeader
-          title="Inventory"
-          subtitle="Products and stock levels"
-          icon="package-variant-closed"
-          gradient={[colors.primary, colors.primaryDeep]}
-          onBack={() => {
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace("/(tabs)/05-settings");
-            }
-          }}
-        />
-
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Products</Text>
-            <Text style={styles.summaryValue}>
-              {summary?.productCount ?? 0}
-            </Text>
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Units</Text>
-            <Text style={styles.summaryValue}>{summary?.totalUnits ?? 0}</Text>
-          </View>
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Stock value</Text>
-            <Text style={[styles.summaryValue, { color: colors.primary }]}>
-              {formatCurrency(summary?.totalStockValue ?? 0)}
-            </Text>
-          </View>
-        </View>
-
-        {!!(summary?.lowStockCount ?? 0) && (
-          <View
-            style={[
-              styles.lowStockNote,
-              {
-                backgroundColor:
-                  isDark ? lowStockColors.dark.bg : lowStockColors.light.bg,
-                borderColor:
-                  isDark ?
-                    lowStockColors.dark.border
-                  : lowStockColors.light.border,
-              },
-            ]}>
-            <MaterialCommunityIcons
-              name="alert-circle-outline"
-              size={16}
-              color={
-                isDark ? lowStockColors.dark.text : lowStockColors.light.text
-              }
+        showsVerticalScrollIndicator={false}
+        initialNumToRender={12}
+        maxToRenderPerBatch={12}
+        windowSize={7}
+        onEndReached={() => {
+          if (hasNextPage && !isFetchingNextPage) {
+            void fetchNextPage();
+          }
+        }}
+        onEndReachedThreshold={0.4}
+        ListHeaderComponent={
+          <>
+            <PageHeader
+              title="Inventory"
+              subtitle="Products and stock levels"
+              icon="package-variant-closed"
+              gradient={[colors.primary, colors.primaryDeep]}
+              onBack={() => {
+                if (router.canGoBack()) {
+                  router.back();
+                } else {
+                  router.replace("/(tabs)/05-settings");
+                }
+              }}
             />
-            <Text
-              style={[
-                styles.lowStockNoteText,
-                {
-                  color:
+
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryLabel}>Products</Text>
+                <Text style={styles.summaryValue}>
+                  {isSummaryLoading ? "…" : (summary?.productCount ?? 0)}
+                </Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryLabel}>Units</Text>
+                <Text style={styles.summaryValue}>
+                  {isSummaryLoading ? "…" : (summary?.totalUnits ?? 0)}
+                </Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryLabel}>Stock value</Text>
+                <Text style={[styles.summaryValue, { color: colors.primary }]}>
+                  {isSummaryLoading ?
+                    "…"
+                  : formatCurrency(summary?.totalStockValue ?? 0)}
+                </Text>
+              </View>
+            </View>
+
+            {!!(summary?.lowStockCount ?? 0) && (
+              <View
+                style={[
+                  styles.lowStockNote,
+                  {
+                    backgroundColor:
+                      isDark ?
+                        lowStockColors.dark.bg
+                      : lowStockColors.light.bg,
+                    borderColor:
+                      isDark ?
+                        lowStockColors.dark.border
+                      : lowStockColors.light.border,
+                  },
+                ]}>
+                <MaterialCommunityIcons
+                  name="alert-circle-outline"
+                  size={16}
+                  color={
                     isDark ?
                       lowStockColors.dark.text
-                    : lowStockColors.light.text,
-                },
-              ]}>
-              {summary?.lowStockCount} product(s) have low stock (below{" "}
-              {LOW_STOCK_THRESHOLD} units).
-            </Text>
-          </View>
-        )}
-
-        <TouchableOpacity
-          style={styles.toggleButton}
-          activeOpacity={0.85}
-          onPress={() => setShowForm((v) => !v)}>
-          <View style={styles.toggleIcon}>
-            <MaterialCommunityIcons
-              name={showForm ? "minus" : "plus"}
-              size={18}
-              color={colors.primary}
-            />
-          </View>
-          <Text style={styles.toggleButtonText}>
-            {showForm ? "Hide add product" : "Add product"}
-          </Text>
-          <MaterialCommunityIcons
-            name={showForm ? "chevron-up" : "chevron-down"}
-            size={22}
-            color={colors.textMuted}
-          />
-        </TouchableOpacity>
-
-        {showForm && (
-          <View style={styles.formCard}>
-            <View style={styles.field}>
-              <LabeledInput
-                label="Product Name"
-                placeholder="e.g. Black Pants"
-                value={name}
-                onChangeText={setName}
-                labelColor={colors.textPrimary}
-                inputBgColor={colors.inputBG}
-                borderColor={colors.border}
-                placeholderColor={colors.textMuted}
-                labelStyle={styles.inputLabel}
-                inputStyle={styles.inputText}
-                inputContainerStyle={styles.inputContainer}
-              />
-              {!!errors.name && (
-                <Text style={styles.errorText}>{errors.name}</Text>
-              )}
-            </View>
-
-            <View style={styles.field}>
-              <LabeledInput
-                label="Category (optional)"
-                placeholder="e.g. Clothing"
-                value={category}
-                onChangeText={setCategory}
-                labelColor={colors.textPrimary}
-                inputBgColor={colors.inputBG}
-                borderColor={colors.border}
-                placeholderColor={colors.textMuted}
-                labelStyle={styles.inputLabel}
-                inputStyle={styles.inputText}
-                inputContainerStyle={styles.inputContainer}
-              />
-            </View>
-
-            <View style={styles.field}>
-              <LabeledInput
-                label="Selling Price"
-                placeholder="Rs."
-                keyboardType="decimal-pad"
-                value={price}
-                onChangeText={setPrice}
-                labelColor={colors.textPrimary}
-                inputBgColor={colors.inputBG}
-                borderColor={colors.border}
-                placeholderColor={colors.textMuted}
-                labelStyle={styles.inputLabel}
-                inputStyle={styles.inputText}
-                inputContainerStyle={styles.inputContainer}
-              />
-              {!!errors.price && (
-                <Text style={styles.errorText}>{errors.price}</Text>
-              )}
-            </View>
-
-            <View style={styles.field}>
-              <LabeledInput
-                label="Cost Price (optional)"
-                placeholder="Rs."
-                keyboardType="decimal-pad"
-                value={costPrice}
-                onChangeText={setCostPrice}
-                labelColor={colors.textPrimary}
-                inputBgColor={colors.inputBG}
-                borderColor={colors.border}
-                placeholderColor={colors.textMuted}
-                labelStyle={styles.inputLabel}
-                inputStyle={styles.inputText}
-                inputContainerStyle={styles.inputContainer}
-              />
-            </View>
-
-            <View style={styles.field}>
-              <LabeledInput
-                label="Initial Stock"
-                placeholder="0"
-                keyboardType="number-pad"
-                value={stock}
-                onChangeText={setStock}
-                labelColor={colors.textPrimary}
-                inputBgColor={colors.inputBG}
-                borderColor={colors.border}
-                placeholderColor={colors.textMuted}
-                labelStyle={styles.inputLabel}
-                inputStyle={styles.inputText}
-                inputContainerStyle={styles.inputContainer}
-              />
-              {!!errors.stockQuantity && (
-                <Text style={styles.errorText}>{errors.stockQuantity}</Text>
-              )}
-            </View>
-
-            <PrimaryButton
-              title="Add product"
-              loading={createProduct.isPending}
-              onPress={handleAddProduct}
-              gradient={[colors.primary, colors.primaryDeep]}
-            />
-            {createProduct.isError && (
-              <Text style={styles.errorText}>
-                Could not add the product. Please try again.
-              </Text>
-            )}
-          </View>
-        )}
-
-        <View style={styles.listSection}>
-          <Text style={styles.sectionTitle}>Products</Text>
-
-          {isLoading ?
-            <ActivityIndicator color={colors.primary} />
-          : <View style={styles.listCard}>
-              {products.length === 0 && (
-                <Text style={styles.emptyText}>
-                  No products yet. Add your first product above.
+                    : lowStockColors.light.text
+                  }
+                />
+                <Text
+                  style={[
+                    styles.lowStockNoteText,
+                    {
+                      color:
+                        isDark ?
+                          lowStockColors.dark.text
+                        : lowStockColors.light.text,
+                    },
+                  ]}>
+                  {summary?.lowStockCount} product(s) have low stock (below{" "}
+                  {LOW_STOCK_THRESHOLD} units).
                 </Text>
-              )}
-              {products.map((product, index) => {
-                const lowStock = product.stockQuantity < LOW_STOCK_THRESHOLD;
-                return (
-                  <View
-                    key={product.id}
-                    style={[
-                      styles.productRow,
-                      index !== products.length - 1 && styles.productDivider,
-                    ]}>
-                    <View style={styles.productIcon}>
-                      <MaterialCommunityIcons
-                        name="package-variant-closed"
-                        size={18}
-                        color={colors.primary}
-                      />
-                    </View>
-                    <View style={styles.productContent}>
-                      <Text style={styles.productName}>{product.name}</Text>
-                      <Text style={styles.productMeta}>
-                        {product.category ?? "No category"} ·{" "}
-                        {formatCurrency(product.price)}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.stockText,
-                          lowStock && styles.stockTextLow,
-                        ]}>
-                        Stock: {product.stockQuantity} {lowStock ? "(low)" : ""}
-                      </Text>
-                    </View>
+              </View>
+            )}
 
-                    <View style={styles.stockControls}>
-                      <TouchableOpacity
-                        style={styles.stockButton}
-                        activeOpacity={0.8}
-                        onPress={() =>
-                          adjustStock.mutate({ id: product.id, delta: -1 })
-                        }
-                        disabled={product.stockQuantity <= 0}>
-                        <MaterialCommunityIcons
-                          name="minus"
-                          size={16}
-                          color={colors.textPrimary}
-                        />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.stockButton}
-                        activeOpacity={0.8}
-                        onPress={() =>
-                          adjustStock.mutate({ id: product.id, delta: 1 })
-                        }>
-                        <MaterialCommunityIcons
-                          name="plus"
-                          size={16}
-                          color={colors.textPrimary}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                );
-              })}
+            <TouchableOpacity
+              style={styles.toggleButton}
+              activeOpacity={0.85}
+              onPress={() => setShowForm((v) => !v)}>
+              <View style={styles.toggleIcon}>
+                <MaterialCommunityIcons
+                  name={showForm ? "minus" : "plus"}
+                  size={18}
+                  color={colors.primary}
+                />
+              </View>
+              <Text style={styles.toggleButtonText}>
+                {showForm ? "Hide add product" : "Add product"}
+              </Text>
+              <MaterialCommunityIcons
+                name={showForm ? "chevron-up" : "chevron-down"}
+                size={22}
+                color={colors.textMuted}
+              />
+            </TouchableOpacity>
+
+            {showForm && (
+              <View style={styles.formCard}>
+                <View style={styles.field}>
+                  <LabeledInput
+                    label="Product Name"
+                    placeholder="e.g. Black Pants"
+                    value={name}
+                    onChangeText={setName}
+                    labelColor={colors.textPrimary}
+                    inputBgColor={colors.inputBG}
+                    borderColor={colors.border}
+                    placeholderColor={colors.textMuted}
+                    labelStyle={styles.inputLabel}
+                    inputStyle={styles.inputText}
+                    inputContainerStyle={styles.inputContainer}
+                  />
+                  {!!errors.name && (
+                    <Text style={styles.errorText}>{errors.name}</Text>
+                  )}
+                </View>
+
+                <View style={styles.field}>
+                  <LabeledInput
+                    label="Category (optional)"
+                    placeholder="e.g. Clothing"
+                    value={category}
+                    onChangeText={setCategory}
+                    labelColor={colors.textPrimary}
+                    inputBgColor={colors.inputBG}
+                    borderColor={colors.border}
+                    placeholderColor={colors.textMuted}
+                    labelStyle={styles.inputLabel}
+                    inputStyle={styles.inputText}
+                    inputContainerStyle={styles.inputContainer}
+                  />
+                </View>
+
+                <View style={styles.field}>
+                  <LabeledInput
+                    label="Selling Price"
+                    placeholder="Rs."
+                    keyboardType="decimal-pad"
+                    value={price}
+                    onChangeText={setPrice}
+                    labelColor={colors.textPrimary}
+                    inputBgColor={colors.inputBG}
+                    borderColor={colors.border}
+                    placeholderColor={colors.textMuted}
+                    labelStyle={styles.inputLabel}
+                    inputStyle={styles.inputText}
+                    inputContainerStyle={styles.inputContainer}
+                  />
+                  {!!errors.price && (
+                    <Text style={styles.errorText}>{errors.price}</Text>
+                  )}
+                </View>
+
+                <View style={styles.field}>
+                  <LabeledInput
+                    label="Cost Price (optional)"
+                    placeholder="Rs."
+                    keyboardType="decimal-pad"
+                    value={costPrice}
+                    onChangeText={setCostPrice}
+                    labelColor={colors.textPrimary}
+                    inputBgColor={colors.inputBG}
+                    borderColor={colors.border}
+                    placeholderColor={colors.textMuted}
+                    labelStyle={styles.inputLabel}
+                    inputStyle={styles.inputText}
+                    inputContainerStyle={styles.inputContainer}
+                  />
+                </View>
+
+                <View style={styles.field}>
+                  <LabeledInput
+                    label="Initial Stock"
+                    placeholder="0"
+                    keyboardType="number-pad"
+                    value={stock}
+                    onChangeText={setStock}
+                    labelColor={colors.textPrimary}
+                    inputBgColor={colors.inputBG}
+                    borderColor={colors.border}
+                    placeholderColor={colors.textMuted}
+                    labelStyle={styles.inputLabel}
+                    inputStyle={styles.inputText}
+                    inputContainerStyle={styles.inputContainer}
+                  />
+                  {!!errors.stockQuantity && (
+                    <Text style={styles.errorText}>
+                      {errors.stockQuantity}
+                    </Text>
+                  )}
+                </View>
+
+                <PrimaryButton
+                  title="Add product"
+                  loading={createProduct.isPending}
+                  onPress={handleAddProduct}
+                  gradient={[colors.primary, colors.primaryDeep]}
+                />
+                {createProduct.isError && (
+                  <Text style={styles.errorText}>
+                    Could not add the product. Please try again.
+                  </Text>
+                )}
+              </View>
+            )}
+
+            <View style={styles.listSection}>
+              <Text style={styles.sectionTitle}>Products</Text>
             </View>
-          }
-        </View>
-      </ScrollView>
+            {!!dataError && (
+              <View style={styles.dataError}>
+                <Text style={styles.errorText}>
+                  Could not load inventory data: {dataError.message}
+                </Text>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={() => {
+                    void refetchProducts();
+                    void refetchSummary();
+                  }}>
+                  <Text style={styles.retryText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
+        }
+        ListEmptyComponent={
+          isLoading ?
+            <ActivityIndicator
+              color={colors.primary}
+              style={styles.listLoading}
+            />
+          : <View style={styles.listCard}>
+              <Text style={styles.emptyText}>
+                {productsError ?
+                  "Products could not be loaded."
+                : "No products yet. Add your first product above."}
+              </Text>
+          </View>
+        }
+        ListFooterComponent={
+          isFetchingNextPage ?
+            <ActivityIndicator
+              color={colors.primary}
+              style={styles.listLoading}
+            />
+          : null
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -518,7 +588,30 @@ function createStyles(colors: typeof Colors_InventoryPage, isDark: boolean) {
       borderColor: colors.border,
       overflow: "hidden",
     },
+    dataError: {
+      marginTop: Spacing.md,
+      marginHorizontal: Spacing.lg,
+      padding: Spacing.md,
+      gap: Spacing.sm,
+      backgroundColor: colors.surface,
+      borderRadius: Radius.md,
+      borderWidth: BorderWidth.thin,
+      borderColor: colors.danger,
+    },
+    retryText: {
+      color: colors.primary,
+      fontSize: FontSize.sm,
+      fontWeight: FontWeight.semibold,
+    },
+    listLoading: {
+      marginVertical: Spacing.xl,
+    },
     productRow: {
+      marginHorizontal: Spacing.lg,
+      backgroundColor: colors.surface,
+      borderLeftWidth: BorderWidth.thin,
+      borderRightWidth: BorderWidth.thin,
+      borderColor: colors.border,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
@@ -526,9 +619,20 @@ function createStyles(colors: typeof Colors_InventoryPage, isDark: boolean) {
       paddingVertical: Spacing.md,
       gap: Spacing.md,
     },
+    productRowFirst: {
+      borderTopWidth: BorderWidth.thin,
+      borderTopLeftRadius: Radius.lg,
+      borderTopRightRadius: Radius.lg,
+    },
+    productRowLast: {
+      borderBottomWidth: BorderWidth.thin,
+      borderBottomLeftRadius: Radius.lg,
+      borderBottomRightRadius: Radius.lg,
+    },
     productDivider: {
       borderBottomWidth: BorderWidth.thin,
       borderBottomColor: colors.border,
+      marginHorizontal: Spacing.lg,
     },
     productIcon: {
       width: 36,

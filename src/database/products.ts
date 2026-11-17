@@ -1,5 +1,8 @@
 import type { SQLiteDatabase } from "expo-sqlite";
 
+export const PRODUCT_STOCK_VALUE_EXPRESSION =
+  "COALESCE(cost_price, 0) * stock_quantity";
+
 export type ProductHint = {
   /** Selling price to use if the product has to be created. */
   price?: number | null;

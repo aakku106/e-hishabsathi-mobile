@@ -1,5 +1,6 @@
 import dayjs, { type Dayjs } from "dayjs";
 
+import { PRODUCT_STOCK_VALUE_EXPRESSION } from "@/database/products";
 import { getDatabase } from "@/database/sqlite";
 import { lastMonths, lastWeekdayLabels } from "@/shared/utils/date";
 import { formatCurrency } from "@/shared/utils/formatter";
@@ -56,7 +57,7 @@ export async function fetchDashboardData(
        (SELECT COALESCE(SUM(amount), 0) FROM sales_entries WHERE sold_at >= ?) AS totalSales,
        (SELECT COALESCE(SUM(COALESCE(cost_price, 0) * quantity), 0) FROM sales_entries WHERE sold_at >= ?) AS totalCost,
        (SELECT COALESCE(SUM(amount), 0) FROM udharo_entries WHERE created_at >= ?) AS totalUdharo,
-       (SELECT COALESCE(SUM(COALESCE(cost_price, 0) * stock_quantity), 0) FROM products) AS stockValue,
+       (SELECT COALESCE(SUM(${PRODUCT_STOCK_VALUE_EXPRESSION}), 0) FROM products) AS stockValue,
        (SELECT COUNT(*) FROM products WHERE stock_quantity < 10) AS lowStockCount,
        NULL AS weekday,
        NULL AS amount,
@@ -89,7 +90,8 @@ export async function fetchDashboardData(
   );
 
   const statsRow = rows.find((row) => row.rowType === "stats");
-  if (!statsRow) throw new Error("Dashboard statistics query returned no result");
+  if (!statsRow)
+    throw new Error("Dashboard statistics query returned no result");
 
   const incomeBars = rows.flatMap((row) => {
     if (
@@ -102,11 +104,7 @@ export async function fetchDashboardData(
     return [{ weekday: row.weekday, amount: row.amount }];
   });
   const monthTrend = rows.flatMap((row) => {
-    if (
-      row.rowType !== "trend" ||
-      row.month === null ||
-      row.amount === null
-    ) {
+    if (row.rowType !== "trend" || row.month === null || row.amount === null) {
       return [];
     }
     return [{ month: row.month, amount: row.amount }];
@@ -157,8 +155,13 @@ export async function fetchDashboardData(
     }),
   );
 
-  const trendMap = new Map(monthTrend.map((point) => [point.month, point.amount]));
-  const maxTrendAmount = Math.max(1, ...monthTrend.map((point) => point.amount));
+  const trendMap = new Map(
+    monthTrend.map((point) => [point.month, point.amount]),
+  );
+  const maxTrendAmount = Math.max(
+    1,
+    ...monthTrend.map((point) => point.amount),
+  );
   const trend: DashboardTrendPoint[] = lastMonths(7).map(
     ({ label, month }) => ({
       label,

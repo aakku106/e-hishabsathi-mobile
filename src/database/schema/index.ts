@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 export const MIGRATIONS: { version: number; name: string; sql: string }[] = [
   {
@@ -184,6 +184,15 @@ export const MIGRATIONS: { version: number; name: string; sql: string }[] = [
         LIMIT 1
       )
       WHERE customer_id IS NULL;
+    `,
+  },
+  {
+    version: 7,
+    name: "index_products_name_case_insensitive",
+    sql: `
+      DROP INDEX IF EXISTS idx_products_name;
+      CREATE INDEX IF NOT EXISTS idx_products_name_nocase
+      ON products (name COLLATE NOCASE);
     `,
   },
 ];
