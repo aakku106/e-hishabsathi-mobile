@@ -1,5 +1,4 @@
 import { Colors_DashboardPage, getThemedColors } from "@/shared/constants/colors";
-import { Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -35,7 +34,7 @@ import { useUdharoSummary } from "@/features/udharo/hooks/useUdharoEntries";
 import { useSettingsStore } from "@/store/settings.store";
 import { useTheme } from "@/providers/ThemeProvider";
 
-const { height: WINDOW_HEIGHT, width: WINDOW_WIDTH } = Dimensions.get("window");
+const { height: WINDOW_HEIGHT } = Dimensions.get("window");
 
 const SHEET_HEIGHT = WINDOW_HEIGHT * 0.85;
 const DRAG_THRESHOLD = 100;
@@ -111,6 +110,8 @@ export default function AIOverlay({
       // Call onClose after animation
       setTimeout(() => runOnJS(onClose)(), 400);
     }
+  // Shared values are stable references; only visible/onClose are true deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, onClose]);
 
   // Animated styles
@@ -129,6 +130,7 @@ export default function AIOverlay({
   const onGestureEvent = (event: { nativeEvent: { translationY: number } }) => {
     // Only allow dragging down (positive translation)
     const translation = Math.max(0, event.nativeEvent.translationY);
+    // eslint-disable-next-line react-hooks/immutability
     translateY.value = translation;
   };
 
@@ -136,8 +138,11 @@ export default function AIOverlay({
     if (event.nativeEvent.state === State.END) {
       const shouldDismiss = event.nativeEvent.translationY > DRAG_THRESHOLD || event.nativeEvent.velocityY > 1000;
       if (shouldDismiss) {
+        // eslint-disable-next-line react-hooks/immutability
         isDismissing.value = true;
+        // eslint-disable-next-line react-hooks/immutability
         translateY.value = withSpring(SHEET_HEIGHT, SPRING_CONFIG);
+        // eslint-disable-next-line react-hooks/immutability
         backdropOpacity.value = withTiming(0, { duration: 250 });
         setTimeout(() => runOnJS(onClose)(), 350);
       } else {
@@ -253,7 +258,7 @@ export default function AIOverlay({
       />
 
       {/* Bottom Sheet */}
-      <PanGestureHandler onGestureEvent={gestureHandler}>
+      <PanGestureHandler onGestureEvent={onGestureEvent} onHandlerStateChange={onHandlerStateChange}>
         <Animated.View style={[styles.sheetContainer, sheetAnimatedStyle]}>
           <View style={[styles.sheet, { backgroundColor: sheetBackgroundColor }]}>
             {/* Drag Handle */}
