@@ -11,16 +11,19 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useTheme } from "@/providers/ThemeProvider";
 import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 import { PageHeader } from "@/shared/components/Header/PageHeader";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
-import { Colors_InventoryPage, getThemedColors } from "@/shared/constants/colors";
+import {
+  Colors_InventoryPage,
+  getThemedColors,
+} from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { formatCurrency } from "@/shared/utils/formatter";
-import { useTheme } from "@/providers/ThemeProvider";
 
 import {
   useAdjustProductStock,
@@ -93,20 +96,27 @@ export default function InventoryScreen() {
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+        showsVerticalScrollIndicator={false}>
         <PageHeader
           title="Inventory"
           subtitle="Products and stock levels"
           icon="package-variant-closed"
           gradient={[colors.primary, colors.primaryDeep]}
-          onBack={() => router.back()}
+          onBack={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/(tabs)/05-settings");
+            }
+          }}
         />
 
         <View style={styles.summaryCard}>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Products</Text>
-            <Text style={styles.summaryValue}>{summary?.productCount ?? 0}</Text>
+            <Text style={styles.summaryValue}>
+              {summary?.productCount ?? 0}
+            </Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryItem}>
@@ -127,24 +137,29 @@ export default function InventoryScreen() {
             style={[
               styles.lowStockNote,
               {
-                backgroundColor: isDark ?
-                  lowStockColors.dark.bg
-                : lowStockColors.light.bg,
-                borderColor: isDark ?
-                  lowStockColors.dark.border
-                : lowStockColors.light.border,
+                backgroundColor:
+                  isDark ? lowStockColors.dark.bg : lowStockColors.light.bg,
+                borderColor:
+                  isDark ?
+                    lowStockColors.dark.border
+                  : lowStockColors.light.border,
               },
             ]}>
             <MaterialCommunityIcons
               name="alert-circle-outline"
               size={16}
-              color={isDark ? lowStockColors.dark.text : lowStockColors.light.text}
+              color={
+                isDark ? lowStockColors.dark.text : lowStockColors.light.text
+              }
             />
             <Text
               style={[
                 styles.lowStockNoteText,
                 {
-                  color: isDark ? lowStockColors.dark.text : lowStockColors.light.text,
+                  color:
+                    isDark ?
+                      lowStockColors.dark.text
+                    : lowStockColors.light.text,
                 },
               ]}>
               {summary?.lowStockCount} product(s) have low stock (below{" "}
@@ -156,8 +171,7 @@ export default function InventoryScreen() {
         <TouchableOpacity
           style={styles.toggleButton}
           activeOpacity={0.85}
-          onPress={() => setShowForm((v) => !v)}
-        >
+          onPress={() => setShowForm((v) => !v)}>
           <View style={styles.toggleIcon}>
             <MaterialCommunityIcons
               name={showForm ? "minus" : "plus"}
@@ -191,7 +205,9 @@ export default function InventoryScreen() {
                 inputStyle={styles.inputText}
                 inputContainerStyle={styles.inputContainer}
               />
-              {!!errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+              {!!errors.name && (
+                <Text style={styles.errorText}>{errors.name}</Text>
+              )}
             </View>
 
             <View style={styles.field}>
@@ -225,7 +241,9 @@ export default function InventoryScreen() {
                 inputStyle={styles.inputText}
                 inputContainerStyle={styles.inputContainer}
               />
-              {!!errors.price && <Text style={styles.errorText}>{errors.price}</Text>}
+              {!!errors.price && (
+                <Text style={styles.errorText}>{errors.price}</Text>
+              )}
             </View>
 
             <View style={styles.field}>
@@ -282,10 +300,9 @@ export default function InventoryScreen() {
         <View style={styles.listSection}>
           <Text style={styles.sectionTitle}>Products</Text>
 
-          {isLoading ? (
+          {isLoading ?
             <ActivityIndicator color={colors.primary} />
-          ) : (
-            <View style={styles.listCard}>
+          : <View style={styles.listCard}>
               {products.length === 0 && (
                 <Text style={styles.emptyText}>
                   No products yet. Add your first product above.
@@ -299,8 +316,7 @@ export default function InventoryScreen() {
                     style={[
                       styles.productRow,
                       index !== products.length - 1 && styles.productDivider,
-                    ]}
-                  >
+                    ]}>
                     <View style={styles.productIcon}>
                       <MaterialCommunityIcons
                         name="package-variant-closed"
@@ -319,8 +335,7 @@ export default function InventoryScreen() {
                           styles.stockText,
                           lowStock && styles.stockTextLow,
                         ]}>
-                        Stock: {product.stockQuantity}{" "}
-                        {lowStock ? "(low)" : ""}
+                        Stock: {product.stockQuantity} {lowStock ? "(low)" : ""}
                       </Text>
                     </View>
 
@@ -331,8 +346,7 @@ export default function InventoryScreen() {
                         onPress={() =>
                           adjustStock.mutate({ id: product.id, delta: -1 })
                         }
-                        disabled={product.stockQuantity <= 0}
-                      >
+                        disabled={product.stockQuantity <= 0}>
                         <MaterialCommunityIcons
                           name="minus"
                           size={16}
@@ -344,8 +358,7 @@ export default function InventoryScreen() {
                         activeOpacity={0.8}
                         onPress={() =>
                           adjustStock.mutate({ id: product.id, delta: 1 })
-                        }
-                      >
+                        }>
                         <MaterialCommunityIcons
                           name="plus"
                           size={16}
@@ -357,7 +370,7 @@ export default function InventoryScreen() {
                 );
               })}
             </View>
-          )}
+          }
         </View>
       </ScrollView>
     </SafeAreaView>

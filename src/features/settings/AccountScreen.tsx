@@ -17,16 +17,19 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useBusiness } from "@/features/business/hooks/useBusiness";
+import { useDeleteAllData } from "@/features/settings/hooks/useDeleteAllData";
+import { useTheme } from "@/providers/ThemeProvider";
 import { PageHeader } from "@/shared/components/Header/PageHeader";
-import { Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
+import {
+  Colors_SettingsPage,
+  getThemedColors,
+} from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
-import { useTheme } from "@/providers/ThemeProvider";
-import { useDeleteAllData } from "@/features/settings/hooks/useDeleteAllData";
+import { logger } from "@/shared/utils/logger";
 import { useAuthStore } from "@/store/auth.store";
 import { useSettingsStore } from "@/store/settings.store";
-import { logger } from "@/shared/utils/logger";
 
 type ConfirmationStep = "warning" | "final-warning" | "type-delete";
 
@@ -84,8 +87,7 @@ const COPY = {
       "तपाईंको स्थानीय डेटाबेस मेटिनेछ र तपाईं लगआउट हुनुहुनेछ। यो डेटा आवश्यक छैन भन्ने निश्चित भएपछि मात्र अगाडि बढ्नुहोस्।",
     continue: "अगाडि बढ्नुहोस्",
     typeTitle: "पुष्टि गर्न DELETE लेख्नुहोस्",
-    typeBody:
-      "यस उपकरणको सबै डेटा स्थायी रूपमा मेटाउन तल DELETE लेख्नुहोस्।",
+    typeBody: "यस उपकरणको सबै डेटा स्थायी रूपमा मेटाउन तल DELETE लेख्नुहोस्।",
     placeholder: "DELETE लेख्नुहोस्",
     deleteForever: "स्थायी रूपमा मेटाउनुहोस्",
     cancel: "रद्द गर्नुहोस्",
@@ -149,7 +151,13 @@ export default function AccountScreen() {
           subtitle={copy.subtitle}
           icon="account-outline"
           gradient={[colors.primary, colors.primaryDeep]}
-          onBack={() => router.back()}
+          onBack={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/(tabs)/05-settings");
+            }
+          }}
         />
 
         <View style={styles.section}>
@@ -226,9 +234,7 @@ export default function AccountScreen() {
         <KeyboardAvoidingView
           style={styles.modalOverlay}
           behavior={Platform.OS === "ios" ? "padding" : undefined}>
-          <View
-            accessibilityViewIsModal
-            style={styles.confirmationCard}>
+          <View accessibilityViewIsModal style={styles.confirmationCard}>
             <View style={styles.warningIcon}>
               <MaterialCommunityIcons
                 name="alert-outline"
@@ -237,13 +243,17 @@ export default function AccountScreen() {
               />
             </View>
             <Text style={styles.confirmationTitle}>
-              {confirmationStep === "warning" ? copy.warningTitle
-              : confirmationStep === "final-warning" ? copy.finalTitle
+              {confirmationStep === "warning" ?
+                copy.warningTitle
+              : confirmationStep === "final-warning" ?
+                copy.finalTitle
               : copy.typeTitle}
             </Text>
             <Text style={styles.confirmationBody}>
-              {confirmationStep === "warning" ? copy.warningBody
-              : confirmationStep === "final-warning" ? copy.finalBody
+              {confirmationStep === "warning" ?
+                copy.warningBody
+              : confirmationStep === "final-warning" ?
+                copy.finalBody
               : copy.typeBody}
             </Text>
 
@@ -291,14 +301,16 @@ export default function AccountScreen() {
                   accessibilityRole="button"
                   onPress={() =>
                     setConfirmationStep(
-                      confirmationStep === "warning" ?
-                        "final-warning"
-                      : "type-delete",
+                      confirmationStep === "warning" ? "final-warning" : (
+                        "type-delete"
+                      ),
                     )
                   }
                   style={styles.continueButton}>
                   <Text style={styles.continueText}>
-                    {confirmationStep === "warning" ? copy.review : copy.continue}
+                    {confirmationStep === "warning" ?
+                      copy.review
+                    : copy.continue}
                   </Text>
                 </Pressable>
               : <Pressable

@@ -12,7 +12,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { PageHeader } from "@/shared/components/Header/PageHeader";
-import { Dropdown, type DropdownOption } from "@/shared/components/DatePicker/DropDown";
+import {
+  Dropdown,
+  type DropdownOption,
+} from "@/shared/components/DatePicker/DropDown";
 import { Colors_TaxPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
@@ -29,7 +32,9 @@ const colors = Colors_TaxPage;
 export default function TaxScreen() {
   const router = useRouter();
   const options = taxMonthOptions();
-  const [selected, setSelected] = useState<DropdownOption>(options[options.length - 1]);
+  const [selected, setSelected] = useState<DropdownOption>(
+    options[options.length - 1],
+  );
 
   const { data: summary, isLoading } = useTaxSummary(String(selected.value));
 
@@ -39,14 +44,19 @@ export default function TaxScreen() {
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <ScrollView
         contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+        showsVerticalScrollIndicator={false}>
         <PageHeader
           title="Tax / VAT"
           subtitle="Monthly VAT summary for your shop"
           icon="file-percent-outline"
           gradient={[colors.primary, colors.primaryDeep]}
-          onBack={() => router.back()}
+          onBack={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/(tabs)/05-settings");
+            }
+          }}
         />
 
         <View style={styles.monthRow}>
@@ -66,16 +76,14 @@ export default function TaxScreen() {
           />
         </View>
 
-        {isLoading ? (
+        {isLoading ?
           <ActivityIndicator color={colors.primary} style={styles.loader} />
-        ) : (
-          <>
+        : <>
             <LinearGradient
               colors={[colors.primary, colors.primaryDeep]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={styles.heroCard}
-            >
+              style={styles.heroCard}>
               <Text style={styles.heroLabel}>
                 Taxable sales · {selected.label}
               </Text>
@@ -122,10 +130,15 @@ export default function TaxScreen() {
               </View>
             </View>
 
-            <View style={[styles.netCard, netPayable < 0 && styles.netCardCredit]}>
+            <View
+              style={[styles.netCard, netPayable < 0 && styles.netCardCredit]}>
               <View style={styles.netLeft}>
                 <Text style={styles.netLabel}>Net VAT payable</Text>
-                <Text style={[styles.netValue, netPayable < 0 && styles.netValueCredit]}>
+                <Text
+                  style={[
+                    styles.netValue,
+                    netPayable < 0 && styles.netValueCredit,
+                  ]}>
                   {netPayable < 0 ? "(credit) " : ""}
                   {formatCurrency(Math.abs(netPayable))}
                 </Text>
@@ -134,16 +147,14 @@ export default function TaxScreen() {
                 style={[
                   styles.netBadge,
                   netPayable < 0 ? styles.netBadgeCredit : styles.netBadgeDue,
-                ]}
-              >
+                ]}>
                 <Text
                   style={[
                     styles.netBadgeText,
-                    netPayable < 0
-                      ? styles.netBadgeTextCredit
-                      : styles.netBadgeTextDue,
-                  ]}
-                >
+                    netPayable < 0 ?
+                      styles.netBadgeTextCredit
+                    : styles.netBadgeTextDue,
+                  ]}>
                   {netPayable < 0 ? "Credit" : "Due"}
                 </Text>
               </View>
@@ -162,7 +173,7 @@ export default function TaxScreen() {
               </Text>
             </View>
           </>
-        )}
+        }
       </ScrollView>
     </SafeAreaView>
   );
@@ -197,7 +208,12 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg,
     padding: Spacing.xl,
     gap: Spacing.xs,
-    boxShadow: boxShadow({ y: 8, blur: 18, color: colors.primaryDeep, opacity: 0.25 }),
+    boxShadow: boxShadow({
+      y: 8,
+      blur: 18,
+      color: colors.primaryDeep,
+      opacity: 0.25,
+    }),
   },
   heroLabel: {
     color: "rgba(255,255,255,0.85)",
