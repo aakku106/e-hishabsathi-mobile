@@ -55,6 +55,7 @@ const COPY = {
     currently: "Currently",
     currency: "Currency",
     account: "Account",
+    accountHint: "Manage account and local data",
     notifications: "Notifications",
     language: "Change Language",
     terms: "Terms & Conditions",
@@ -81,6 +82,7 @@ const COPY = {
     currently: "हाल",
     currency: "मुद्रा",
     account: "खाता",
+    accountHint: "खाता र स्थानीय डेटा व्यवस्थापन गर्नुहोस्",
     notifications: "सूचनाहरू",
     language: "भाषा परिवर्तन",
     terms: "नियम तथा सर्तहरू",
@@ -304,13 +306,27 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{copy.general}</Text>
           <View style={styles.card}>
-            <SettingsLink
-              icon="account-outline"
-              label={copy.account}
-              value={business?.name ?? "-"}
-              colors={colors}
-              styles={styles}
-            />
+            <TouchableOpacity
+              style={styles.linkRow}
+              activeOpacity={0.8}
+              onPress={() => router.push("/account")}>
+              <View style={styles.linkIcon}>
+                <MaterialCommunityIcons
+                  name="account-outline"
+                  size={20}
+                  color={colors.primary}
+                />
+              </View>
+              <View style={styles.linkTextWrap}>
+                <Text style={styles.settingLabel}>{copy.account}</Text>
+                <Text style={styles.settingHint}>{copy.accountHint}</Text>
+              </View>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={22}
+                color={colors.textMuted}
+              />
+            </TouchableOpacity>
             <View style={styles.rowDivider} />
             <SettingsLink
               icon="bell-outline"
