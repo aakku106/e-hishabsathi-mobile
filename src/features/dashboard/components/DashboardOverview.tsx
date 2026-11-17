@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   Pressable,
   ScrollView,
@@ -96,7 +97,16 @@ export default function DashboardOverview() {
   const styles = createStyles(colors);
   const [period, setPeriod] = useState<DashboardPeriod>("today");
   const [periodMenuOpen, setPeriodMenuOpen] = useState(false);
-  const { stats, bars, trend } = useDashboardData(period);
+  const {
+    stats,
+    bars,
+    trend,
+    isLoading,
+    isFetching,
+    error,
+    databaseReady,
+    refetch,
+  } = useDashboardData(period);
   // UI toggle states
   const [incomeMode, setIncomeMode] = useState<string>("Income");
   const [trendMode, setTrendMode] = useState<string>("Month");
@@ -164,7 +174,14 @@ export default function DashboardOverview() {
       </View>
 
       <View style={styles.cardGrid}>
-        {stats.map((stat) => {
+        {isLoading ?
+          <View style={styles.dataStatus}>
+            <ActivityIndicator size="small" color={colors.greenPrimary} />
+            <Text style={styles.dataStatusText}>
+              {t("Loading dashboard data")}
+            </Text>
+          </View>
+        : stats.map((stat) => {
           return (
             <View key={stat.label} style={styles.statCard}>
               <View style={styles.statBody}>
@@ -199,6 +216,25 @@ export default function DashboardOverview() {
             </View>
           );
         })}
+        {!!error && (
+          <View style={styles.dataError}>
+            <Text style={styles.dataErrorText}>
+              {t("Dashboard data could not be loaded from the local database.")}
+            </Text>
+            <Text style={styles.dataErrorDetail}>{error.message}</Text>
+            {databaseReady && (
+              <TouchableOpacity
+                accessibilityRole="button"
+                disabled={isFetching}
+                onPress={() => void refetch()}
+                style={styles.retryButton}>
+                <Text style={styles.retryButtonText}>
+                  {isFetching ? t("Retrying…") : t("Retry")}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </View>
 
       <View style={styles.chartCard}>
@@ -451,6 +487,48 @@ function createStyles(colors: typeof Colors_DashboardPage) {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: Spacing.md,
+  },
+  dataStatus: {
+    width: "100%",
+    minHeight: 116,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+  },
+  dataStatusText: {
+    color: colors.textMuted,
+    fontSize: FontSize.sm,
+  },
+  dataError: {
+    width: "100%",
+    padding: Spacing.md,
+    gap: Spacing.sm,
+    backgroundColor: colors.surface,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: colors.redPrimary,
+  },
+  dataErrorText: {
+    color: colors.redPrimary,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
+  },
+  dataErrorDetail: {
+    color: colors.textMuted,
+    fontSize: FontSize.xs,
+  },
+  retryButton: {
+    alignSelf: "flex-start",
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: Radius.sm,
+    backgroundColor: colors.surfaceAlt,
+  },
+  retryButtonText: {
+    color: colors.greenPrimary,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
   },
   statCard: {
     width: "47.5%",
