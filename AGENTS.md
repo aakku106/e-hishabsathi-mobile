@@ -24,6 +24,7 @@ Repo root is `e-hishabsathi-mobile/` (git, `package.json`, Expo config); the out
 - expo-sqlite web/OPFS allows one exclusive database handle: use one dev server and close extra tabs to avoid `DatabaseLockedError`.
 - On web, `USE_NATIVE_DRIVER=false`; put `pointerEvents` in `style`, and use `boxShadow` helpers instead of deprecated `shadow*` props.
 - AI chat is a bottom sheet (not a route) opened by the floating AI button on Sales, Buy, Udharo, and Dashboard. Its overlay relies on a stable close callback (`onCloseRef`) and cleared dismiss timers; inline close callbacks restart the effect.
+- All authenticated screens use `AppHeader` (menu or back button + title pill + bell); its green accent comes from `getAccentColor(isDark)` and the floating AI button uses the same color. `PageHeader` is legacy — don't add new usages.
 
 ## Config and generated files
 

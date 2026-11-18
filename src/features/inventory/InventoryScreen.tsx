@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useTheme } from "@/providers/ThemeProvider";
 import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
-import { PageHeader } from "@/shared/components/Header/PageHeader";
+import { AppHeader } from "@/shared/components/Header/AppHeader";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
 import {
   Colors_InventoryPage,
@@ -110,6 +110,18 @@ export default function InventoryScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <AppHeader
+        title="Inventory"
+        colors={colors}
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace("/(tabs)/05-settings");
+          }
+        }}
+      />
+
       <FlatList
         data={products}
         keyExtractor={(product) => String(product.id)}
@@ -193,20 +205,6 @@ export default function InventoryScreen() {
         onEndReachedThreshold={0.4}
         ListHeaderComponent={
           <>
-            <PageHeader
-              title="Inventory"
-              subtitle="Products and stock levels"
-              icon="package-variant-closed"
-              gradient={[colors.primary, colors.primaryDeep]}
-              onBack={() => {
-                if (router.canGoBack()) {
-                  router.back();
-                } else {
-                  router.replace("/(tabs)/05-settings");
-                }
-              }}
-            />
-
             <View style={styles.summaryCard}>
               <View style={styles.summaryItem}>
                 <Text style={styles.summaryLabel}>Products</Text>

@@ -20,7 +20,7 @@ import { removeSetting, SETTING_KEYS } from "@/database/helpers/settings";
 import { useBusiness } from "@/features/business/hooks/useBusiness";
 import { useDeleteAllData } from "@/features/settings/hooks/useDeleteAllData";
 import { useTheme } from "@/providers/ThemeProvider";
-import { PageHeader } from "@/shared/components/Header/PageHeader";
+import { AppHeader } from "@/shared/components/Header/AppHeader";
 import {
   Colors_SettingsPage,
   getThemedColors,
@@ -158,23 +158,21 @@ export default function AccountScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <AppHeader
+        title={copy.title}
+        colors={colors}
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace("/(tabs)/05-settings");
+          }
+        }}
+      />
+
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}>
-        <PageHeader
-          title={copy.title}
-          subtitle={copy.subtitle}
-          icon="account-outline"
-          gradient={[colors.primary, colors.primaryDeep]}
-          onBack={() => {
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace("/(tabs)/05-settings");
-            }
-          }}
-        />
-
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{copy.business}</Text>
           <View style={styles.card}>

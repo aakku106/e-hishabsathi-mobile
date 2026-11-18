@@ -12,7 +12,6 @@ import {
 } from "react-native";
 
 import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
-import { PageHeader } from "@/shared/components/Header/PageHeader";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
 import { Colors_UdharoPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
@@ -185,13 +184,6 @@ export default function UdharoEntryForm() {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled">
-      <PageHeader
-        title={t("Udharo")}
-        subtitle={t("Track money owed to you")}
-        icon="account-cash-outline"
-        gradient={[colors.primary, colors.primaryDeep]}
-      />
-
       <View style={styles.formCard}>
         <Pressable
           style={[styles.voiceButton, styles.voiceButtonFull]}

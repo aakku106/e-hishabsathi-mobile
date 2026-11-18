@@ -37,6 +37,29 @@ export function getThemedColors<T extends PageColors>(colors: T, isDark: boolean
   };
 }
 
+/**
+ * Shared green accent for the default header title and floating AI button.
+ * The dark variant is lighter so it stays legible on the dark surface.
+ */
+export const Colors_Accent = {
+  light: "#059669",
+  dark: "#34D399",
+} as const;
+
+/** Icon/text color that stays readable on top of `Colors_Accent`. */
+export const Colors_AccentForeground = {
+  light: "#FFFFFF",
+  dark: "#052E1B",
+} as const;
+
+export function getAccentColor(isDark: boolean): string {
+  return isDark ? Colors_Accent.dark : Colors_Accent.light;
+}
+
+export function getAccentForegroundColor(isDark: boolean): string {
+  return isDark ? Colors_AccentForeground.dark : Colors_AccentForeground.light;
+}
+
 const basePage = {
   surface: "#FFFFFF",
   onPrimary: "#FFFFFF",
@@ -149,6 +172,7 @@ export const Colors_NavBar = {
 export const Colors_LoginPage = {
   background: "#F6F7FB",
   surface: "#FFFFFF",
+  surfaceAlt: "#EEF2FF",
   textPrimary: "#0F172A",
   textSecondary: "#475569",
   textMuted: "#94A3B8",

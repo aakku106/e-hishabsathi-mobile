@@ -2,30 +2,45 @@
 
 Two shared headers:
 
-- `AppHeader.tsx` — dashboard-style top bar with a menu button, title pill, and notifications button.
-- `PageHeader.tsx` — gradient hero header for stack/detail screens.
+- `AppHeader.tsx` — the default app header: menu (or back) button, title pill, and notifications button.
+- `PageHeader.tsx` — legacy gradient hero header kept for compatibility; new screens should use `AppHeader`.
 
 ## AppHeader
 
-Implemented. Renders a menu icon on the left, the page title in a pill, and a notification bell on the right (with an optional dot). Used by the Dashboard and Sales tabs.
+Implemented. Renders a menu icon on the left, the page title in a pill, and a notification bell on the right (with an optional dot). Every authenticated screen uses it.
+
+The title and notification dot always use the shared theme-aware green from `getAccentColor(isDark)` in `src/shared/constants/colors.ts` (`#059669` light, `#34D399` dark). Do not pass a per-page accent.
 
 | Prop | Type | Required | Default |
 | --- | --- | --- | --- |
 | `title` | `string` | yes | — |
-| `colors` | `{ surface, surfaceAlt, textPrimary, primary }` | yes | — |
-| `accentColor` | `string` | no | `colors.primary` |
+| `colors` | `{ surface, surfaceAlt, textPrimary }` | yes | — |
+| `onBack` | `() => void` | no | — |
 | `onMenuPress` | `() => void` | no | — |
 | `onNotificationsPress` | `() => void` | no | — |
 | `showNotificationDot` | `boolean` | no | `true` |
+
+When `onBack` is provided the left button becomes a back arrow; otherwise it renders the hamburger menu.
+
+Tab screen:
 
 ```tsx
 import { AppHeader } from "@/shared/components/Header/AppHeader";
 import { Colors_SalesPage } from "@/shared/constants/colors";
 
+<AppHeader title="Sales" colors={Colors_SalesPage} />
+```
+
+Stack screen:
+
+```tsx
 <AppHeader
-  title="Sales"
-  colors={Colors_SalesPage}
-  accentColor={Colors_SalesPage.primary}
+  title="Inventory"
+  colors={colors}
+  onBack={() => {
+    if (router.canGoBack()) router.back();
+    else router.replace("/(tabs)/05-settings");
+  }}
 />
 ```
 
@@ -33,7 +48,7 @@ The menu and notification buttons are visual placeholders until a drawer and not
 
 ## PageHeader
 
-Implemented. Renders a gradient hero with a title, optional subtitle, optional icon badge, optional back button, and an optional right action.
+Legacy. Renders a gradient hero with a title, optional subtitle, optional icon badge, optional back button, and an optional right action. Kept for reference; no current screen uses it.
 
 | Prop | Type | Required | Default |
 | --- | --- | --- | --- |
@@ -48,20 +63,13 @@ Implemented. Renders a gradient hero with a title, optional subtitle, optional i
 
 ```tsx
 import { PageHeader } from "@/shared/components/Header/PageHeader";
-import { Colors_SettingsPage } from "@/shared/constants/colors";
 
 <PageHeader
   title="Settings"
   subtitle="Manage your shop and preferences"
   icon="cog-outline"
-  gradient={[Colors_SettingsPage.primary, Colors_SettingsPage.primaryDeep]}
+  gradient={["#3B82F6", "#1D4ED8"]}
 />
-```
-
-With a back button:
-
-```tsx
-<PageHeader title="Inventory" onBack={() => router.back()} />
 ```
 
 ## Notes

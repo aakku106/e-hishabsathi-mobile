@@ -19,7 +19,7 @@ import { persistThemeMode } from "@/lib/hydration";
 import { useBusiness } from "@/features/business/hooks/useBusiness";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useSettingsStore } from "@/store/settings.store";
-import { PageHeader } from "@/shared/components/Header/PageHeader";
+import { AppHeader } from "@/shared/components/Header/AppHeader";
 import { Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
@@ -149,15 +149,11 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <AppHeader title={copy.settings} colors={colors} />
+
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}>
-        <PageHeader
-          title={copy.settings}
-          subtitle={copy.subtitle}
-          gradient={[colors.primary, colors.primaryDeep]}
-        />
-
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{copy.profile}</Text>
           <TouchableOpacity

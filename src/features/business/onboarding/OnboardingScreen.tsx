@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { PageHeader } from "@/shared/components/Header/PageHeader";
+import { AppHeader } from "@/shared/components/Header/AppHeader";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
 import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 import { Colors_LoginPage } from "@/shared/constants/colors";
@@ -50,6 +50,8 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <AppHeader title="Set up your business" colors={colors} />
+
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -59,13 +61,6 @@ export default function OnboardingScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <PageHeader
-            title="Set up your business"
-            subtitle="Enter your business details to start keeping khata."
-            icon="storefront-outline"
-            gradient={[colors.heroTop, colors.heroBottom]}
-          />
-
           <View style={styles.formCard}>
             <View style={styles.form}>
               <View style={styles.field}>

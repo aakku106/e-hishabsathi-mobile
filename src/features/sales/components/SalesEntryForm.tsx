@@ -371,11 +371,7 @@ export default function SalesEntryForm() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <AppHeader
-        title={t("Sales")}
-        colors={colors}
-        accentColor={colors.primary}
-      />
+      <AppHeader title={t("Sales")} colors={colors} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -870,7 +866,7 @@ export default function SalesEntryForm() {
         </View>
       </ScrollView>
 
-      <AIAssistant accentColor={colors.primary} />
+      <AIAssistant />
     </SafeAreaView>
   );
 }

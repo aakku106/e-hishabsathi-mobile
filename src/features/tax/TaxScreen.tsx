@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { PageHeader } from "@/shared/components/Header/PageHeader";
+import { AppHeader } from "@/shared/components/Header/AppHeader";
 import {
   Dropdown,
   type DropdownOption,
@@ -42,23 +42,21 @@ export default function TaxScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <AppHeader
+        title="Tax / VAT"
+        colors={colors}
+        onBack={() => {
+          if (router.canGoBack()) {
+            router.back();
+          } else {
+            router.replace("/(tabs)/05-settings");
+          }
+        }}
+      />
+
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}>
-        <PageHeader
-          title="Tax / VAT"
-          subtitle="Monthly VAT summary for your shop"
-          icon="file-percent-outline"
-          gradient={[colors.primary, colors.primaryDeep]}
-          onBack={() => {
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace("/(tabs)/05-settings");
-            }
-          }}
-        />
-
         <View style={styles.monthRow}>
           <Dropdown
             options={options}

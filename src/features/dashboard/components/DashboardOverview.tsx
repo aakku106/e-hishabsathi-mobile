@@ -185,11 +185,7 @@ export default function DashboardOverview() {
         style={styles.container}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}>
-      <AppHeader
-        title={t("Dashboard")}
-        colors={colors}
-        accentColor={colors.greenPrimary}
-      />
+      <AppHeader title={t("Dashboard")} colors={colors} />
 
       <View style={styles.todayRow}>
         <Pressable style={styles.periodSelector} onPress={() => setPeriodMenuOpen((open) => !open)}>
@@ -392,7 +388,7 @@ export default function DashboardOverview() {
 
       </ScrollView>
 
-      <AIAssistant accentColor={colors.greenPrimary} />
+      <AIAssistant />
     </View>
   );
 }

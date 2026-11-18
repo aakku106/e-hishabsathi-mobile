@@ -2,6 +2,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useMemo } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+import { useTheme } from "@/providers/ThemeProvider";
+import { getAccentColor } from "@/shared/constants/colors";
 import { Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
@@ -10,48 +12,67 @@ type AppHeaderColors = {
   surface: string;
   surfaceAlt: string;
   textPrimary: string;
-  primary: string;
 };
 
 type AppHeaderProps = {
   title: string;
   colors: AppHeaderColors;
-  /** Accent for the title pill and notification dot. Defaults to `colors.primary`. */
-  accentColor?: string;
+  /** Shows a back arrow instead of the menu button on stack screens. */
+  onBack?: () => void;
   onMenuPress?: () => void;
   onNotificationsPress?: () => void;
   showNotificationDot?: boolean;
 };
 
 /**
- * Dashboard-style top bar: menu button on the left, page title pill in the
- * middle, notifications on the right.
+ * Default app header: menu (or back) button on the left, page title pill in
+ * the middle, notifications on the right. The title and notification dot use
+ * the shared theme-aware green accent.
  */
 export function AppHeader({
   title,
   colors,
-  accentColor,
+  onBack,
   onMenuPress,
   onNotificationsPress,
   showNotificationDot = true,
 }: AppHeaderProps) {
-  const accent = accentColor ?? colors.primary;
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const { isDark } = useTheme();
+  const accent = getAccentColor(isDark);
+  const { surface, surfaceAlt, textPrimary } = colors;
+  const styles = useMemo(
+    () => createStyles({ surface, surfaceAlt, textPrimary }),
+    [surface, surfaceAlt, textPrimary],
+  );
 
   return (
     <View style={styles.appHeader}>
       <View style={styles.headerRow}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Open menu"
-          style={styles.headerIconButton}
-          onPress={onMenuPress}>
-          <MaterialCommunityIcons
-            name="menu"
-            size={28}
-            color={colors.textPrimary}
-          />
-        </TouchableOpacity>
+        {onBack ? (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            style={styles.headerIconButton}
+            onPress={onBack}>
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={28}
+              color={textPrimary}
+            />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Open menu"
+            style={styles.headerIconButton}
+            onPress={onMenuPress}>
+            <MaterialCommunityIcons
+              name="menu"
+              size={28}
+              color={textPrimary}
+            />
+          </TouchableOpacity>
+        )}
 
         <View style={styles.titlePill}>
           <Text style={[styles.title, { color: accent }]} numberOfLines={1}>
@@ -67,7 +88,7 @@ export function AppHeader({
           <MaterialCommunityIcons
             name="bell-outline"
             size={27}
-            color={colors.textPrimary}
+            color={textPrimary}
           />
           {showNotificationDot && (
             <View style={[styles.notificationDot, { backgroundColor: accent }]} />

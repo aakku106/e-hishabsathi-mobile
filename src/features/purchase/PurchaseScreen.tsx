@@ -14,8 +14,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AIAssistant } from "@/features/ai/components/AIAssistant";
+import { AppHeader } from "@/shared/components/Header/AppHeader";
 import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
-import { PageHeader } from "@/shared/components/Header/PageHeader";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
 import {
   ProductPicker,
@@ -198,6 +198,8 @@ export default function PurchaseScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <AppHeader title={t("Buy")} colors={colors} />
+
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}>
@@ -206,13 +208,6 @@ export default function PurchaseScreen() {
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
-          <PageHeader
-            title={t("Buy")}
-            subtitle={t("Add a new purchase")}
-            onBack={() => undefined}
-            gradient={[colors.primary, colors.primaryDeep]}
-          />
-
           <View style={styles.formCard}>
             <View style={styles.sectionHeading}>
               <Text style={styles.sectionTitle}>{t("Products")}</Text>
@@ -454,7 +449,7 @@ export default function PurchaseScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <AIAssistant accentColor={colors.primary} />
+      <AIAssistant />
     </SafeAreaView>
   );
 }

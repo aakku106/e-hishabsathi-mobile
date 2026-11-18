@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
-import { PageHeader } from "@/shared/components/Header/PageHeader";
+import { AppHeader } from "@/shared/components/Header/AppHeader";
 import { BusinessTypes, type BusinessType } from "@/shared/constants/businessTypes";
 import { Colors_LoginPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
@@ -62,17 +62,12 @@ export default function BusinessTypeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <AppHeader title="What kind of business?" colors={colors} />
+
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <PageHeader
-          title="What kind of business?"
-          subtitle="This helps us tailor the khata experience for you."
-          icon="domain"
-          gradient={[colors.heroTop, colors.heroBottom]}
-        />
-
         <View style={styles.options}>
           {BUSINESS_TYPE_OPTIONS.map((option) => {
             const isSelected = selected === option.value;
