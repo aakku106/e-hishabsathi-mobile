@@ -1,12 +1,11 @@
 import { Colors_DashboardPage, getThemedColors } from "@/shared/constants/colors";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import BottomSheet, { BottomSheetBackdrop, type BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
-  Dimensions,
-  KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
@@ -16,17 +15,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import {
-  PanGestureHandler,
-  State,
-} from "react-native-gesture-handler";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-  runOnJS,
-} from "react-native-reanimated";
 
 import { useProductSummary } from "@/features/inventory/hooks/useInventory";
 import { usePurchaseSummary } from "@/features/purchase/hooks/usePurchaseEntries";
@@ -34,15 +22,6 @@ import { useSalesSummary } from "@/features/sales/hooks/useSalesEntries";
 import { useUdharoSummary } from "@/features/udharo/hooks/useUdharoEntries";
 import { useSettingsStore } from "@/store/settings.store";
 import { useTheme } from "@/providers/ThemeProvider";
-
-const { height: WINDOW_HEIGHT } = Dimensions.get("window");
-
-// The AI assistant sheet covers almost the whole screen (including the header
-// area). When the keyboard opens, the KeyboardAvoidingView inside keeps the
-// input row above it.
-const SHEET_HEIGHT = WINDOW_HEIGHT;
-const DRAG_THRESHOLD = 100;
-const SPRING_CONFIG = { damping: 25, stiffness: 200, mass: 1 };
 
 type SpeechRecognitionLike = {
   lang: string;
@@ -78,10 +57,7 @@ export default function AIOverlay({
   const { isDark } = useTheme();
   const colors = getThemedColors(Colors_DashboardPage, isDark);
 
-  // Reanimated shared values for spring animations
-  const translateY = useSharedValue(SHEET_HEIGHT);
-  const backdropOpacity = useSharedValue(0);
-  const isDismissing = useSharedValue(false);
+  const bottomSheetRef = useRef<BottomSheet>(null);
 
   // Local state
   const [question, setQuestion] = useState(initialQuestion);
@@ -115,65 +91,27 @@ export default function AIOverlay({
     };
   }, []);
 
-  // Show/hide animations
   useEffect(() => {
-    if (visible) {
-      isDismissing.value = false;
-      translateY.value = withSpring(0, SPRING_CONFIG);
-      backdropOpacity.value = withTiming(0.4, { duration: 200 });
-      return;
+    if (!visible) {
+      bottomSheetRef.current?.close();
     }
+  }, [visible]);
 
-    isDismissing.value = true;
-    translateY.value = withSpring(SHEET_HEIGHT, SPRING_CONFIG);
-    backdropOpacity.value = withTiming(0, { duration: 200 });
+  const handleSheetClose = () => {
     if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
-    dismissTimerRef.current = setTimeout(
-      () => runOnJS(onCloseRef.current)(),
-      400,
-    );
-  }, [visible, backdropOpacity, isDismissing, translateY]);
-
-  // Animated styles
-  const sheetAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }), [translateY]);
-
-  const backdropAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: backdropOpacity.value,
-  }), [backdropOpacity]);
-
-  // Theme-aware sheet background
-  const sheetBackgroundColor = isDark ? colors.background : "#FFFFFF";
-
-  // Gesture handler for swipe to dismiss
-  const onGestureEvent = (event: { nativeEvent: { translationY: number } }) => {
-    // Only allow dragging down (positive translation)
-    const translation = Math.max(0, event.nativeEvent.translationY);
-    // eslint-disable-next-line react-hooks/immutability
-    translateY.value = translation;
+    dismissTimerRef.current = setTimeout(() => onCloseRef.current(), 400);
   };
 
-  const onHandlerStateChange = (event: { nativeEvent: { state: number; translationY: number; velocityY: number } }) => {
-    if (event.nativeEvent.state === State.END) {
-      const shouldDismiss = event.nativeEvent.translationY > DRAG_THRESHOLD || event.nativeEvent.velocityY > 1000;
-      if (shouldDismiss) {
-        // eslint-disable-next-line react-hooks/immutability
-        isDismissing.value = true;
-        // eslint-disable-next-line react-hooks/immutability
-        translateY.value = withSpring(SHEET_HEIGHT, SPRING_CONFIG);
-        // eslint-disable-next-line react-hooks/immutability
-        backdropOpacity.value = withTiming(0, { duration: 250 });
-        if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
-        dismissTimerRef.current = setTimeout(
-          () => runOnJS(onCloseRef.current)(),
-          350,
-        );
-      } else {
-        translateY.value = withSpring(0, SPRING_CONFIG);
-      }
-    }
-  };
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop
+        {...props}
+        opacity={0.4}
+        onPress={() => bottomSheetRef.current?.close()}
+      />
+    ),
+    [],
+  );
 
   const handleAsk = () => {
     const trimmedQuestion = question.trim();
@@ -198,8 +136,7 @@ export default function AIOverlay({
       const profit = (salesSummary?.totalAmount ?? 0) - (purchaseSummary?.totalAmount ?? 0);
       answer = `Overview: ${salesSummary?.entryCount ?? 0} sales worth Rs.${(salesSummary?.totalAmount ?? 0).toLocaleString("en-IN")}, ${purchaseSummary?.entryCount ?? 0} purchases worth Rs.${(purchaseSummary?.totalAmount ?? 0).toLocaleString("en-IN")}, ${udharoSummary?.entryCount ?? 0} Udhaaro records, and estimated profit of Rs.${profit.toLocaleString("en-IN")}.`;
     } else if (asksAboutProfit) {
-      const profit = (salesSummary?.totalAmount ?? 0) - (purchaseSummary?.totalAmount ?? 0);
-      answer = `Your estimated profit is Rs.${profit.toLocaleString("en-IN")}. This is sales total minus purchase total.`;
+      answer = `Your estimated profit is Rs.${(salesSummary?.totalAmount ?? 0) - (purchaseSummary?.totalAmount ?? 0)}. This is sales total minus purchase total.`;
     } else if (asksAboutSales && (salesSummary?.entryCount ?? 0) === 0) {
       answer = language === "np" ? "तपाईंले अहिलेसम्म केही बिक्री गर्नुभएको छैन।" : "You haven't sold anything yet.";
     } else if (asksAboutSales) {
@@ -268,130 +205,92 @@ export default function AIOverlay({
     recognition.start();
   };
 
-  const dismissKeyboard = () => {
-    inputRef.current?.blur();
-  };
+  const sheetBackgroundColor = isDark ? colors.background : "#FFFFFF";
 
   return (
-    <>
-      {/* Backdrop */}
-      <Animated.View
-        style={[
-          styles.backdrop,
-          backdropAnimatedStyle,
-          { pointerEvents: visible ? "auto" : "none" },
-        ]}
-        onTouchStart={dismissKeyboard}
-      />
+    <BottomSheet
+      ref={bottomSheetRef}
+      snapPoints={["92%"]}
+      enablePanDownToClose
+      onClose={handleSheetClose}
+      backdropComponent={renderBackdrop}
+      keyboardBehavior="interactive">
+      <View style={[styles.sheet, { backgroundColor: sheetBackgroundColor }]}>
+        {/* Drag Handle */}
+        <View style={styles.dragHandleContainer}>
+          <View style={[styles.dragHandle, { backgroundColor: isDark ? "#48484A" : "#C7C7CC" }]} />
+        </View>
 
-      {/* Bottom Sheet */}
-      <PanGestureHandler onGestureEvent={onGestureEvent} onHandlerStateChange={onHandlerStateChange}>
-        <Animated.View style={[styles.sheetContainer, sheetAnimatedStyle]}>
-          <View style={[styles.sheet, { backgroundColor: sheetBackgroundColor }]}>
-            {/* Drag Handle */}
-            <View style={styles.dragHandleContainer}>
-              <View style={[styles.dragHandle, { backgroundColor: isDark ? "#48484A" : "#C7C7CC" }]} />
+        {/* Header */}
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <Text style={styles.title}>Khata Intelligence</Text>
+        </View>
+
+        {/* Messages */}
+        <ScrollView
+          style={styles.messages}
+          contentContainerStyle={{ padding: Spacing.md, paddingBottom: Spacing.xl }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          {messages.map((m) => (
+            <View
+              key={m.id}
+              style={[
+                styles.messageBubble,
+                {
+                  backgroundColor: m.type.startsWith("bot") ? colors.primarySoft : colors.primary,
+                  alignSelf: m.type.startsWith("bot") ? "flex-start" : "flex-end",
+                  borderColor: m.type.startsWith("bot") ? colors.border : colors.primary,
+                },
+              ]}>
+              <Text
+                style={[
+                  styles.messageText,
+                  { color: m.type.startsWith("bot") ? colors.textPrimary : "#FFFFFF" },
+                ]}>
+                {m.text}
+              </Text>
             </View>
+          ))}
+        </ScrollView>
 
-            {/* Header */}
-            <View style={[styles.header, { borderBottomColor: colors.border }]}>
-              <Text style={styles.title}>Khata Intelligence</Text>
-            </View>
-
-            {/* Messages */}
-            <ScrollView
-              style={styles.messages}
-              contentContainerStyle={{ padding: Spacing.md, paddingBottom: Spacing.xl }}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}>
-              {messages.map((m) => (
-                <View
-                  key={m.id}
-                  style={[
-                    styles.messageBubble,
-                    {
-                      backgroundColor: m.type.startsWith("bot") ? colors.primarySoft : colors.primary,
-                      alignSelf: m.type.startsWith("bot") ? "flex-start" : "flex-end",
-                      borderColor: m.type.startsWith("bot") ? colors.border : colors.primary,
-                    },
-                  ]}>
-                  <Text
-                    style={[
-                      styles.messageText,
-                      { color: m.type.startsWith("bot") ? colors.textPrimary : "#FFFFFF" },
-                    ]}>
-                    {m.text}
-                  </Text>
-                </View>
-              ))}
-            </ScrollView>
-
-            {/* Input Area */}
-            <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : undefined}
-              keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}>
-              <View style={[styles.inputRow, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-                <TextInput
-                  ref={inputRef}
-                  placeholder="What would you like to know?"
-                  style={[styles.input, { backgroundColor: colors.background, color: colors.textPrimary }]}
-                  placeholderTextColor={colors.textMuted}
-                  value={question}
-                  onChangeText={setQuestion}
-                  onSubmitEditing={handleAsk}
-                  returnKeyType="send"
-                  editable
-                  blurOnSubmit={false}
-                  autoFocus
-                />
-                <TouchableOpacity
-                  style={[styles.micBtn, { backgroundColor: isListening ? colors.danger + "20" : colors.primarySoft }]}
-                  onPress={handleVoiceInput}>
-                  <MaterialCommunityIcons
-                    name={isListening ? "stop" : "microphone"}
-                    size={20}
-                    color={isListening ? colors.danger : colors.primary}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.sendBtn, { backgroundColor: colors.primary }]} onPress={handleAsk}>
-                  <MaterialCommunityIcons name="arrow-up" size={18} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            </KeyboardAvoidingView>
-          </View>
-        </Animated.View>
-      </PanGestureHandler>
-    </>
+        {/* Input Area */}
+        <View style={[styles.inputRow, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+          <TextInput
+            ref={inputRef}
+            placeholder="What would you like to know?"
+            style={[styles.input, { backgroundColor: colors.background, color: colors.textPrimary }]}
+            placeholderTextColor={colors.textMuted}
+            value={question}
+            onChangeText={setQuestion}
+            onSubmitEditing={handleAsk}
+            returnKeyType="send"
+            editable
+            blurOnSubmit={false}
+            autoFocus
+          />
+          <TouchableOpacity
+            style={[styles.micBtn, { backgroundColor: isListening ? colors.danger + "20" : colors.primarySoft }]}
+            onPress={handleVoiceInput}>
+            <MaterialCommunityIcons
+              name={isListening ? "stop" : "microphone"}
+              size={20}
+              color={isListening ? colors.danger : colors.primary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.sendBtn, { backgroundColor: colors.primary }]} onPress={handleAsk}>
+            <MaterialCommunityIcons name="arrow-up" size={18} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  // Full-screen backdrop
-  backdrop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "#000",
-    zIndex: 998,
-  },
-
-  // Sheet container fills screen, sheet is positioned at bottom
-  sheetContainer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    top: 0,
-    zIndex: 999,
-    justifyContent: "flex-end",
-  },
-
-  // The actual sheet (backgroundColor applied dynamically)
+  // The AI assistant sheet surface
   sheet: {
     width: "100%",
-    height: SHEET_HEIGHT,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     shadowColor: "#000",
