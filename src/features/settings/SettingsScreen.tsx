@@ -14,15 +14,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useMemo } from "react";
 
 import { APP } from "@/config/app";
-import {
-  removeSetting,
-  setSetting,
-  SETTING_KEYS,
-} from "@/database/helpers/settings";
+import { setSetting, SETTING_KEYS } from "@/database/helpers/settings";
 import { persistThemeMode } from "@/lib/hydration";
 import { useBusiness } from "@/features/business/hooks/useBusiness";
 import { useTheme } from "@/providers/ThemeProvider";
-import { useAuthStore } from "@/store/auth.store";
 import { useSettingsStore } from "@/store/settings.store";
 import { PageHeader } from "@/shared/components/Header/PageHeader";
 import { Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
@@ -55,15 +50,12 @@ const COPY = {
     dark: "Dark mode",
     currently: "Currently",
     currency: "Currency",
-    account: "Account",
-    accountHint: "Manage account and local data",
     notifications: "Notifications",
     language: "Change Language",
     terms: "Terms & Conditions",
     privacy: "Privacy Policy",
     appName: "App name",
     version: "Version",
-    logout: "Logout",
     english: "English",
     nepali: "नेपाली",
   },
@@ -82,15 +74,12 @@ const COPY = {
     dark: "डार्क मोड",
     currently: "हाल",
     currency: "मुद्रा",
-    account: "खाता",
-    accountHint: "खाता र स्थानीय डेटा व्यवस्थापन गर्नुहोस्",
     notifications: "सूचनाहरू",
     language: "भाषा परिवर्तन",
     terms: "नियम तथा सर्तहरू",
     privacy: "गोपनीयता नीति",
     appName: "एपको नाम",
     version: "संस्करण",
-    logout: "लगआउट",
     english: "English",
     nepali: "नेपाली",
   },
@@ -145,14 +134,6 @@ export default function SettingsScreen() {
     [isDark],
   );
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const logout = useAuthStore((state) => state.logout);
-
-  const handleLogout = () => {
-    removeSetting(SETTING_KEYS.authPan);
-    removeSetting(SETTING_KEYS.authUsername);
-    logout();
-    router.replace("/(auth)/login");
-  };
 
   const handleToggleTheme = () => {
     toggleTheme();
@@ -174,13 +155,16 @@ export default function SettingsScreen() {
         <PageHeader
           title={copy.settings}
           subtitle={copy.subtitle}
-          icon="cog-outline"
           gradient={[colors.primary, colors.primaryDeep]}
         />
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{copy.profile}</Text>
-          <View style={styles.card}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            activeOpacity={0.85}
+            onPress={() => router.push("/account")}
+            style={styles.card}>
             <View style={styles.profileRow}>
               <LinearGradient
                 colors={[colors.primary, colors.primaryDeep]}
@@ -201,6 +185,11 @@ export default function SettingsScreen() {
                   : "Set up your business in onboarding"}
                 </Text>
               </View>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={22}
+                color={colors.textMuted}
+              />
             </View>
 
             {!!business?.pan && (
@@ -221,7 +210,7 @@ export default function SettingsScreen() {
                 <Text style={styles.detailValue}>{business.address}</Text>
               </View>
             )}
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
@@ -310,28 +299,6 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{copy.general}</Text>
           <View style={styles.card}>
-            <TouchableOpacity
-              style={styles.linkRow}
-              activeOpacity={0.8}
-              onPress={() => router.push("/account")}>
-              <View style={styles.linkIcon}>
-                <MaterialCommunityIcons
-                  name="account-outline"
-                  size={20}
-                  color={colors.primary}
-                />
-              </View>
-              <View style={styles.linkTextWrap}>
-                <Text style={styles.settingLabel}>{copy.account}</Text>
-                <Text style={styles.settingHint}>{copy.accountHint}</Text>
-              </View>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={22}
-                color={colors.textMuted}
-              />
-            </TouchableOpacity>
-            <View style={styles.rowDivider} />
             <SettingsLink
               icon="bell-outline"
               label={copy.notifications}
@@ -373,24 +340,6 @@ export default function SettingsScreen() {
               colors={colors}
               styles={styles}
             />
-            <View style={styles.rowDivider} />
-            <Pressable style={styles.settingRow} onPress={handleLogout}>
-              <View style={styles.rowLeading}>
-                <View style={styles.smallIcon}>
-                  <MaterialCommunityIcons
-                    name="logout"
-                    size={18}
-                    color={colors.primary}
-                  />
-                </View>
-                <Text style={styles.settingLabel}>{copy.logout}</Text>
-              </View>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={22}
-                color={colors.textMuted}
-              />
-            </Pressable>
           </View>
         </View>
 
@@ -408,18 +357,6 @@ export default function SettingsScreen() {
             </View>
           </View>
         </View>
-
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={handleLogout}
-          style={styles.logoutButton}>
-          <MaterialCommunityIcons
-            name="logout"
-            size={18}
-            color={colors.danger}
-          />
-          <Text style={styles.logoutText}>Sign out</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -570,24 +507,6 @@ function createStyles(colors: typeof Colors_SettingsPage) {
   currencyBadgeText: {
     color: colors.primaryDeep,
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.bold,
-  },
-  logoutButton: {
-    marginTop: Spacing["2xl"],
-    alignSelf: "center",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.sm,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing["2xl"],
-    borderRadius: Radius.pill,
-    borderWidth: BorderWidth.thin,
-    borderColor: colors.dangerBorder,
-    backgroundColor: colors.dangerSoft,
-  },
-  logoutText: {
-    color: colors.danger,
-    fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
   },
   });

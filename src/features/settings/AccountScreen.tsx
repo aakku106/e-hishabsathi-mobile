@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { removeSetting, SETTING_KEYS } from "@/database/helpers/settings";
 import { useBusiness } from "@/features/business/hooks/useBusiness";
 import { useDeleteAllData } from "@/features/settings/hooks/useDeleteAllData";
 import { useTheme } from "@/providers/ThemeProvider";
@@ -44,6 +45,8 @@ const COPY = {
     localData: "Your data stays on this device",
     localDataHint:
       "Business and transaction records are stored locally on this device.",
+    general: "General",
+    logout: "Logout",
     dangerZone: "Danger zone",
     deleteAll: "Delete all data",
     deleteHint: "Permanently erase all local account and business data",
@@ -75,6 +78,8 @@ const COPY = {
     localData: "तपाईंको डेटा यसै उपकरणमा रहन्छ",
     localDataHint:
       "व्यवसाय र कारोबारका विवरण यस उपकरणमै स्थानीय रूपमा सुरक्षित हुन्छन्।",
+    general: "सामान्य",
+    logout: "लगआउट",
     dangerZone: "जोखिम क्षेत्र",
     deleteAll: "सबै डेटा मेटाउनुहोस्",
     deleteHint: "यस उपकरणको सबै खाता र व्यवसाय डेटा स्थायी रूपमा मेटाउनुहोस्",
@@ -142,6 +147,13 @@ export default function AccountScreen() {
     router.replace("/(auth)/login");
   };
 
+  const handleLogout = () => {
+    removeSetting(SETTING_KEYS.authPan);
+    removeSetting(SETTING_KEYS.authUsername);
+    logout();
+    router.replace("/(auth)/login");
+  };
+
   const canDelete = typedConfirmation === "DELETE" && !deleteAllData.isPending;
 
   return (
@@ -199,6 +211,30 @@ export default function AccountScreen() {
                 <Text style={styles.noticeHint}>{copy.localDataHint}</Text>
               </View>
             </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{copy.general}</Text>
+          <View style={styles.card}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={handleLogout}
+              style={styles.logoutRow}>
+              <View style={styles.logoutIcon}>
+                <MaterialCommunityIcons
+                  name="logout"
+                  size={20}
+                  color={colors.primary}
+                />
+              </View>
+              <Text style={styles.logoutLabel}>{copy.logout}</Text>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={22}
+                color={colors.textMuted}
+              />
+            </Pressable>
           </View>
         </View>
 
@@ -410,6 +446,26 @@ function createStyles(colors: typeof Colors_SettingsPage) {
     rowDivider: {
       height: BorderWidth.thin,
       backgroundColor: colors.border,
+    },
+    logoutRow: {
+      minHeight: 44,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.md,
+    },
+    logoutIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primarySoft,
+    },
+    logoutLabel: {
+      flex: 1,
+      color: colors.textPrimary,
+      fontSize: FontSize.md,
+      fontWeight: FontWeight.semibold,
     },
     localNotice: {
       flexDirection: "row",

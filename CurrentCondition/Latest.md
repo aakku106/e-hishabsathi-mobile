@@ -28,7 +28,7 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 - Dashboard reads local data and displays period-based statistics, income bars, monthly trend data, stock/low-stock metrics, and a local rule-based AI assistant bottom sheet.
 - Inventory has a route and feature screen with paged product listing, product creation, manual stock adjustment, and product/stock summaries.
 - Tax/VAT has a month selector and calculates output VAT, input VAT, and net payable from local sales and purchase data.
-- Settings includes theme/language controls, inventory/tax links, account access, and app settings persistence.
+- Settings includes theme/language controls, inventory/tax links, and app settings persistence; the business profile card opens the Account page.
 - Account includes a confirmed local-data deletion flow and logout.
 
 ### Local data foundation
