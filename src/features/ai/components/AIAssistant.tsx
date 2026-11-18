@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useTheme } from "@/providers/ThemeProvider";
 import { GlassSurface } from "@/shared/components/Glass/GlassSurface";
@@ -32,7 +32,7 @@ export function AIAssistant({ bottomOffset = 92 }: AIAssistantProps) {
   const foreground = getAccentForegroundColor(isDark);
 
   return (
-    <>
+    <View style={styles.overlayRoot} pointerEvents="box-none">
       <TouchableOpacity
         accessibilityRole="button"
         accessibilityLabel="Open AI Assistant"
@@ -53,11 +53,22 @@ export function AIAssistant({ bottomOffset = 92 }: AIAssistantProps) {
       </TouchableOpacity>
 
       {open && <AIOverlay visible={open} onClose={() => setOpen(false)} />}
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  // Full-screen layer for the AI button + bottom sheet so the overlay is
+  // laid out identically on every screen regardless of host container.
+  overlayRoot: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 900,
+    pointerEvents: "box-none",
+  },
   button: {
     position: "absolute",
     right: Spacing.lg,
