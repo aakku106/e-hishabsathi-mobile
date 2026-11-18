@@ -24,7 +24,7 @@ Repo root is `e-hishabsathi-mobile/` (git, `package.json`, Expo config); the out
 - expo-sqlite web/OPFS allows one exclusive database handle: use one dev server and close extra tabs to avoid `DatabaseLockedError`.
 - On web, `USE_NATIVE_DRIVER=false`; put `pointerEvents` in `style`, and use `boxShadow` helpers instead of deprecated `shadow*` props.
 - AI chat is a bottom sheet (not a route) opened by the floating AI button on Sales, Buy, Udharo, and Dashboard. Its overlay relies on a stable close callback (`onCloseRef`) and cleared dismiss timers; inline close callbacks restart the effect.
-- All authenticated screens use `AppHeader` (menu or back button + title pill + bell). The header bar and title pill are translucent green glass (`GlassSurface` tinted with `getAccentColor(isDark)`); each page's header title text still uses that page's accent (Dashboard passes `greenPrimary`). Only the floating AI button uses the shared green as a translucent glass fill. `PageHeader` is legacy — don't add new usages.
+- All authenticated screens use `AppHeader` (menu or back button + title pill + bell). The header bar and title pill are translucent glass tinted with the page accent (`accentColor ?? colors.primary`), and the title text uses that same accent. Only the floating AI button uses the shared `getAccentColor(isDark)` green, as a translucent glass fill. Sales opts into `edgeToEdge`, which draws the header glass behind the status bar. `PageHeader` is legacy — don't add new usages.
 - Theme mode is `light`, `dark`, or `system`; `ThemeProvider` resolves `system` through `useColorScheme()`. The bottom tab bar uses `expo-glass-effect` (`GlassView`) on iOS 26+ and `expo-blur` (`BlurView`) elsewhere.
 
 ## Config and generated files

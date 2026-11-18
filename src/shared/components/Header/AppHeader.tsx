@@ -1,10 +1,10 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useMemo } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/providers/ThemeProvider";
 import { GlassSurface } from "@/shared/components/Glass/GlassSurface";
-import { getAccentColor } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { withAlpha } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
@@ -27,11 +27,17 @@ type AppHeaderProps = {
   onMenuPress?: () => void;
   onNotificationsPress?: () => void;
   showNotificationDot?: boolean;
+  /**
+   * Extends the glass behind the status bar. The screen must not apply its own
+   * top safe-area inset when this is enabled (use `edges` without `"top"`).
+   */
+  edgeToEdge?: boolean;
 };
 
 /**
  * Default app header: menu (or back) button on the left, page title pill in
- * the middle, notifications on the right. Each page supplies its own accent.
+ * the middle, notifications on the right. The glass is tinted with the page's
+ * own accent, so each area keeps its identity.
  */
 export function AppHeader({
   title,
@@ -41,10 +47,11 @@ export function AppHeader({
   onMenuPress,
   onNotificationsPress,
   showNotificationDot = true,
+  edgeToEdge = false,
 }: AppHeaderProps) {
   const { isDark } = useTheme();
+  const insets = useSafeAreaInsets();
   const accent = accentColor ?? colors.primary;
-  const accentGreen = getAccentColor(isDark);
   const { textPrimary } = colors;
   const styles = useMemo(() => createStyles({ textPrimary }), [textPrimary]);
 
@@ -52,11 +59,14 @@ export function AppHeader({
     <GlassSurface
       style={[
         styles.appHeader,
+        edgeToEdge && {
+          paddingTop: insets.top > 0 ? insets.top + Spacing.sm : Spacing.lg,
+        },
         {
-          borderBottomColor: withAlpha(accentGreen, isDark ? 0.22 : 0.14),
+          borderBottomColor: withAlpha(accent, isDark ? 0.25 : 0.16),
         },
       ]}
-      tintColor={withAlpha(accentGreen, isDark ? 0.2 : 0.12)}
+      tintColor={withAlpha(accent, isDark ? 0.18 : 0.08)}
       intensity={55}>
       <View style={styles.headerRow}>
         {onBack ? (
@@ -89,11 +99,8 @@ export function AppHeader({
           style={[
             styles.titlePill,
             {
-              backgroundColor: withAlpha(
-                accentGreen,
-                isDark ? 0.2 : 0.12,
-              ),
-              borderColor: withAlpha(accentGreen, isDark ? 0.28 : 0.18),
+              backgroundColor: withAlpha(accent, isDark ? 0.22 : 0.14),
+              borderColor: withAlpha(accent, isDark ? 0.3 : 0.22),
             },
           ]}>
           <Text style={[styles.title, { color: accent }]} numberOfLines={1}>

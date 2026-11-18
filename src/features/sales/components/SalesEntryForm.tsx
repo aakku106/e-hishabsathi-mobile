@@ -4,13 +4,13 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppHeader } from "@/shared/components/Header/AppHeader";
 import {
@@ -370,8 +370,10 @@ export default function SalesEntryForm() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <AppHeader title={t("Sales")} colors={colors} />
+    <SafeAreaView
+      style={styles.safeArea}
+      edges={["bottom", "left", "right"]}>
+      <AppHeader title={t("Sales")} colors={colors} edgeToEdge />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

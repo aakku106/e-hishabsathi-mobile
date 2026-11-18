@@ -9,7 +9,7 @@ Two shared headers:
 
 Implemented. Renders a menu icon on the left, the page title in a pill, and a notification bell on the right (with an optional dot). Every authenticated screen uses it.
 
-The header bar and title pill are translucent green glass surfaces: both use `GlassSurface` with a translucent tint from the shared `getAccentColor(isDark)` green (native Liquid Glass on iOS 26+, `BlurView` elsewhere). The title text itself keeps the page accent, so pages stay visually distinct while sharing one glass treatment. Pages set that accent through `colors.primary`, or `accentColor` for pages like Dashboard that use a different token.
+The header bar and title pill are translucent glass surfaces: both use `GlassSurface` with a translucent tint built from the page accent (native Liquid Glass on iOS 26+, `BlurView` elsewhere). The title text uses the same accent, so each page keeps its own identity. Pages set that accent through `colors.primary`, or `accentColor` for pages like Dashboard that use a different token.
 
 The floating AI button is separate: it always uses the shared `getAccentColor(isDark)` green, also as a translucent glass tint.
 
@@ -22,17 +22,24 @@ The floating AI button is separate: it always uses the shared `getAccentColor(is
 | `onMenuPress` | `() => void` | no | — |
 | `onNotificationsPress` | `() => void` | no | — |
 | `showNotificationDot` | `boolean` | no | `true` |
+| `edgeToEdge` | `boolean` | no | `false` |
 
 When `onBack` is provided the left button becomes a back arrow; otherwise it renders the hamburger menu.
 
 Tab screen:
 
 ```tsx
+import { SafeAreaView } from "react-native-safe-area-context";
 import { AppHeader } from "@/shared/components/Header/AppHeader";
 import { Colors_SalesPage } from "@/shared/constants/colors";
 
-<AppHeader title="Sales" colors={Colors_SalesPage} />
+<SafeAreaView style={{ flex: 1 }} edges={["bottom", "left", "right"]}>
+  <AppHeader title="Sales" colors={Colors_SalesPage} edgeToEdge />
+  {/* ... */}
+</SafeAreaView>
 ```
+
+`edgeToEdge` adds the top safe-area inset to the header's padding, so the glass runs behind the status bar. The surrounding screen must then skip its own top inset (`edges` without `"top"`). Sales is the only screen using it so far; every other screen keeps the default inset behavior.
 
 Dashboard uses its green accent instead of the page's indigo `primary`:
 
@@ -89,5 +96,6 @@ import { PageHeader } from "@/shared/components/Header/PageHeader";
 
 - Both components are also default exports.
 - `PageHeader`'s back button only renders when `onBack` is provided.
-- `AppHeader`'s glass tint and bottom border are derived from `getAccentColor(isDark)` with `withAlpha()`; the title color is independent, so changing a page's accent never changes the glass tint.
+- `AppHeader`'s glass tint and bottom border are derived from the resolved page accent (`accentColor ?? colors.primary`) with `withAlpha()`, so the header always matches that page's identity.
+- `edgeToEdge` is opt-in per screen; only enable it when the screen's safe-area wrapper omits the top edge.
 - `GlassSurface` is the shared glass primitive; see [Glass/README.md](../Glass/README.md).
