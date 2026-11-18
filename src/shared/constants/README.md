@@ -1,10 +1,10 @@
 # Project Constants
 
-This project uses page-specific style constants instead of a single light/dark theme. The goal is to keep each business area free to define its own colors, spacing, radius, and typography tokens.
+This project uses page-specific style constants plus a light/dark mode context. There is no single global palette; each business area defines its own colors, spacing, radius, and typography tokens.
 
 ### Where the constants live
 
-- `src/shared/constants/colors.ts` for page color maps.
+- `src/shared/constants/colors.ts` for page color maps and `getThemedColors(colors, isDark)`.
 - `src/shared/constants/typography.ts` for font families, font sizes, weights, and page typography presets.
 - `src/shared/constants/spacing.ts` for spacing scale and layout sizes.
 - `src/shared/constants/radius.ts` for border radius and border widths.
@@ -42,6 +42,17 @@ const styles = StyleSheet.create({
 });
 ```
 
+For theme-aware screens, resolve the page palette with `useTheme()` and `getThemedColors`, then memoize `StyleSheet.create` by the resolved palette:
+
+```tsx
+const { isDark } = useTheme();
+const colors = useMemo(
+  () => getThemedColors(Colors_SalesPage, isDark),
+  [isDark],
+);
+const styles = useMemo(() => createStyles(colors), [colors]);
+```
+
 ### Recommended pattern
 
 - Use the page token set that matches the screen you are styling, for example `Colors_SalesPage` or `Colors_DashboardPage`.
@@ -52,10 +63,14 @@ const styles = StyleSheet.create({
 ### Current page token sets
 
 - `Colors_SalesPage` and `Typography_SalesPage`
-- `Colors_PurchasesPage` and `Typography_PurchasesPage`
+- `Colors_PurchasesPage` and `Typography_PurchasesPage` (`Typography_BuyPage` is an alias)
 - `Colors_UdharoPage` and `Typography_UdharoPage`
 - `Colors_DashboardPage` and `Typography_DashboardPage`
 - `Colors_SettingsPage` and `Typography_SettingsPage`
 - `Colors_AiPage` and `Typography_AiPage`
+- `Colors_InventoryPage` and `Typography_InventoryPage`
+- `Colors_TaxPage` and `Typography_TaxPage`
+- `Colors_LoginPage`
+- `Colors_NavBar`
 
 If a screen needs a new visual identity, add a new token set in the constants folder first, then wire the screen to that set.

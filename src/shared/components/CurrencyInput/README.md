@@ -2,11 +2,11 @@
 
 ## Status
 
-Not yet implemented — this folder only contains a `t.ts` git-tracking placeholder.
+Not yet implemented — this folder only contains this README.
 
 ## Intended purpose
 
-A shared numeric input specialized for money entry (currency prefix, decimal formatting, numeric keyboard), built on top of [Input/LabledInput.tsx](../Input/README.md) plus `@/shared/utils/currency` once that util is implemented (see [utils/README.md](../../utils/README.md)).
+A shared numeric input specialized for money entry (currency prefix, decimal formatting, numeric keyboard), built on top of [Input/LabledInput.tsx](../Input/README.md) plus the implemented helpers in `@/shared/utils/currency` (see [utils/README.md](../../utils/README.md)).
 
 ## Suggested shape
 

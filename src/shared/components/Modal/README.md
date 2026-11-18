@@ -2,7 +2,7 @@
 
 ## Status
 
-Not yet implemented — this folder only contains a `t.ts` git-tracking placeholder.
+Not yet implemented — this folder only contains this README.
 
 ## Intended purpose
 

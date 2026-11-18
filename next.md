@@ -2,12 +2,12 @@
 
 ## Status
 
-Part 2 (Local Edge Database) is **implemented** on branch `feat/local-edge-database`:
-- Migration v5 adds all four tables (`local_sync_queue`, `local_udaaro_customers`, `local_udaaro_ledger`, `local_udaaro_backup_log`) plus `client_uuid` idempotency columns on `sales_entries` / `purchase_entries`.
+Part 2 (Local Edge Database) is **implemented**:
+- Migration v5 adds all four tables (`local_sync_queue`, `local_udaaro_customers`, `local_udaaro_ledger`, `local_udaaro_backup_log`) plus `client_uuid` idempotency columns on `sales_entries` / `purchase_entries`. The current schema is v7, which adds inventory links and a case-insensitive product index.
 - Repositories live in `src/database/edge/` (sync queue state machine + 7-day retention purge, customers, ledger, backup log).
-- Sales/purchase creates enqueue into `local_sync_queue` atomically (outbox); udaaro creates write the ledger only (never synced).
-- Dashboard "Total Profit" = `totalSales − totalUdaaroOutstanding` from `local_udaaro_ledger`, computed on-device.
-- AI stays unwired.
+- Sales/purchase creates enqueue into `local_sync_queue` atomically (outbox); Udharo creates write the ledger only (never synced).
+- Dashboard "Total Profit" = `totalSales − totalCost` (COGS) from `sales_entries`, computed on-device. It is not a cash-in-hand figure and does not use Udharo outstanding.
+- AI remains local and rule-based; remote AI is unwired.
 
 # implement this exect schema 
 
@@ -20,7 +20,7 @@ _These tables exist strictly on the merchant's mobile/desktop device to ensure p
 - Every locally created record carries a **client-generated UUID** used as the backend idempotency key.
 - Sync state machine: `NOT_SYNCED` → `SYNCING` → `SYNCED`.
 - **Retention rule:** a local row is deleted only once it is BOTH `SYNCED` **AND** past its 7-day edit window. This keeps all edits local-first with a single upward sync direction — no pull-to-edit path required.
-- The **frontend daily "cash in hand" figure** (`sales - udaaro`) is computed **entirely on-device** from local tables — no backend round-trip needed.
+- The **frontend profit figure** (`sales − cost of goods sold`) is computed **entirely on-device** from `sales_entries` — no backend round-trip needed. It is not cash in hand and does not subtract Udharo outstanding.
 
 #### `local_sync_queue`
 

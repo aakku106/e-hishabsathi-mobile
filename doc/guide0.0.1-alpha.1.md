@@ -142,13 +142,23 @@ app/
 
       _layout.tsx
 
+      index.tsx
+
+      +not-found.tsx
+
       (auth)/
 
+            _layout.tsx
+
             login.tsx
+
+            business-type.tsx
 
             onboarding.tsx
 
       (tabs)/
+
+            _layout.tsx
 
             01-sales.tsx
 
@@ -159,9 +169,15 @@ app/
             04-dashboard.tsx
 
             05-settings.tsx
+
+      account.tsx
+
+      inventory.tsx
+
+      tax.tsx
 ```
 
-Route files must stay thin and only re-export the feature screen.
+Screen route files must stay thin and only re-export the feature screen. Layouts and `+not-found.tsx` own navigation/UI code by design.
 
 Example
 
@@ -275,14 +291,11 @@ Responsibilities
 - Data mapping
 - Business data access
 
-During UI work, this folder can also expose temporary mock records.
-Screens must still consume the data through a feature hook.
+Repositories call `getDatabase()` from `@/database/sqlite` and return empty or zero data when the database is not ready. Do not add `*.mock.ts` fixtures; screens must consume real data through a feature hook.
 
 Example
 
 ```
-udharo.mock.ts
-
 udharo.repository.ts
 ```
 
@@ -297,7 +310,11 @@ useUdharoEntries()
 
 ↓
 
-udharo.mock.ts
+udharo.repository.ts
+
+↓
+
+expo-sqlite
 ```
 
 No screen should execute SQL directly.
@@ -512,7 +529,7 @@ Rules enforced by the edge layer:
 
 - Udaaro detail never syncs: udhaaro records are written to the ledger but **not** enqueued into `local_sync_queue`.
 - Idempotency is enforced by the DB constraint (`ON CONFLICT (client_entry_id) DO NOTHING`), not app logic.
-- The dashboard "Total Profit / cash in hand" figure (`total sales − udhaaro outstanding`) is computed entirely on-device from `sales_entries` and `local_udaaro_ledger` — no backend round-trip.
+- The dashboard "Total Profit" figure (`total sales − total cost`, where cost is `cost_price × quantity`) is computed entirely on-device from `sales_entries` — no backend round-trip. It is not a cash-in-hand figure and does not subtract Udharo outstanding.
 
 Structure
 

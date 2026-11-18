@@ -9,8 +9,8 @@ Implemented.
 ## What it does
 
 - Renders a label above a bordered input container.
-- Defaults to `Colors_SalesPage` tokens for label/background/border color.
 - Forwards all standard `TextInputProps` (e.g. `keyboardType`, `secureTextEntry`, `onChangeText`) to the underlying `TextInput`.
+- Exposes color and style overrides for page-specific theming.
 
 ## Props
 
@@ -19,15 +19,16 @@ Implemented.
 | `label` | `string` | yes | — |
 | `value`, `onChangeText`, ...rest of `TextInputProps` | — | no | — |
 | `placeholder` | `string` | no | `"Enter text"` |
-| `labelColor` | `string` | no | `Colors_SalesPage.textPrimary` |
-| `inputBgColor` | `string` | no | `Colors_SalesPage.inputBG` |
-| `borderColor` | `string` | no | `Colors_SalesPage.border` |
+| `labelColor` | `string` | no | `"#0F172A"` |
+| `inputBgColor` | `string` | no | `"#FFFFFF"` |
+| `borderColor` | `string` | no | `"#E2E8F0"` |
+| `placeholderColor` | `string` | no | `"#94A3B8"` |
 | `containerStyle` / `inputContainerStyle` / `labelStyle` / `inputStyle` | `StyleProp<...>` | no | — |
 
 ## How to use it
 
 ```tsx
-import LabeledInput from "@/shared/components/Input/LabledInput";
+import { LabeledInput } from "@/shared/components/Input/LabledInput";
 
 <LabeledInput
   label="Quantity"
@@ -38,20 +39,23 @@ import LabeledInput from "@/shared/components/Input/LabledInput";
 />
 ```
 
-On a different page, override the token set:
+On a page with a different palette, pass its colors explicitly:
 
 ```tsx
-import LabeledInput from "@/shared/components/Input/LabledInput";
+import { LabeledInput } from "@/shared/components/Input/LabledInput";
 import { Colors_UdharoPage } from "@/shared/constants/colors";
 
 <LabeledInput
   label="Amount"
   placeholder="Enter Amount"
   labelColor={Colors_UdharoPage.textPrimary}
+  inputBgColor={Colors_UdharoPage.surface}
   borderColor={Colors_UdharoPage.border}
+  placeholderColor={Colors_UdharoPage.textMuted}
 />
 ```
 
 ## Notes
 
-- `t.ts` in this folder is a git-tracking placeholder only — never edit it.
+- The input text color is currently hardcoded to `#0F172A`; use `inputStyle` when a page needs a different text color.
+- The default export is also `LabeledInput`.

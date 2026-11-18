@@ -1,5 +1,8 @@
 # Tasks
 
+> [!WARNING]
+> Historical task list from 2026-07-22, kept for context only. The folder assignments and edit restrictions below no longer apply. For current state and active work, see [CurrentCondition/Latest.md](../CurrentCondition/Latest.md).
+
 ## Sanjita
 
 - Assamble Sales,Purchase/buy & Udharo page

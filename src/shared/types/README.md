@@ -1,12 +1,12 @@
 # shared/types/
 
+Global TypeScript interfaces used by two or more features.
+
 ## Status
 
-Not yet implemented — this folder only contains a `t.ts` git-tracking placeholder.
+Empty — there are no shared type files yet.
 
-## Intended purpose
-
-Global TypeScript interfaces used by two or more features. Feature-specific types (e.g. `Sale`, `SaleItem`, `CreateSaleRequest`) stay in that feature's own `types.ts` — only promote a type here once a second feature needs it too.
+Feature-specific types (e.g. `Sale`, `SaleItem`, `CreateSaleInput`) stay in that feature's own `types.ts`. Only promote a type here once a second feature needs it too.
 
 ## Suggested shape
 
@@ -27,8 +27,6 @@ export interface Paginated<T> {
 export type ID = string;
 ```
 
-## How it would be used
-
 ```ts
 import type { Paginated } from "@/shared/types/common";
 import type { Sale } from "@/features/sales/types";
@@ -37,3 +35,8 @@ function useSalesPage(page: number): Paginated<Sale> {
   // ...
 }
 ```
+
+## Notes
+
+- Do not create a shared type just to avoid a local import; wait until at least two features need it.
+- Database row shapes and repository mapping types belong beside their repository.

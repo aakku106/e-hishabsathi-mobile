@@ -1,31 +1,24 @@
 # shared/theme/
 
+Reserved for a future global theme token set.
+
 ## Status
 
-Not yet implemented — this folder only contains a `t.ts` git-tracking placeholder.
+No theme token files exist here yet. The app currently uses two complementary pieces:
 
-## Intended purpose
+- `src/providers/ThemeProvider.tsx` owns the light/dark mode context and exposes `useTheme()`.
+- `src/shared/constants/colors.ts` holds page token sets and `getThemedColors(colors, isDark)`, which maps a page palette to dark values.
 
-Per the architecture guide, `theme/` is meant to hold global theme configuration: colors, typography, spacing, and dark mode support.
-
-Right now the project uses the **page-specific token pattern** documented in [constants/README.md](../constants/README.md) instead (`Colors_SalesPage`, `Colors_UdharoPage`, etc.) — each screen owns its own visual identity rather than pulling from one shared light/dark theme.
-
-If the app later moves to a single shared theme (e.g. to support a real dark-mode toggle instead of per-page colors), it belongs here, structured roughly as:
-
-```
-theme/
-    colors.ts       # light + dark palettes
-    typography.ts
-    spacing.ts
-    index.ts        # exports the active theme, e.g. via useColorScheme()
-```
+Screens should keep using their page token set plus `getThemedColors` rather than introducing a second theme system:
 
 ```tsx
-// Hypothetical usage once implemented
-import { useTheme } from "@/shared/hooks/useTheme";
-
-const theme = useTheme();
-<View style={{ backgroundColor: theme.colors.background }} />
+const { isDark } = useTheme();
+const colors = useMemo(
+  () => getThemedColors(Colors_SalesPage, isDark),
+  [isDark],
+);
 ```
 
-Until this exists, keep using the page token sets in [constants/](../constants/README.md).
+## Future direction
+
+If the app later moves to a single shared palette, add it here and migrate page tokens deliberately. Until then, [constants/](../constants/README.md) is the source of truth for colors, spacing, radius, and typography.

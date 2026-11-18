@@ -2,11 +2,11 @@
 
 ## Status
 
-Not yet implemented — this folder only contains a `t.ts` git-tracking placeholder.
+Not yet implemented — this folder only contains this README.
 
 ## Intended purpose
 
-A shared search input (magnifier icon + text field + clear button), typically paired with `useDebounce` (see [hooks/README.md](../../hooks/README.md)) so a feature's list-filter hook isn't re-querying SQLite on every keystroke.
+A shared search input (magnifier icon + text field + clear button), typically paired with the implemented `useDebounce` hook (see [hooks/README.md](../../hooks/README.md)) so a feature's list-filter hook isn't re-querying SQLite on every keystroke.
 
 ## Suggested shape
 

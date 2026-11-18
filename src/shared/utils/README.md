@@ -1,28 +1,23 @@
 # shared/utils/
 
-## Status
-
-Not yet implemented — every file here (`calculations.ts`, `currency.ts`, `date.ts`, `formatter.ts`, `logger.ts`, `validation.ts`) currently exists but is empty.
-
-## Intended purpose
-
 Reusable helper functions used by two or more features. Feature-specific helpers (e.g. `calculateProfit()` for Sales) stay inside that feature's own `utils/` folder — only move a helper here once a second feature needs it too.
 
 ## Files
 
-| File | Intended purpose | Example |
+| File | Exports | Purpose |
 | --- | --- | --- |
-| `calculations.ts` | Generic math helpers not tied to one feature | `calculatePercentage(part, total)` |
-| `currency.ts` | Money formatting/parsing (NPR, rounding, etc.) | `formatCurrency(amount)` |
-| `date.ts` | Date formatting/parsing built on Day.js | `formatDate(date, "DD MMM YYYY")` |
-| `formatter.ts` | General text/number formatting not specific to currency or date | `formatPhoneNumber(value)` |
-| `logger.ts` | A single app-wide logger so `console.log` isn't scattered everywhere | `logger.info("sync started")` |
-| `validation.ts` | Plain-JS validation helpers used outside of a Zod schema (e.g. quick UI checks) | `isValidPhoneNumber(value)` |
+| `calculations.ts` | `sum`, `average`, `percentage`, `changePercent`, `profit`, `grossProfit` | Generic math helpers |
+| `currency.ts` | `parseCurrency`, `formatCurrencyAmount`, `sumAmounts` | Currency parsing and formatting helpers |
+| `date.ts` | `formatDate`, `formatTime`, `formatDateTime`, `startOfDay/Week/Month/Year`, `daysAgo`, `isOverdue`, `NEPALI_MONTHS`, `nepalMonthForDate`, `lastMonths`, `lastWeekdayLabels` | Date helpers built on Day.js |
+| `formatter.ts` | `formatCurrency`, `formatNumber`, `formatPercentage` | General display formatting |
+| `logger.ts` | `logger.debug/info/warn/error` | App-wide logger; output is suppressed outside development |
+| `uuid.ts` | `generateUuid()` | Client UUID generation via `expo-crypto` |
+| `validation.ts` | `optionalText`, `requiredText`, `positiveNumber`, `nonNegativeNumber`, `amountString`, `zodErrorMessages` | Lightweight Zod helpers shared by forms |
 
-## How to use them (once implemented)
+## How to use them
 
 ```ts
-import { formatCurrency } from "@/shared/utils/currency";
+import { formatCurrency } from "@/shared/utils/formatter";
 import { formatDate } from "@/shared/utils/date";
 import { logger } from "@/shared/utils/logger";
 
@@ -32,5 +27,6 @@ logger.info("rendered sale summary", { label });
 
 ## Notes
 
-- Keep feature-only calculations (e.g. `groupSales()`, `calculateDiscount()`) inside the feature's own `utils/`, per Rules 3/4 in the architecture guide.
-- `validation.ts` here is for lightweight, non-schema checks. Full form field validation still belongs in each feature's own `validation.ts` using Zod.
+- `formatCurrency` lives in `formatter.ts`; `currency.ts` is for parsing and currency-specific helpers.
+- Keep feature-only calculations (`groupSales()`, `calculateDiscount()`) inside the feature's own `utils/`, per Rules 3/4 in the architecture guide.
+- Full form validation belongs in each feature's `validation.ts` using Zod; `shared/utils/validation.ts` only holds reusable primitives.

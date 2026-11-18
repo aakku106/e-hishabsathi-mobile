@@ -1,45 +1,46 @@
 # shared/hooks/
 
-## Status
+Reusable hooks used by two or more features. Feature-specific hooks (e.g. `useSalesEntries()`, `useSaleForm()`) stay inside that feature's own `hooks/` folder.
 
-Not yet implemented — `useDebounce.ts`, `useKeyboard.ts`, `useSQLite.ts`, and `useTheme.ts` currently exist but are empty files.
+## Implemented hooks
 
-## Intended purpose
+| Hook | Returns | Purpose |
+| --- | --- | --- |
+| `useDebounce<T>(value, delay = 300)` | `T` | Debounce a fast-changing value before it triggers work such as a query |
+| `useKeyboard()` | `{ isVisible, keyboardHeight }` | Track keyboard visibility and height for layout adjustments |
+| `useSQLite()` | `{ db, ready, error }` | Read the SQLite provider context; use it to gate feature queries on `ready && db` |
+| `useTheme()` | `{ mode, isDark }` | Re-export of `providers/ThemeProvider`; read the active light/dark mode |
 
-Reusable hooks used by two or more features. Feature-specific hooks (e.g. `useSales()`, `useSaleForm()`) stay inside that feature's own `hooks/` folder.
-
-## Files
-
-| Hook | Intended purpose |
-| --- | --- |
-| `useDebounce.ts` | Debounce a fast-changing value (e.g. search text) before it triggers a SQLite query |
-| `useKeyboard.ts` | Track keyboard visibility/height so screens can adjust layout when the keyboard opens |
-| `useSQLite.ts` | Access the SQLite database instance set up in `database/` and `providers/` |
-| `useTheme.ts` | Read the active theme, once [theme/](../theme/README.md) is implemented |
-
-## How to use them (once implemented)
+## How to use them
 
 ```tsx
 import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const [query, setQuery] = useState("");
 const debouncedQuery = useDebounce(query, 300);
-
-useEffect(() => {
-  // re-run the SQLite search only when debouncedQuery changes
-}, [debouncedQuery]);
 ```
 
 ```tsx
 import { useSQLite } from "@/shared/hooks/useSQLite";
 
-// Inside a feature's data/ repository, e.g. features/udharo/data/udharo.repository.ts
-function useUdharoEntries() {
-  const db = useSQLite();
-  // db.getAllAsync(...)
+function useSalesEntries() {
+  const { db, ready } = useSQLite();
+  return useQuery({
+    queryKey: ["sales", "entries"],
+    queryFn: fetchSalesEntries,
+    enabled: ready && db !== null,
+  });
 }
+```
+
+```tsx
+import { useTheme } from "@/shared/hooks/useTheme";
+
+const { isDark } = useTheme();
 ```
 
 ## Notes
 
-- Screens should still never call SQLite directly (Rule 1) — `useSQLite()` is meant to be consumed by a feature's `data/` repository, not by a screen component.
+- Screens should never call SQLite directly (Rule 1). `useSQLite()` belongs in feature hooks that gate repository queries; repositories call `getDatabase()` from `@/database/sqlite`.
+- `useTheme()` is a convenience re-export. Most existing screens import `useTheme` directly from `@/providers/ThemeProvider`.
+- `useKeyboard()` only listens while the calling component is mounted.

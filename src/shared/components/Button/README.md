@@ -1,6 +1,6 @@
 # Button
 
-`TopButton.tsx` is a shared pill-shaped button used across feature screens.
+`PrimaryButton.tsx` exports `PrimaryButton`, the shared gradient action button used across feature screens.
 
 ## Status
 
@@ -8,9 +8,10 @@ Implemented.
 
 ## What it does
 
-- Renders a `TouchableOpacity` pill button with a title.
-- Defaults to `Colors_SalesPage` tokens for background/text color, spacing, radius, and typography.
-- Lets the caller override layout/color with `style` and `textStyle`.
+- Renders a `TouchableOpacity` wrapping a `LinearGradient`.
+- Supports a loading spinner and disabled state.
+- Uses shared spacing, radius, typography, and shadow tokens.
+- Lets the caller override the gradient, outer style, and text style.
 
 ## Props
 
@@ -18,31 +19,34 @@ Implemented.
 | --- | --- | --- | --- |
 | `title` | `string` | no | `""` |
 | `onPress` | `(event: GestureResponderEvent) => void` | no | — |
+| `loading` | `boolean` | no | `false` |
+| `disabled` | `boolean` | no | `false` |
+| `gradient` | `readonly [string, string]` | no | `["#4F46E5", "#3730A3"]` |
 | `style` | `StyleProp<ViewStyle>` | no | — |
 | `textStyle` | `StyleProp<TextStyle>` | no | — |
 
 ## How to use it
 
 ```tsx
-import TopButton from "@/shared/components/Button/TopButton";
+import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 
-<TopButton title="Save Sale" onPress={handleSave} />
+<PrimaryButton title="Save Sale" onPress={handleSave} />
 ```
 
-Override colors for a different page's token set:
+Match a page's palette by passing its gradient:
 
 ```tsx
-import TopButton from "@/shared/components/Button/TopButton";
+import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 import { Colors_UdharoPage } from "@/shared/constants/colors";
 
-<TopButton
+<PrimaryButton
   title="Record Payment"
+  gradient={[Colors_UdharoPage.primary, Colors_UdharoPage.primaryDeep]}
   onPress={handleRecordPayment}
-  style={{ backgroundColor: Colors_UdharoPage.topBtn }}
-  textStyle={{ color: Colors_UdharoPage.textPrimary }}
 />
 ```
 
 ## Notes
 
-- `track.ts` in this folder is a git-tracking placeholder only — never edit it.
+- The default export is also `PrimaryButton`.
+- `loading` disables presses and replaces the title with a white `ActivityIndicator`.

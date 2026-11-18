@@ -58,4 +58,5 @@ const options = [
 
 ## Notes
 
-- `t.ts` in this folder is a git-tracking placeholder only — never edit it.
+- The default export is also `Dropdown`.
+- The folder name is historical; rename it only as part of a deliberate component move.
