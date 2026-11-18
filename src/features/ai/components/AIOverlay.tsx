@@ -301,9 +301,11 @@ export default function AIOverlay({
               <TouchableOpacity
                 accessibilityRole="button"
                 accessibilityLabel="Close AI Assistant"
-                hitSlop={10}
-                onPress={startDismiss}>
-                <MaterialCommunityIcons name="close" size={22} color={colors.textMuted} />
+                accessibilityHint="Close the AI assistant"
+                hitSlop={12}
+                onPress={startDismiss}
+                style={styles.closeBtn}>
+                <MaterialCommunityIcons name="close" size={20} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
@@ -409,6 +411,14 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 8,
     overflow: "hidden",
+  },
+
+  // Close button (top-right of sheet header)
+  closeBtn: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // Drag handle at top
