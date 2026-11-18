@@ -9,7 +9,9 @@ Two shared headers:
 
 Implemented. Renders a menu icon on the left, the page title in a pill, and a notification bell on the right (with an optional dot). Every authenticated screen uses it.
 
-Each page supplies its own accent through `colors.primary` (or `accentColor` for pages like Dashboard that use a different token). The floating AI button is separate: it always uses the shared `getAccentColor(isDark)` green.
+The header bar and title pill are translucent green glass surfaces: both use `GlassSurface` with a translucent tint from the shared `getAccentColor(isDark)` green (native Liquid Glass on iOS 26+, `BlurView` elsewhere). The title text itself keeps the page accent, so pages stay visually distinct while sharing one glass treatment. Pages set that accent through `colors.primary`, or `accentColor` for pages like Dashboard that use a different token.
+
+The floating AI button is separate: it always uses the shared `getAccentColor(isDark)` green, also as a translucent glass tint.
 
 | Prop | Type | Required | Default |
 | --- | --- | --- | --- |
@@ -87,3 +89,5 @@ import { PageHeader } from "@/shared/components/Header/PageHeader";
 
 - Both components are also default exports.
 - `PageHeader`'s back button only renders when `onBack` is provided.
+- `AppHeader`'s glass tint and bottom border are derived from `getAccentColor(isDark)` with `withAlpha()`; the title color is independent, so changing a page's accent never changes the glass tint.
+- `GlassSurface` is the shared glass primitive; see [Glass/README.md](../Glass/README.md).

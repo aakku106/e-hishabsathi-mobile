@@ -12,6 +12,7 @@ Every component lives in its own `PascalCase` folder matching the component name
 | Input | Implemented (`LabeledInput`) | [Input/README.md](./Input/README.md) |
 | DatePicker | Implemented (`Dropdown`, not a date picker) | [DatePicker/README.md](./DatePicker/README.md) |
 | Header | Implemented (`AppHeader` default, `PageHeader` legacy) | [Header/README.md](./Header/README.md) |
+| Glass | Implemented (`GlassSurface`) | [Glass/README.md](./Glass/README.md) |
 | ProductPicker | Implemented (`ProductPicker`) | [ProductPicker/README.md](./ProductPicker/README.md) |
 | TabBar | Implemented (`CustomTabBar`) | [TabBar/README.md](./TabBar/README.md) |
 | BottomSheet | Not yet implemented; folder contains only its README | [BottomSheet/README.md](./BottomSheet/README.md) |

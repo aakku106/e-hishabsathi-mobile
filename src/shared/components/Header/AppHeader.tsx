@@ -2,7 +2,11 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useMemo } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { Radius } from "@/shared/constants/radius";
+import { useTheme } from "@/providers/ThemeProvider";
+import { GlassSurface } from "@/shared/components/Glass/GlassSurface";
+import { getAccentColor } from "@/shared/constants/colors";
+import { BorderWidth, Radius } from "@/shared/constants/radius";
+import { withAlpha } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 
@@ -38,15 +42,22 @@ export function AppHeader({
   onNotificationsPress,
   showNotificationDot = true,
 }: AppHeaderProps) {
+  const { isDark } = useTheme();
   const accent = accentColor ?? colors.primary;
-  const { surface, surfaceAlt, textPrimary } = colors;
-  const styles = useMemo(
-    () => createStyles({ surface, surfaceAlt, textPrimary }),
-    [surface, surfaceAlt, textPrimary],
-  );
+  const accentGreen = getAccentColor(isDark);
+  const { textPrimary } = colors;
+  const styles = useMemo(() => createStyles({ textPrimary }), [textPrimary]);
 
   return (
-    <View style={styles.appHeader}>
+    <GlassSurface
+      style={[
+        styles.appHeader,
+        {
+          borderBottomColor: withAlpha(accentGreen, isDark ? 0.22 : 0.14),
+        },
+      ]}
+      tintColor={withAlpha(accentGreen, isDark ? 0.2 : 0.12)}
+      intensity={55}>
       <View style={styles.headerRow}>
         {onBack ? (
           <TouchableOpacity
@@ -74,7 +85,17 @@ export function AppHeader({
           </TouchableOpacity>
         )}
 
-        <View style={styles.titlePill}>
+        <View
+          style={[
+            styles.titlePill,
+            {
+              backgroundColor: withAlpha(
+                accentGreen,
+                isDark ? 0.2 : 0.12,
+              ),
+              borderColor: withAlpha(accentGreen, isDark ? 0.28 : 0.18),
+            },
+          ]}>
           <Text style={[styles.title, { color: accent }]} numberOfLines={1}>
             {title}
           </Text>
@@ -95,19 +116,17 @@ export function AppHeader({
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </GlassSurface>
   );
 }
 
-function createStyles(
-  colors: Pick<AppHeaderColors, "surface" | "surfaceAlt" | "textPrimary">,
-) {
+function createStyles(colors: Pick<AppHeaderColors, "textPrimary">) {
   return StyleSheet.create({
     appHeader: {
-      backgroundColor: colors.surface,
       paddingHorizontal: Spacing.md,
       paddingTop: Spacing.lg,
       paddingBottom: Spacing.sm,
+      borderBottomWidth: BorderWidth.thin,
     },
     headerRow: {
       flexDirection: "row",
@@ -125,7 +144,7 @@ function createStyles(
       marginHorizontal: Spacing.lg,
       minHeight: 58,
       borderRadius: Radius.pill,
-      backgroundColor: colors.surfaceAlt,
+      borderWidth: BorderWidth.thin,
       alignItems: "center",
       justifyContent: "center",
     },

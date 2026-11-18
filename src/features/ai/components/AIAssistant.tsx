@@ -3,11 +3,12 @@ import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity } from "react-native";
 
 import { useTheme } from "@/providers/ThemeProvider";
+import { GlassSurface } from "@/shared/components/Glass/GlassSurface";
 import {
   getAccentColor,
   getAccentForegroundColor,
 } from "@/shared/constants/colors";
-import { boxShadow } from "@/shared/constants/shadows";
+import { boxShadow, withAlpha } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontWeight } from "@/shared/constants/typography";
 
@@ -21,7 +22,8 @@ type AIAssistantProps = {
 /**
  * Floating AI button plus the Khata Intelligence bottom sheet. Render it as a
  * sibling of the screen's ScrollView so the absolute overlay covers the page.
- * The button uses the same theme-aware green as the default header title.
+ * The button uses the shared theme-aware green as a translucent glass tint so
+ * it matches the header without copying the page accent.
  */
 export function AIAssistant({ bottomOffset = 92 }: AIAssistantProps) {
   const [open, setOpen] = useState(false);
@@ -36,7 +38,12 @@ export function AIAssistant({ bottomOffset = 92 }: AIAssistantProps) {
         accessibilityLabel="Open AI Assistant"
         activeOpacity={0.85}
         onPress={() => setOpen(true)}
-        style={[styles.button, { backgroundColor: accent, bottom: bottomOffset }]}>
+        style={[styles.button, { bottom: bottomOffset }]}>
+        <GlassSurface
+          style={styles.glass}
+          tintColor={withAlpha(accent, isDark ? 0.62 : 0.76)}
+          intensity={45}
+        />
         <MaterialCommunityIcons
           name="creation-outline"
           size={24}
@@ -61,6 +68,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     boxShadow: boxShadow({ y: 5, blur: 10, color: "#0F172A", opacity: 0.2 }),
     zIndex: 10,
+  },
+  glass: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 29,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.35)",
   },
   label: {
     fontSize: 10,
