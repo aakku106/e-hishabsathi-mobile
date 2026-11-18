@@ -4,7 +4,7 @@ Repo root is `e-hishabsathi-mobile/` (git, `package.json`, Expo config); the out
 
 ## Before writing code
 
-- This is Expo SDK 57 / React Native 0.86; check APIs against <https://docs.expo.dev/versions/v57.0.0/>, not current/latest docs.
+- This is Expo SDK 58 / React Native 0.88; check APIs against <https://docs.expo.dev/versions/v58.0.0/>, not current/latest docs.
 - Read `doc/guide0.0.1-alpha.1.md` for architecture/data flow and `src/shared/constants/README.md` before styling changes. When prose and code disagree, trust repositories/config.
 
 ## Architecture

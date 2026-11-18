@@ -10,9 +10,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppHeader } from "@/shared/components/Header/AppHeader";
+import {
+  AppHeader,
+  getAppHeaderHeight,
+} from "@/shared/components/Header/AppHeader";
 import {
   Dropdown,
   DropdownOption,
@@ -134,6 +137,10 @@ export default function SalesEntryForm() {
     [isDark],
   );
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
+  const [headerHeight, setHeaderHeight] = useState(() =>
+    getAppHeaderHeight(insets.top),
+  );
   const emptyProduct = (): ProductDraft => ({
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     product: "",
@@ -373,12 +380,21 @@ export default function SalesEntryForm() {
     <SafeAreaView
       style={styles.safeArea}
       edges={["bottom", "left", "right"]}>
-      <AppHeader title={t("Sales")} colors={colors} edgeToEdge />
+      <View
+        style={styles.headerOverlay}
+        onLayout={(event) =>
+          setHeaderHeight(event.nativeEvent.layout.height)
+        }>
+        <AppHeader title={t("Sales")} colors={colors} edgeToEdge />
+      </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.content}>
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: headerHeight + Spacing.lg },
+        ]}>
         <View style={styles.formCard}>
           <View style={styles.productHeaderRow}>
             <Text style={styles.extraTitle}>{t("Products")}</Text>
@@ -880,10 +896,18 @@ function createStyles(colors: typeof Colors_SalesPage) {
     backgroundColor: colors.background,
   },
 
+  headerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    pointerEvents: "box-none",
+  },
+
   content: {
     flexGrow: 1,
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
     paddingBottom: 160,
   },
 

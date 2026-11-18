@@ -181,16 +181,16 @@ export default function DashboardOverview() {
 
   return (
     <View style={styles.screen}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}>
       <AppHeader
         title={t("Dashboard")}
         colors={colors}
         accentColor={colors.greenPrimary}
       />
 
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}>
       <View style={styles.todayRow}>
         <Pressable style={styles.periodSelector} onPress={() => setPeriodMenuOpen((open) => !open)}>
           <Text style={styles.todayText}>{t(period === "today" ? "Today" : period === "week" ? "This Week" : period === "month" ? "This Month" : "This Year")}</Text>

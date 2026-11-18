@@ -12,6 +12,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TextInputInstance,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -36,7 +37,10 @@ import { useTheme } from "@/providers/ThemeProvider";
 
 const { height: WINDOW_HEIGHT } = Dimensions.get("window");
 
-const SHEET_HEIGHT = WINDOW_HEIGHT * 0.85;
+// The AI assistant sheet covers almost the whole screen (including the header
+// area). When the keyboard opens, the KeyboardAvoidingView inside keeps the
+// input row above it.
+const SHEET_HEIGHT = WINDOW_HEIGHT;
 const DRAG_THRESHOLD = 100;
 const SPRING_CONFIG = { damping: 25, stiffness: 200, mass: 1 };
 
@@ -83,7 +87,7 @@ export default function AIOverlay({
   const [question, setQuestion] = useState(initialQuestion);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
   const onCloseRef = useRef(onClose);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [messages, setMessages] = useState<AssistantMessage[]>([
@@ -387,7 +391,7 @@ const styles = StyleSheet.create({
   // The actual sheet (backgroundColor applied dynamically)
   sheet: {
     width: "100%",
-    maxHeight: SHEET_HEIGHT,
+    height: SHEET_HEIGHT,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     shadowColor: "#000",

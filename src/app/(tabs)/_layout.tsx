@@ -3,6 +3,11 @@ import { Redirect, Tabs } from "expo-router";
 import { useAuthStore } from "@/store/auth.store";
 import { CustomTabBar } from "@/shared/components/TabBar/CustomTabBar";
 
+export const unstable_settings = {
+  // Initial tab for the tabs navigator: the dashboard.
+  anchor: "04-dashboard",
+};
+
 export default function TabsLayout() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isHydrated = useAuthStore((state) => state.isHydrated);
@@ -13,7 +18,6 @@ export default function TabsLayout() {
 
   return (
     <Tabs
-      initialRouteName="04-dashboard"
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
         headerShown: false,

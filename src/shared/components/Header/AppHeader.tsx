@@ -34,6 +34,18 @@ type AppHeaderProps = {
   edgeToEdge?: boolean;
 };
 
+/** Height of the header row, excluding the top padding and bottom border. */
+const HEADER_ROW_HEIGHT = 58;
+
+/**
+ * Total header height for a given top safe-area inset. Screens that render the
+ * header as an overlay over scrolling content use it to offset that content.
+ */
+export function getAppHeaderHeight(topInset: number): number {
+  const topPadding = topInset > 0 ? topInset + Spacing.sm : Spacing.lg;
+  return topPadding + HEADER_ROW_HEIGHT + Spacing.sm + BorderWidth.thin;
+}
+
 /**
  * Default app header: menu (or back) button on the left, page title pill in
  * the middle, notifications on the right. The glass is tinted with the page's
@@ -51,6 +63,7 @@ export function AppHeader({
 }: AppHeaderProps) {
   const { isDark } = useTheme();
   const insets = useSafeAreaInsets();
+  const topPadding = insets.top > 0 ? insets.top + Spacing.sm : Spacing.lg;
   const accent = accentColor ?? colors.primary;
   const { textPrimary } = colors;
   const styles = useMemo(() => createStyles({ textPrimary }), [textPrimary]);
@@ -59,9 +72,7 @@ export function AppHeader({
     <GlassSurface
       style={[
         styles.appHeader,
-        edgeToEdge && {
-          paddingTop: insets.top > 0 ? insets.top + Spacing.sm : Spacing.lg,
-        },
+        edgeToEdge && { paddingTop: topPadding },
         {
           borderBottomColor: withAlpha(accent, isDark ? 0.25 : 0.16),
         },
@@ -149,7 +160,7 @@ function createStyles(colors: Pick<AppHeaderColors, "textPrimary">) {
     titlePill: {
       flex: 1,
       marginHorizontal: Spacing.lg,
-      minHeight: 58,
+      minHeight: HEADER_ROW_HEIGHT,
       borderRadius: Radius.pill,
       borderWidth: BorderWidth.thin,
       alignItems: "center",

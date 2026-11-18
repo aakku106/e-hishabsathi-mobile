@@ -19,7 +19,7 @@ module.exports = () => ({
   ...appConfig,
   web: {
     ...appConfig.web,
-    // `expo start --web` must use the single-page output: Metro 57 cannot
+    // `expo start --web` must use the single-page output: Metro 58 cannot
     // serialize the expo-sqlite web worker chunk from the static output.
     // `expo export --platform web` still needs the static multi-route output.
     output: isWebExport ? "static" : "single",

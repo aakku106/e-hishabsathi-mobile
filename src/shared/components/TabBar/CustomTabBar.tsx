@@ -68,7 +68,7 @@ const ROUTE_ICON_ACTIVE_MAP: Record<
   "05-settings": "cog",
 };
 
-export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
+export const CustomTabBar = ({ state, descriptors, emitter, navigateToTab }: any) => {
   const { t } = useCopy();
   const { isDark } = useTheme();
   const styles = React.useMemo(() => createStyles(isDark), [isDark]);
@@ -102,14 +102,14 @@ export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
       "circle-outline";
 
     const onPress = () => {
-      const event = navigation.emit({
+      const event = emitter.emit({
         type: "tabPress",
         target: route.key,
         canPreventDefault: true,
       });
 
       if (!isFocused && !event.defaultPrevented) {
-        navigation.navigate(route.name);
+        navigateToTab(route.key);
       }
     };
 

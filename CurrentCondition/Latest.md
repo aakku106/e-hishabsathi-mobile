@@ -12,7 +12,7 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 
 ### Application structure
 
-- Expo SDK 57 / React Native 0.86.2 app configured with Expo Router.
+- Expo SDK 58 / React Native 0.88.1 app configured with Expo Router.
 - Root layout wires React Query, SQLite, theme handling, and store hydration.
 - All screen route files are thin re-exports into feature screens; layouts and `+not-found.tsx` own code by design.
 - Navigation includes Sales, Purchases, Udharo, Dashboard, Settings, Inventory, Tax, Account, login, onboarding, and business type screens.

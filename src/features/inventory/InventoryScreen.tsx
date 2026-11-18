@@ -441,7 +441,7 @@ export default function InventoryScreen() {
               color={colors.primary}
               style={styles.listLoading}
             />
-          : null
+          : undefined
         }
       />
     </SafeAreaView>
