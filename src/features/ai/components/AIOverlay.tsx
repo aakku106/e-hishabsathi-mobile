@@ -224,6 +224,13 @@ export default function AIOverlay({
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <Text style={styles.title}>Khata Intelligence</Text>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Close AI Assistant"
+            hitSlop={10}
+            onPress={() => bottomSheetRef.current?.close()}>
+            <MaterialCommunityIcons name="close" size={22} color={colors.textMuted} />
+          </TouchableOpacity>
         </View>
 
         {/* Messages */}
@@ -291,6 +298,7 @@ const styles = StyleSheet.create({
   // The AI assistant sheet surface
   sheet: {
     width: "100%",
+    flex: 1,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     shadowColor: "#000",
@@ -315,9 +323,10 @@ const styles = StyleSheet.create({
   // Header
   header: {
     height: 56,
-    paddingHorizontal: Spacing.md,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.md,
     borderBottomWidth: 1,
   },
   title: {
