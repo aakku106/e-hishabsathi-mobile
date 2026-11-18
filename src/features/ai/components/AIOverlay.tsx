@@ -40,7 +40,9 @@ const { height: WINDOW_HEIGHT } = Dimensions.get("window");
 // The AI assistant sheet covers almost the whole screen (including the header
 // area). When the keyboard opens, the KeyboardAvoidingView inside keeps the
 // input row above it.
-const SHEET_HEIGHT = WINDOW_HEIGHT;
+// Slightly reduced from the full window height so the drag handle / header /
+// input row stay comfortably reachable without the sheet feeling oversized.
+const SHEET_HEIGHT = WINDOW_HEIGHT * 0.96;
 const DRAG_THRESHOLD = 100;
 const SPRING_CONFIG = { damping: 25, stiffness: 200, mass: 1 };
 
