@@ -9,7 +9,7 @@ Reusable hooks used by two or more features. Feature-specific hooks (e.g. `useSa
 | `useDebounce<T>(value, delay = 300)` | `T` | Debounce a fast-changing value before it triggers work such as a query |
 | `useKeyboard()` | `{ isVisible, keyboardHeight }` | Track keyboard visibility and height for layout adjustments |
 | `useSQLite()` | `{ db, ready, error }` | Read the SQLite provider context; use it to gate feature queries on `ready && db` |
-| `useTheme()` | `{ mode, isDark }` | Re-export of `providers/ThemeProvider`; read the active light/dark mode |
+| `useTheme()` | `{ mode, isDark }` | Re-export of `providers/ThemeProvider`; `mode` is `light`, `dark`, or `system`, and `isDark` is the resolved value |
 
 ## How to use them
 

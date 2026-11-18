@@ -4,7 +4,9 @@
 
 ## What it does
 
-- Renders the bottom navigation bar.
+- Renders a floating, translucent bottom navigation bar.
+- On iOS 26+ it uses `GlassView` from `expo-glass-effect` for the native Liquid Glass material.
+- On other platforms it uses `BlurView` from `expo-blur` (web gets CSS `backdrop-filter`; Android falls back to a semi-transparent surface when no blur target is provided).
 - Uses shared design tokens for spacing, radius, typography, shadows, and colors.
 - Maps route names like `01-sales` and `04-dashboard` to nav color tokens and icon names.
 - Translates tab labels through `useCopy()` and switches soft/active colors with `useTheme()`.
@@ -38,4 +40,6 @@ export default function TabsLayout() {
 
 - Keep route names in sync with `ROUTE_COLOR_MAP`, `ROUTE_SOFT_MAP`, `ROUTE_ICON_MAP`, and `ROUTE_ICON_ACTIVE_MAP` inside `CustomTabBar.tsx`.
 - If you add a new tab, update those maps and add a matching `Tabs.Screen` entry.
+- The active tab pills use translucent route tints so they read correctly on top of the glass surface.
+- `expo-glass-effect` only renders the native effect on iOS 26+; the blur fallback is intentional, not a bug.
 - The default export is also `CustomTabBar`.

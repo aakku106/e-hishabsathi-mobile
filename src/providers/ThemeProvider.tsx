@@ -1,8 +1,9 @@
 import React, { PropsWithChildren, createContext, useContext } from "react";
+import { useColorScheme } from "react-native";
 
 import { useSettingsStore } from "@/store/settings.store";
 
-export type ThemeMode = "light" | "dark";
+export type ThemeMode = "light" | "dark" | "system";
 
 export type Theme = {
   mode: ThemeMode;
@@ -26,7 +27,9 @@ export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider: React.FC<PropsWithChildren> = ({ children }) => {
   const mode = useSettingsStore((state) => state.themeMode);
-  const isDark = mode === "dark";
+  const systemScheme = useColorScheme();
+  const isDark =
+    mode === "dark" || (mode === "system" && systemScheme === "dark");
 
   return (
     <ThemeContext.Provider value={{ mode, isDark }}>

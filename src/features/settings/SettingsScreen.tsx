@@ -4,7 +4,6 @@ import { useRouter } from "expo-router";
 import {
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   Pressable,
   TouchableOpacity,
@@ -17,7 +16,7 @@ import { APP } from "@/config/app";
 import { setSetting, SETTING_KEYS } from "@/database/helpers/settings";
 import { persistThemeMode } from "@/lib/hydration";
 import { useBusiness } from "@/features/business/hooks/useBusiness";
-import { useTheme } from "@/providers/ThemeProvider";
+import { useTheme, type ThemeMode } from "@/providers/ThemeProvider";
 import { useSettingsStore } from "@/store/settings.store";
 import { AppHeader } from "@/shared/components/Header/AppHeader";
 import { Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
@@ -47,8 +46,11 @@ const COPY = {
     products: "Products and stock",
     tax: "Tax / VAT",
     vat: "Monthly VAT summary",
-    dark: "Dark mode",
-    currently: "Currently",
+    appearance: "Appearance",
+    appearanceHint: "Choose how the app looks",
+    system: "System",
+    dark: "Dark",
+    light: "Light",
     currency: "Currency",
     notifications: "Notifications",
     language: "Change Language",
@@ -71,8 +73,11 @@ const COPY = {
     products: "उत्पादन र स्टक",
     tax: "कर / VAT",
     vat: "मासिक VAT सारांश",
-    dark: "डार्क मोड",
-    currently: "हाल",
+    appearance: "देखावट",
+    appearanceHint: "एप कस्तो देखिने छान्नुहोस्",
+    system: "सिस्टम",
+    dark: "गाढा",
+    light: "उज्यालो",
     currency: "मुद्रा",
     notifications: "सूचनाहरू",
     language: "भाषा परिवर्तन",
@@ -84,6 +89,15 @@ const COPY = {
     nepali: "नेपाली",
   },
 } as const;
+
+const THEME_OPTIONS: {
+  mode: ThemeMode;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+}[] = [
+  { mode: "system", icon: "theme-light-dark" },
+  { mode: "dark", icon: "weather-night" },
+  { mode: "light", icon: "white-balance-sunny" },
+];
 
 type SettingsLinkProps = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
@@ -125,7 +139,7 @@ function SettingsLink({
 export default function SettingsScreen() {
   const router = useRouter();
   const { data: business } = useBusiness();
-  const { themeMode, toggleTheme, currency, language, setLanguage } =
+  const { themeMode, setThemeMode, currency, language, setLanguage } =
     useSettingsStore();
   const copy = COPY[language];
   const { isDark } = useTheme();
@@ -135,10 +149,9 @@ export default function SettingsScreen() {
   );
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const handleToggleTheme = () => {
-    toggleTheme();
-    const nextMode = themeMode === "dark" ? "light" : "dark";
-    persistThemeMode(nextMode);
+  const handleThemeChange = (mode: ThemeMode) => {
+    setThemeMode(mode);
+    void persistThemeMode(mode);
   };
 
   const handleLanguageChange = () => {
@@ -265,17 +278,39 @@ export default function SettingsScreen() {
           <View style={styles.card}>
             <View style={styles.settingRow}>
               <View style={styles.settingTextWrap}>
-                <Text style={styles.settingLabel}>{copy.dark}</Text>
-                <Text style={styles.settingHint}>
-                  {copy.currently} {themeMode === "dark" ? "on" : "off"}
-                </Text>
+                <Text style={styles.settingLabel}>{copy.appearance}</Text>
+                <Text style={styles.settingHint}>{copy.appearanceHint}</Text>
               </View>
-              <Switch
-                value={themeMode === "dark"}
-                onValueChange={handleToggleTheme}
-                trackColor={{ false: "#CBD5E1", true: colors.primary }}
-                thumbColor="#FFFFFF"
-              />
+            </View>
+
+            <View style={styles.themeOptions}>
+              {THEME_OPTIONS.map((option) => {
+                const selected = themeMode === option.mode;
+                return (
+                  <Pressable
+                    key={option.mode}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    onPress={() => handleThemeChange(option.mode)}
+                    style={[
+                      styles.themeOption,
+                      selected && styles.themeOptionActive,
+                    ]}>
+                    <MaterialCommunityIcons
+                      name={option.icon}
+                      size={17}
+                      color={selected ? colors.onPrimary : colors.textMuted}
+                    />
+                    <Text
+                      style={[
+                        styles.themeOptionLabel,
+                        selected && styles.themeOptionLabelActive,
+                      ]}>
+                      {copy[option.mode]}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
 
             <View style={styles.rowDivider} />
@@ -488,6 +523,35 @@ function createStyles(colors: typeof Colors_SettingsPage) {
     color: colors.textMuted,
     fontSize: FontSize.sm,
     fontWeight: FontWeight.regular,
+  },
+  themeOptions: {
+    flexDirection: "row",
+    gap: Spacing.xs,
+    padding: Spacing.xs,
+    borderRadius: Radius.md,
+    backgroundColor: colors.surfaceAlt,
+  },
+  themeOption: {
+    flex: 1,
+    minHeight: 42,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.xs,
+    borderRadius: Radius.sm,
+  },
+  themeOptionActive: {
+    backgroundColor: colors.primary,
+  },
+  themeOptionLabel: {
+    color: colors.textMuted,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
+  },
+  themeOptionLabelActive: {
+    color: colors.onPrimary,
+    fontWeight: FontWeight.bold,
   },
   settingValue: {
     color: colors.textPrimary,

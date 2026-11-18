@@ -488,7 +488,7 @@ Contains
 - colors
 - typography
 - spacing
-- dark mode support
+- light, dark, and system appearance support
 
 ---
 

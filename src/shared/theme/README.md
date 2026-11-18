@@ -6,7 +6,7 @@ Reserved for a future global theme token set.
 
 No theme token files exist here yet. The app currently uses two complementary pieces:
 
-- `src/providers/ThemeProvider.tsx` owns the light/dark mode context and exposes `useTheme()`.
+- `src/providers/ThemeProvider.tsx` owns the light/dark/system mode context and exposes `useTheme()`. `mode` is the stored preference (`"light"`, `"dark"`, or `"system"`); `isDark` is the resolved value, with `"system"` following `useColorScheme()`.
 - `src/shared/constants/colors.ts` holds page token sets and `getThemedColors(colors, isDark)`, which maps a page palette to dark values.
 
 Screens should keep using their page token set plus `getThemedColors` rather than introducing a second theme system:

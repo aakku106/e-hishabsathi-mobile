@@ -28,7 +28,8 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 - Dashboard reads local data and displays period-based statistics, income bars, monthly trend data, and stock/low-stock metrics. A local rule-based AI assistant bottom sheet opens from a floating AI button on Sales, Buy, Udharo, and Dashboard.
 - Inventory has a route and feature screen with paged product listing, product creation, manual stock adjustment, and product/stock summaries.
 - Tax/VAT has a month selector and calculates output VAT, input VAT, and net payable from local sales and purchase data.
-- Settings includes theme/language controls, inventory/tax links, and app settings persistence; the business profile card opens the Account page.
+- Settings includes appearance (System/Dark/Light), language controls, inventory/tax links, and app settings persistence; the business profile card opens the Account page.
+- The bottom tab bar is a floating translucent surface: native Liquid Glass on iOS 26+ and a blur fallback elsewhere.
 - Account includes a confirmed local-data deletion flow and logout.
 
 ### Local data foundation

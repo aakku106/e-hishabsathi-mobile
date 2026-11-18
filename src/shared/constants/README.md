@@ -1,6 +1,6 @@
 # Project Constants
 
-This project uses page-specific style constants plus a light/dark mode context. There is no single global palette; each business area defines its own colors, spacing, radius, and typography tokens.
+This project uses page-specific style constants plus a light/dark/system mode context. There is no single global palette; each business area defines its own colors, spacing, radius, and typography tokens.
 
 ### Where the constants live
 
