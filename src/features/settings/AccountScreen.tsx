@@ -47,6 +47,9 @@ const COPY = {
       "Business and transaction records are stored locally on this device.",
     general: "General",
     logout: "Logout",
+    logoutTitle: "Log out?",
+    logoutBody: "You will need to sign in again to open your local khata.",
+    logoutConfirm: "Log out",
     dangerZone: "Danger zone",
     deleteAll: "Delete all data",
     deleteHint: "Permanently erase all local account and business data",
@@ -80,6 +83,9 @@ const COPY = {
       "व्यवसाय र कारोबारका विवरण यस उपकरणमै स्थानीय रूपमा सुरक्षित हुन्छन्।",
     general: "सामान्य",
     logout: "लगआउट",
+    logoutTitle: "लगआउट गर्ने?",
+    logoutBody: "तपाईंको स्थानीय खाता खोल्न फेरि साइन इन गर्नुपर्नेछ।",
+    logoutConfirm: "लगआउट",
     dangerZone: "जोखिम क्षेत्र",
     deleteAll: "सबै डेटा मेटाउनुहोस्",
     deleteHint: "यस उपकरणको सबै खाता र व्यवसाय डेटा स्थायी रूपमा मेटाउनुहोस्",
@@ -122,6 +128,7 @@ export default function AccountScreen() {
 
   const [confirmationStep, setConfirmationStep] =
     useState<ConfirmationStep | null>(null);
+  const [logoutVisible, setLogoutVisible] = useState(false);
   const [typedConfirmation, setTypedConfirmation] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -148,6 +155,7 @@ export default function AccountScreen() {
   };
 
   const handleLogout = () => {
+    setLogoutVisible(false);
     removeSetting(SETTING_KEYS.authPan);
     removeSetting(SETTING_KEYS.authUsername);
     logout();
@@ -217,7 +225,7 @@ export default function AccountScreen() {
           <View style={styles.card}>
             <Pressable
               accessibilityRole="button"
-              onPress={handleLogout}
+              onPress={() => setLogoutVisible(true)}
               style={styles.logoutRow}>
               <View style={styles.logoutIcon}>
                 <MaterialCommunityIcons
@@ -376,6 +384,42 @@ export default function AccountScreen() {
             )}
           </View>
         </KeyboardAvoidingView>
+      </Modal>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={logoutVisible}
+        onRequestClose={() => setLogoutVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View accessibilityViewIsModal style={styles.confirmationCard}>
+            <View style={styles.logoutConfirmIcon}>
+              <MaterialCommunityIcons
+                name="logout"
+                size={28}
+                color={colors.primary}
+              />
+            </View>
+            <Text style={styles.confirmationTitle}>{copy.logoutTitle}</Text>
+            <Text style={styles.confirmationBody}>{copy.logoutBody}</Text>
+            <View style={styles.modalActions}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setLogoutVisible(false)}
+                style={styles.cancelButton}>
+                <Text style={styles.cancelText}>{copy.cancel}</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                onPress={handleLogout}
+                style={styles.logoutConfirmButton}>
+                <Text style={styles.logoutConfirmText}>
+                  {copy.logoutConfirm}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -550,6 +594,14 @@ function createStyles(colors: typeof Colors_SettingsPage) {
       borderRadius: Radius.pill,
       backgroundColor: colors.dangerSoft,
     },
+    logoutConfirmIcon: {
+      width: 52,
+      height: 52,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: Radius.pill,
+      backgroundColor: colors.primarySoft,
+    },
     confirmationTitle: {
       color: colors.textPrimary,
       fontSize: FontSize.xl,
@@ -601,6 +653,19 @@ function createStyles(colors: typeof Colors_SettingsPage) {
     },
     continueText: {
       color: colors.danger,
+      fontSize: FontSize.md,
+      fontWeight: FontWeight.bold,
+    },
+    logoutConfirmButton: {
+      minHeight: 44,
+      justifyContent: "center",
+      alignItems: "center",
+      borderRadius: Radius.md,
+      backgroundColor: colors.primary,
+      paddingHorizontal: Spacing.md,
+    },
+    logoutConfirmText: {
+      color: colors.onPrimary,
       fontSize: FontSize.md,
       fontWeight: FontWeight.bold,
     },

@@ -306,20 +306,6 @@ export default function PurchaseScreen() {
                       color={colors.textPrimary}
                     />
                   </View>
-                  <Pressable
-                    style={[styles.voiceButton, isListening && styles.voiceButtonActive]}
-                    onPress={handleVoiceInput}
-                  >
-                    <MaterialCommunityIcons
-                      name={isListening ? "stop-circle-outline" : "microphone-outline"}
-                      size={20}
-                      color={colors.primary}
-                    />
-                    <View>
-                      <Text style={styles.voiceTitle}>{isListening ? t("Listening") : t("AI Voice")}</Text>
-                      <Text style={styles.voiceSubtitle}>{isListening ? t("Speak now") : t("Fill with voice")}</Text>
-                    </View>
-                  </Pressable>
                 </View>
               </View>
             </View>

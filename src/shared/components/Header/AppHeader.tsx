@@ -2,8 +2,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useMemo } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-import { useTheme } from "@/providers/ThemeProvider";
-import { getAccentColor } from "@/shared/constants/colors";
 import { Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
@@ -12,11 +10,14 @@ type AppHeaderColors = {
   surface: string;
   surfaceAlt: string;
   textPrimary: string;
+  primary: string;
 };
 
 type AppHeaderProps = {
   title: string;
   colors: AppHeaderColors;
+  /** Page accent for the title and notification dot. Defaults to `colors.primary`. */
+  accentColor?: string;
   /** Shows a back arrow instead of the menu button on stack screens. */
   onBack?: () => void;
   onMenuPress?: () => void;
@@ -26,19 +27,18 @@ type AppHeaderProps = {
 
 /**
  * Default app header: menu (or back) button on the left, page title pill in
- * the middle, notifications on the right. The title and notification dot use
- * the shared theme-aware green accent.
+ * the middle, notifications on the right. Each page supplies its own accent.
  */
 export function AppHeader({
   title,
   colors,
+  accentColor,
   onBack,
   onMenuPress,
   onNotificationsPress,
   showNotificationDot = true,
 }: AppHeaderProps) {
-  const { isDark } = useTheme();
-  const accent = getAccentColor(isDark);
+  const accent = accentColor ?? colors.primary;
   const { surface, surfaceAlt, textPrimary } = colors;
   const styles = useMemo(
     () => createStyles({ surface, surfaceAlt, textPrimary }),
@@ -99,7 +99,9 @@ export function AppHeader({
   );
 }
 
-function createStyles(colors: AppHeaderColors) {
+function createStyles(
+  colors: Pick<AppHeaderColors, "surface" | "surfaceAlt" | "textPrimary">,
+) {
   return StyleSheet.create({
     appHeader: {
       backgroundColor: colors.surface,

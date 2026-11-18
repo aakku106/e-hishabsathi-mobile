@@ -16,7 +16,7 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 - Root layout wires React Query, SQLite, theme handling, and store hydration.
 - All screen route files are thin re-exports into feature screens; layouts and `+not-found.tsx` own code by design.
 - Navigation includes Sales, Purchases, Udharo, Dashboard, Settings, Inventory, Tax, Account, login, onboarding, and business type screens.
-- Shared UI components, page-specific design tokens, dark-mode color mapping, formatting utilities, validation schemas, and i18n helpers are present. Every authenticated screen uses the shared `AppHeader`, and the floating AI button shares its theme-aware green accent.
+- Shared UI components, page-specific design tokens, dark-mode color mapping, formatting utilities, validation schemas, and i18n helpers are present. Every authenticated screen uses the shared `AppHeader`, and the floating AI button uses a shared theme-aware green accent.
 
 ### User-facing features
 

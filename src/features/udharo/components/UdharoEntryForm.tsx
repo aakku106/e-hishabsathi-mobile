@@ -252,16 +252,6 @@ export default function UdharoEntryForm() {
                 color={colors.primary}
               />
             </Pressable>
-            <Pressable style={styles.voiceButton} onPress={handleVoiceInput}>
-              <MaterialCommunityIcons
-                name={isListening ? "stop-circle-outline" : "microphone-outline"}
-                size={18}
-                color={colors.primary}
-              />
-              <Text style={styles.voiceText}>
-                {isListening ? t("Listening") : t("AI Voice")}
-              </Text>
-            </Pressable>
           </View>
           {showMore && (
             <View style={styles.moreFields}>

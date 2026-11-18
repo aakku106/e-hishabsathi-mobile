@@ -4,7 +4,7 @@ This project uses page-specific style constants plus a light/dark mode context. 
 
 ### Where the constants live
 
-- `src/shared/constants/colors.ts` for page color maps, `getThemedColors(colors, isDark)`, and the shared `Colors_Accent` / `getAccentColor(isDark)` tokens used by `AppHeader` and the floating AI button.
+- `src/shared/constants/colors.ts` for page color maps, `getThemedColors(colors, isDark)`, and the shared `Colors_Accent` / `getAccentColor(isDark)` tokens used by the floating AI button.
 - `src/shared/constants/typography.ts` for font families, font sizes, weights, and page typography presets.
 - `src/shared/constants/spacing.ts` for spacing scale and layout sizes.
 - `src/shared/constants/radius.ts` for border radius and border widths.
@@ -72,6 +72,6 @@ const styles = useMemo(() => createStyles(colors), [colors]);
 - `Colors_TaxPage` and `Typography_TaxPage`
 - `Colors_LoginPage`
 - `Colors_NavBar`
-- `Colors_Accent` and `Colors_AccentForeground` (shared green for the default header and AI button)
+- `Colors_Accent` and `Colors_AccentForeground` (shared green for the floating AI button)
 
 If a screen needs a new visual identity, add a new token set in the constants folder first, then wire the screen to that set.

@@ -185,7 +185,11 @@ export default function DashboardOverview() {
         style={styles.container}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}>
-      <AppHeader title={t("Dashboard")} colors={colors} />
+      <AppHeader
+        title={t("Dashboard")}
+        colors={colors}
+        accentColor={colors.greenPrimary}
+      />
 
       <View style={styles.todayRow}>
         <Pressable style={styles.periodSelector} onPress={() => setPeriodMenuOpen((open) => !open)}>
