@@ -25,7 +25,7 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 - Sales supports multi-item batch entry, cash/udharo payment selection, customer capture, optional details, color selection, web voice input, recent entries, and summaries. Sales decrement stock, link to inventory, enqueue sync records, and create an Udharo credit entry plus ledger record when paid on credit.
 - Purchases supports validated entry creation, inventory suggestions, web voice input, recent entries, and summaries. Purchases increase stock, update cost price, and enqueue sync records.
 - Udharo supports validated credit entry creation, customer phone/due-date details, status display, recent entries, and summaries. Udharo writes to the local customer/ledger tables and never enters the sync queue.
-- Dashboard reads local data and displays period-based statistics, income bars, monthly trend data, stock/low-stock metrics, and a local rule-based AI assistant bottom sheet.
+- Dashboard reads local data and displays period-based statistics, income bars, monthly trend data, and stock/low-stock metrics. A local rule-based AI assistant bottom sheet opens from a floating AI button on Sales, Buy, Udharo, and Dashboard.
 - Inventory has a route and feature screen with paged product listing, product creation, manual stock adjustment, and product/stock summaries.
 - Tax/VAT has a month selector and calculates output VAT, input VAT, and net payable from local sales and purchase data.
 - Settings includes theme/language controls, inventory/tax links, and app settings persistence; the business profile card opens the Account page.

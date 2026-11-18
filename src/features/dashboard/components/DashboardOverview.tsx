@@ -21,8 +21,9 @@ import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useCopy } from "@/shared/i18n";
 import { formatCurrency } from "@/shared/utils/formatter";
+import { AppHeader } from "@/shared/components/Header/AppHeader";
 
-import AIOverlay from "@/features/ai/components/AIOverlay";
+import { AIAssistant } from "@/features/ai/components/AIAssistant";
 import { useDashboardData } from "../hooks/useDashboardData";
 import type { DashboardPeriod } from "../data/dashboard.repository";
 
@@ -117,7 +118,6 @@ export default function DashboardOverview() {
   // UI toggle states
   const [incomeMode, setIncomeMode] = useState<string>("Income");
   const [trendMode, setTrendMode] = useState<string>("Month");
-  const [showAI, setShowAI] = useState(false);
 
   const [chartFade] = useState(() => new Animated.Value(1));
   const [trendFade] = useState(() => new Animated.Value(1));
@@ -185,20 +185,11 @@ export default function DashboardOverview() {
         style={styles.container}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}>
-      <View style={styles.appHeader}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.headerIconButton} accessibilityLabel="Open menu">
-            <MaterialCommunityIcons name="menu" size={28} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <View style={styles.dashboardPill}>
-            <Text style={styles.brandName}>{t("Dashboard")}</Text>
-          </View>
-          <TouchableOpacity style={styles.headerIconButton} accessibilityLabel="Open notifications">
-            <MaterialCommunityIcons name="bell-outline" size={27} color={colors.textPrimary} />
-            <View style={styles.notificationDot} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <AppHeader
+        title={t("Dashboard")}
+        colors={colors}
+        accentColor={colors.greenPrimary}
+      />
 
       <View style={styles.todayRow}>
         <Pressable style={styles.periodSelector} onPress={() => setPeriodMenuOpen((open) => !open)}>
@@ -401,19 +392,7 @@ export default function DashboardOverview() {
 
       </ScrollView>
 
-      <TouchableOpacity
-        style={styles.floatingAIButton}
-        accessibilityLabel="Open AI Assistant"
-        activeOpacity={0.85}
-        onPress={() => setShowAI(true)}
-      >
-        <MaterialCommunityIcons name="creation-outline" size={24} color="#FFFFFF" />
-        <Text style={styles.floatingAIText}>AI</Text>
-      </TouchableOpacity>
-
-      {showAI && (
-        <AIOverlay visible={showAI} onClose={() => setShowAI(false)} />
-      )}
+      <AIAssistant accentColor={colors.greenPrimary} />
     </View>
   );
 }
@@ -431,66 +410,6 @@ function createStyles(colors: typeof Colors_DashboardPage) {
   content: {
     flexGrow: 1,
     paddingBottom: 120,
-  },
-  floatingAIButton: {
-    position: "absolute",
-    right: Spacing.lg,
-    bottom: 92,
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: colors.greenPrimary,
-    alignItems: "center",
-    justifyContent: "center",
-    boxShadow: boxShadow({ y: 5, blur: 10, color: "#0F172A", opacity: 0.2 }),
-    zIndex: 10,
-  },
-  floatingAIText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: FontWeight.bold,
-    marginTop: -2,
-  },
-  appHeader: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: Spacing.md,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.sm,
-  },
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  headerIconButton: {
-    width: 42,
-    height: 42,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  brandName: {
-    color: colors.greenPrimary,
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold,
-    textAlign: "center",
-  },
-  dashboardPill: {
-    flex: 1,
-    marginHorizontal: Spacing.lg,
-    minHeight: 58,
-    borderRadius: Radius.pill,
-    backgroundColor: colors.surfaceAlt,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  notificationDot: {
-    position: "absolute",
-    top: 6,
-    right: 7,
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: colors.greenPrimary,
   },
   periodRow: {
     marginTop: Spacing.sm,

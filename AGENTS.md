@@ -23,7 +23,7 @@ Repo root is `e-hishabsathi-mobile/` (git, `package.json`, Expo config); the out
 - `app.config.js` forces dev env for `expo start` and uses `single` web output; `expo export --platform web` uses `static`. Don't revert to a `NODE_ENV`-only check or hardcode static output.
 - expo-sqlite web/OPFS allows one exclusive database handle: use one dev server and close extra tabs to avoid `DatabaseLockedError`.
 - On web, `USE_NATIVE_DRIVER=false`; put `pointerEvents` in `style`, and use `boxShadow` helpers instead of deprecated `shadow*` props.
-- AI chat is a Dashboard bottom sheet, not a route. Its overlay relies on a stable close callback (`onCloseRef`) and cleared dismiss timers; inline close callbacks restart the effect.
+- AI chat is a bottom sheet (not a route) opened by the floating AI button on Sales, Buy, Udharo, and Dashboard. Its overlay relies on a stable close callback (`onCloseRef`) and cleared dismiss timers; inline close callbacks restart the effect.
 
 ## Config and generated files
 

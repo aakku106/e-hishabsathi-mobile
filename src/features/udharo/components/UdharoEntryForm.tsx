@@ -407,7 +407,7 @@ function createStyles(colors: typeof Colors_UdharoPage) {
   },
   content: {
     flexGrow: 1,
-    paddingBottom: Spacing["4xl"],
+    paddingBottom: 160,
   },
   formCard: {
     marginTop: Spacing.xl,

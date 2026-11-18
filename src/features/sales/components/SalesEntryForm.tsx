@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 
+import { AppHeader } from "@/shared/components/Header/AppHeader";
 import {
   Dropdown,
   DropdownOption,
@@ -30,6 +31,7 @@ import { useTheme } from "@/providers/ThemeProvider";
 import { useCopy } from "@/shared/i18n";
 import { formatCurrency } from "@/shared/utils/formatter";
 
+import { AIAssistant } from "@/features/ai/components/AIAssistant";
 import { useProducts } from "@/features/inventory/hooks/useInventory";
 
 import {
@@ -369,20 +371,11 @@ export default function SalesEntryForm() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <View style={styles.headerIconBox}>
-          <MaterialCommunityIcons
-            name="cash-multiple"
-            size={24}
-            color="#FFFFFF"
-          />
-        </View>
-
-        <View style={styles.headerTextContainer}>
-          <Text style={styles.headerTitle}>{t("Sales")}</Text>
-          <Text style={styles.headerSubtitle}>{t("Add a new sale")}</Text>
-        </View>
-      </View>
+      <AppHeader
+        title={t("Sales")}
+        colors={colors}
+        accentColor={colors.primary}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -876,6 +869,8 @@ export default function SalesEntryForm() {
           }
         </View>
       </ScrollView>
+
+      <AIAssistant accentColor={colors.primary} />
     </SafeAreaView>
   );
 }
@@ -887,47 +882,11 @@ function createStyles(colors: typeof Colors_SalesPage) {
     backgroundColor: colors.background,
   },
 
-  header: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
-  },
-
-  headerIconBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.18)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  headerTextContainer: {
-    flex: 1,
-  },
-
-  headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 26,
-    fontWeight: FontWeight.bold,
-    lineHeight: 32,
-  },
-
-  headerSubtitle: {
-    color: "rgba(255,255,255,0.85)",
-    fontSize: FontSize.md,
-    marginTop: 2,
-  },
-
   content: {
     flexGrow: 1,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.lg,
-    paddingBottom: Spacing["4xl"],
+    paddingBottom: 160,
   },
 
   formCard: {

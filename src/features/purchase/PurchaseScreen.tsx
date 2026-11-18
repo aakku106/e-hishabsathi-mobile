@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { AIAssistant } from "@/features/ai/components/AIAssistant";
 import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 import { PageHeader } from "@/shared/components/Header/PageHeader";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
@@ -452,6 +453,8 @@ export default function PurchaseScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <AIAssistant accentColor={colors.primary} />
     </SafeAreaView>
   );
 }
@@ -533,7 +536,7 @@ function createStyles(colors: typeof Colors_PurchasesPage) {
   },
   content: {
     flexGrow: 1,
-    paddingBottom: Spacing["4xl"],
+    paddingBottom: 160,
   },
   formCard: {
     marginTop: Spacing.lg,
