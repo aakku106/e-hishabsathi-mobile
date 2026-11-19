@@ -17,6 +17,7 @@ Two pieces make up the bottom tab navigation:
 - Uses shared design tokens for spacing, radius, typography, shadows, and colors.
 - Maps route names like `01-sales` and `04-dashboard` to nav color tokens and icon names.
 - Translates tab labels through `useCopy()` and switches soft/active colors with `useTheme()`.
+- Draws one shared selection pill that springs between tabs instead of a per-tab background, and cross-fades to the destination tab's tint.
 - Fires a selection haptic before switching to a different tab.
 - Works as the `tabBar` prop for the tabs navigator.
 
@@ -56,7 +57,14 @@ export default function TabsLayout() {
           {children}
         </SwipeableTabScreen>
       )}
-      screenOptions={{ headerShown: false, animation: "shift" }}>
+      screenOptions={{
+        headerShown: false,
+        animation: "shift",
+        transitionSpec: {
+          animation: "timing",
+          config: { duration: 220, easing: Easing.out(Easing.cubic) },
+        },
+      }}>
       <Tabs.Screen name="01-sales" options={{ title: "Sales" }} />
       <Tabs.Screen name="02-purchases" options={{ title: "Buy" }} />
       <Tabs.Screen name="03-udharo" options={{ title: "Udharo" }} />
@@ -71,9 +79,10 @@ export default function TabsLayout() {
 
 - Expo Router 58 passes `{ state, descriptors, emitter, navigateToTab }` to a custom `tabBar`; the old `navigation` prop is gone. Emit `tabPress` through `emitter` and switch tabs with `navigateToTab(route.key)`.
 - `screenLayout` is supported by the vendored bottom-tabs navigator; it wraps each screen inside its scene, so the tab bar itself is not part of the swipe area.
-- `animation: "shift"` slides the scenes sideways on every tab change, including swipes. The default shift timing is 150ms.
+- `animation: "shift"` slides the scenes sideways on every tab change, including swipes. The tabs layout overrides the 150ms default with a 220ms `Easing.out(Easing.cubic)` timing so the slide is clearly visible.
+- The selection pill is a single absolute `Animated.View` inside the `tabsRow` wrapper. It is measured once with `onLayout` (tabs are `flex: 1`, so `itemWidth = rowWidth / routeCount`), placed without animation on first layout, then moved with `withSpring` and re-tinted with `withTiming`. `pointerEvents: "none"` lives in the pill's style for react-native-web.
 - Keep route names in sync with `ROUTE_COLOR_MAP`, `ROUTE_SOFT_MAP`, `ROUTE_ICON_MAP`, and `ROUTE_ICON_ACTIVE_MAP` inside `CustomTabBar.tsx`.
 - If you add a new tab, update those maps, `TAB_ROUTE_ORDER`, and add a matching `Tabs.Screen` entry.
-- The active tab pills use translucent route tints so they read correctly on top of the glass surface.
+- The selection pill uses a translucent route tint so it reads correctly on top of the glass surface; dark mode uses a neutral white wash for every tab.
 - `expo-glass-effect` only renders the native effect on iOS 26+; the blur fallback is intentional, not a bug.
 - The default export is also `CustomTabBar`.

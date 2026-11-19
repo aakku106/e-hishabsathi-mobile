@@ -1,4 +1,5 @@
 import { Redirect, Tabs } from "expo-router";
+import { Easing } from "react-native";
 
 import { useAuthStore } from "@/store/auth.store";
 import { CustomTabBar } from "@/shared/components/TabBar/CustomTabBar";
@@ -30,8 +31,17 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         // Slide the scenes sideways when the active tab changes; swipe
-        // navigation in `SwipeableTabScreen` commits the same change.
+        // navigation in `SwipeableTabScreen` commits the same change. The
+        // custom timing is a touch longer than the 150ms default so the shift
+        // reads as a deliberate slide rather than a flicker.
         animation: "shift",
+        transitionSpec: {
+          animation: "timing",
+          config: {
+            duration: 220,
+            easing: Easing.out(Easing.cubic),
+          },
+        },
       }}>
       <Tabs.Screen name="01-sales" options={{ title: "Sales" }} />
       <Tabs.Screen name="02-purchases" options={{ title: "Buy" }} />

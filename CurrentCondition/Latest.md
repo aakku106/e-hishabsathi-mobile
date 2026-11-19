@@ -30,7 +30,7 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 - Inventory has a route and feature screen with paged product listing, product creation, manual stock adjustment, and product/stock summaries.
 - Tax/VAT has a month selector and calculates output VAT, input VAT, and net payable from local sales and purchase data.
 - Settings includes appearance (System/Dark/Light), language controls, inventory/tax links, and app settings persistence; the business profile card opens the Account page.
-- The bottom tab bar is a floating translucent surface: native Liquid Glass on iOS 26+ and a blur fallback elsewhere. Tab screens can be paged with horizontal swipes (`SwipeableTabScreen`), and tab changes animate with the 150ms shift transition.
+- The bottom tab bar is a floating translucent surface: native Liquid Glass on iOS 26+ and a blur fallback elsewhere. Tab screens can be paged with horizontal swipes (`SwipeableTabScreen`), tab changes animate with a 220ms eased shift transition, and a single selection pill springs between tabs instead of each tab toggling its own background.
 - Haptic feedback is centralized in `src/shared/utils/haptics.ts`: success after writes, error on validation failures/failed writes, selection ticks for tab and preference changes, and a strong patterned vibration for logout and delete-all-data confirmations.
 - Account includes a confirmed local-data deletion flow and logout.
 
