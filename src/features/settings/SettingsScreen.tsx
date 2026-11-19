@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { APP } from "@/config/app";
 import { setSetting, SETTING_KEYS } from "@/database/helpers/settings";
@@ -19,11 +19,12 @@ import { useBusiness } from "@/features/business/hooks/useBusiness";
 import { useTheme, type ThemeMode } from "@/providers/ThemeProvider";
 import { useSettingsStore } from "@/store/settings.store";
 import { AppHeader } from "@/shared/components/Header/AppHeader";
-import { Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
+import { Colors_NavBar, Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
-import { boxShadow } from "@/shared/constants/shadows";
+import { boxShadow, withAlpha } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { hapticSelection } from "@/shared/utils/haptics";
 
 const BUSINESS_TYPE_LABELS: Record<string, string> = {
   retail: "Retail",
@@ -46,6 +47,15 @@ const COPY = {
     products: "Products and stock",
     tax: "Tax / VAT",
     vat: "Monthly VAT summary",
+    pages: "Pages",
+    sales: "Sales",
+    buy: "Buy",
+    udharo: "Udharo",
+    dashboard: "Dashboard",
+    strictInventory: "Only sell inventory items",
+    strictInventoryHint: "Sales must use products that already exist in Inventory",
+    aiAssistant: "AI assistant",
+    aiAssistantHint: "Show the floating AI button on this page",
     appearance: "Appearance",
     appearanceHint: "Choose how the app looks",
     system: "System",
@@ -73,6 +83,15 @@ const COPY = {
     products: "उत्पादन र स्टक",
     tax: "कर / VAT",
     vat: "मासिक VAT सारांश",
+    pages: "पृष्ठहरू",
+    sales: "बिक्री",
+    buy: "खरिद",
+    udharo: "उधारो",
+    dashboard: "ड्यासबोर्ड",
+    strictInventory: "इन्भेन्टरीका सामान मात्र बेच्नुहोस्",
+    strictInventoryHint: "बिक्री गर्न इन्भेन्टरीमा रहेका उत्पादन मात्र प्रयोग गर्नुपर्छ",
+    aiAssistant: "AI सहायक",
+    aiAssistantHint: "यो पृष्ठमा तैरने AI सहायक बटन देखाउनुहोस्",
     appearance: "देखावट",
     appearanceHint: "एप कस्तो देखिने छान्नुहोस्",
     system: "सिस्टम",
@@ -105,6 +124,9 @@ type SettingsLinkProps = {
   value?: string;
   colors: typeof Colors_SettingsPage;
   styles: ReturnType<typeof createStyles>;
+  onPress?: () => void;
+  /** Page accent used for the row icon; defaults to the settings primary. */
+  accent?: string;
 };
 
 function SettingsLink({
@@ -113,15 +135,24 @@ function SettingsLink({
   value,
   colors,
   styles,
+  onPress,
+  accent,
 }: SettingsLinkProps) {
-  return (
+  const row = (
     <View style={styles.settingRow}>
       <View style={styles.rowLeading}>
-        <View style={styles.smallIcon}>
+        <View
+          style={[
+            styles.smallIcon,
+            {
+              backgroundColor:
+                accent ? withAlpha(accent, 0.14) : colors.primarySoft,
+            },
+          ]}>
           <MaterialCommunityIcons
             name={icon}
             size={18}
-            color={colors.primary}
+            color={accent ?? colors.primary}
           />
         </View>
         <Text style={styles.settingLabel}>{label}</Text>
@@ -133,6 +164,18 @@ function SettingsLink({
         color={colors.textMuted}
       />
     </View>
+  );
+
+  if (!onPress) return row;
+
+  return (
+    <TouchableOpacity
+      accessibilityRole="button"
+      activeOpacity={0.8}
+      onPress={onPress}
+      style={styles.settingRow}>
+      {row}
+    </TouchableOpacity>
   );
 }
 
@@ -148,24 +191,29 @@ export default function SettingsScreen() {
     [isDark],
   );
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const handleThemeChange = (mode: ThemeMode) => {
+    hapticSelection();
     setThemeMode(mode);
     void persistThemeMode(mode);
   };
 
   const handleLanguageChange = () => {
+    hapticSelection();
     const nextLanguage = language === "en" ? "np" : "en";
     setLanguage(nextLanguage);
     void setSetting(SETTING_KEYS.language, nextLanguage);
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <AppHeader title={copy.settings} colors={colors} />
+    <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+      <View style={styles.headerOverlay} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <AppHeader title={copy.settings} colors={colors} edgeToEdge showNotifications={false} />
+      </View>
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}
         showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{copy.profile}</Text>
@@ -375,6 +423,50 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{copy.pages}</Text>
+          <View style={styles.card}>
+            <SettingsLink
+              icon="cash-register"
+              label={copy.sales}
+              colors={colors}
+              styles={styles}
+              accent={Colors_NavBar.selected.sales}
+              onPress={() => router.push("/settings/pages/sales")}
+            />
+            <View style={styles.rowDivider} />
+
+            <SettingsLink
+              icon="cart-outline"
+              label={copy.buy}
+              colors={colors}
+              styles={styles}
+              accent={Colors_NavBar.selected.buy}
+              onPress={() => router.push("/settings/pages/buy")}
+            />
+            <View style={styles.rowDivider} />
+
+            <SettingsLink
+              icon="account-cash-outline"
+              label={copy.udharo}
+              colors={colors}
+              styles={styles}
+              accent={Colors_NavBar.selected.udharo}
+              onPress={() => router.push("/settings/pages/udharo")}
+            />
+            <View style={styles.rowDivider} />
+
+            <SettingsLink
+              icon="view-dashboard-outline"
+              label={copy.dashboard}
+              colors={colors}
+              styles={styles}
+              accent={Colors_NavBar.selected.dashBoard}
+              onPress={() => router.push("/settings/pages/dashboard")}
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>{copy.about}</Text>
           <View style={styles.card}>
             <View style={styles.settingRow}>
@@ -402,6 +494,14 @@ function createStyles(colors: typeof Colors_SettingsPage) {
   content: {
     flexGrow: 1,
     paddingBottom: Spacing["4xl"],
+  },
+  headerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    pointerEvents: "box-none",
   },
   section: {
     marginTop: Spacing.xl,

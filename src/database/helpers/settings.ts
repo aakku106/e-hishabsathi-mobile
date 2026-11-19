@@ -34,4 +34,19 @@ export const SETTING_KEYS = {
   authUsername: "auth.username",
   themeMode: "settings.themeMode",
   language: "settings.language",
+  /** Sales may only use products that already exist in inventory. */
+  salesStrictInventory: "settings.sales.strictInventory",
+  /** Per-page visibility of the floating AI assistant button. */
+  aiAssistant: {
+    sales: "settings.aiAssistant.sales",
+    buy: "settings.aiAssistant.buy",
+    udharo: "settings.aiAssistant.udharo",
+    dashboard: "settings.aiAssistant.dashboard",
+  },
+  /** Per-page visibility of the recent-entries list. */
+  recent: {
+    sales: "settings.recent.sales",
+    buy: "settings.recent.buy",
+    udharo: "settings.recent.udharo",
+  },
 } as const;

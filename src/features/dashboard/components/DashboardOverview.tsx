@@ -13,7 +13,8 @@ import {
 import Svg, { Circle, Line, Polygon, Polyline } from "react-native-svg";
 
 import { USE_NATIVE_DRIVER } from "@/shared/constants/animation";
-import { Colors_DashboardPage, getThemedColors } from "@/shared/constants/colors";
+import { APP } from "@/config/app";
+import { Colors_DashboardPage, Colors_NavBar, getThemedColors } from "@/shared/constants/colors";
 import { useTheme } from "@/providers/ThemeProvider";
 import { Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
@@ -118,6 +119,7 @@ export default function DashboardOverview() {
   // UI toggle states
   const [incomeMode, setIncomeMode] = useState<string>("Income");
   const [trendMode, setTrendMode] = useState<string>("Month");
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const [chartFade] = useState(() => new Animated.Value(1));
   const [trendFade] = useState(() => new Animated.Value(1));
@@ -181,16 +183,19 @@ export default function DashboardOverview() {
 
   return (
     <View style={styles.screen}>
+      <View style={styles.headerOverlay} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <AppHeader
+          title={t("Dashboard")}
+          colors={colors}
+          accentColor={Colors_NavBar.selected.dashBoard}
+          edgeToEdge
+        />
+      </View>
+
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}
         showsVerticalScrollIndicator={false}>
-      <AppHeader
-        title={t("Dashboard")}
-        colors={colors}
-        accentColor={colors.greenPrimary}
-      />
-
       <View style={styles.todayRow}>
         <Pressable style={styles.periodSelector} onPress={() => setPeriodMenuOpen((open) => !open)}>
           <Text style={styles.todayText}>{t(period === "today" ? "Today" : period === "week" ? "This Week" : period === "month" ? "This Month" : "This Year")}</Text>
@@ -221,7 +226,12 @@ export default function DashboardOverview() {
             <View key={stat.label} style={styles.statCard}>
               <View style={styles.statBody}>
                 <Text style={styles.statLabel}>{t(stat.label)}</Text>
-                <Text style={styles.statValue}>{stat.value}</Text>
+                <Text style={styles.statValue} numberOfLines={1}>
+                  {APP.currency ? (
+                    <Text style={styles.statValueSymbol}>{APP.currency}</Text>
+                  ) : null}
+                  {stat.value.slice(APP.currency.length)}
+                </Text>
               </View>
 
               {!!stat.change && (
@@ -392,7 +402,7 @@ export default function DashboardOverview() {
 
       </ScrollView>
 
-      <AIAssistant />
+      <AIAssistant page="dashboard" />
     </View>
   );
 }
@@ -410,6 +420,14 @@ function createStyles(colors: typeof Colors_DashboardPage) {
   content: {
     flexGrow: 1,
     paddingBottom: 120,
+  },
+  headerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    pointerEvents: "box-none",
   },
   periodRow: {
     marginTop: Spacing.sm,
@@ -547,6 +565,11 @@ function createStyles(colors: typeof Colors_DashboardPage) {
     fontSize: FontSize["2xl"],
     fontWeight: FontWeight.bold,
     letterSpacing: 0,
+  },
+  statValueSymbol: {
+    color: colors.textMuted,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semibold,
   },
   changeBadge: {
     alignSelf: "flex-start",

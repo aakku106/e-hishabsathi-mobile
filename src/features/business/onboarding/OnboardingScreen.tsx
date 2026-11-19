@@ -18,6 +18,7 @@ import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { hapticError, hapticSuccess } from "@/shared/utils/haptics";
 
 import { useCreateBusiness } from "../hooks/useBusiness";
 
@@ -29,12 +30,14 @@ export default function OnboardingScreen() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const createBusiness = useCreateBusiness();
 
   const handleContinue = () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
+      hapticError();
       setError("Business name is required to get started.");
       return;
     }
@@ -43,21 +46,27 @@ export default function OnboardingScreen() {
     createBusiness.mutate(
       { name: trimmedName, phone: phone.trim() || null, address: address.trim() || null },
       {
-        onSuccess: () => router.replace("/(auth)/business-type"),
+        onSuccess: () => {
+          hapticSuccess();
+          router.replace("/(auth)/business-type");
+        },
+        onError: hapticError,
       },
     );
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <AppHeader title="Set up your business" colors={colors} />
+    <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+      <View style={styles.headerOverlay} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <AppHeader title="Set up your business" colors={colors} edgeToEdge />
+      </View>
 
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -145,6 +154,14 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingBottom: Spacing["2xl"],
+  },
+  headerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    pointerEvents: "box-none",
   },
   formCard: {
     backgroundColor: colors.surface,

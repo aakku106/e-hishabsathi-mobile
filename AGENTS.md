@@ -1,10 +1,10 @@
 # e-hishabsathi-mobile
 
-Repo root is `e-hishabsathi-mobile/` (git, `package.json`, Expo config); the outer container is not a repo. Run commands here. Use npm: both `package-lock.json` and `bun.lock` are tracked, but the scripts are npm-based.
+Repo root is `e-hishabsathi-mobile/` (git, `package.json`, Expo config); the outer container is not a repo. Run commands here. Use bun as the package manager (`bun install`, `bun run <script>`, `bunx <bin>`); npm is kept as a fallback because both `bun.lock` and `package-lock.json` are tracked. Keep both lockfiles in sync after dependency changes (see Commands).
 
 ## Before writing code
 
-- This is Expo SDK 57 / React Native 0.86; check APIs against <https://docs.expo.dev/versions/v57.0.0/>, not current/latest docs.
+- This is Expo SDK 58 / React Native 0.88; check APIs against <https://docs.expo.dev/versions/v58.0.0/>, not current/latest docs.
 - Read `doc/guide0.0.1-alpha.1.md` for architecture/data flow and `src/shared/constants/README.md` before styling changes. When prose and code disagree, trust repositories/config.
 
 ## Architecture
@@ -13,6 +13,7 @@ Repo root is `e-hishabsathi-mobile/` (git, `package.json`, Expo config); the out
 - `src/features/<name>/` owns components, hooks, `data/`, `utils/`, `validation.ts` (Zod), and `types.ts`; reusable-only UI goes in `src/shared/components/`.
 - Route files in `src/app/` are thin re-exports only; layouts and `+not-found.tsx` contain code by design.
 - SQLite is the only data source: `initDatabase()` (via `SQLiteProvider` from `@/lib/sqlite`) applies `src/database/schema/` migrations through `PRAGMA user_version`, then seeds; `SEED_DEMO_DATA=false`. There are no `*.mock.ts` fixtures; reads return empty/zero when `getDatabase()` is null.
+- Page-level behaviour settings are stored in SQLite `app_settings` (`SETTING_KEYS` in `src/database/helpers/settings.ts`) and hydrated into `useSettingsStore` via `hydrateStores()`: `sales.strictInventory` (default `true`) and `aiAssistant.<page>` for sales/buy/udharo/dashboard (default `true`). The Settings screen has a `Pages` section that is a link list to `/settings/pages/<page>`; each per-page screen (Sales/Buy/Udharo/Dashboard) owns that page's toggles via `SettingsPageShell` + `SettingsToggleRow`, has a `Reset to default` button (Alert confirmation + haptics), and the sales gate is `requireInventory` on `createSalesBatch` plus the inline field error in `SalesEntryForm`. The Settings area hides the header notifications icon.
 - Sales/purchase writes enqueue `local_sync_queue` with client-UUID idempotency and 7-day retention; udhaaro entries go to `local_udaaro_ledger` and never sync.
 - Dashboard profit in code is sales − `totalCost` (COGS), not cash in hand and not net of udhaaro outstanding.
 
@@ -23,8 +24,11 @@ Repo root is `e-hishabsathi-mobile/` (git, `package.json`, Expo config); the out
 - `app.config.js` forces dev env for `expo start` and uses `single` web output; `expo export --platform web` uses `static`. Don't revert to a `NODE_ENV`-only check or hardcode static output.
 - expo-sqlite web/OPFS allows one exclusive database handle: use one dev server and close extra tabs to avoid `DatabaseLockedError`.
 - On web, `USE_NATIVE_DRIVER=false`; put `pointerEvents` in `style`, and use `boxShadow` helpers instead of deprecated `shadow*` props.
-- AI chat is a bottom sheet (not a route) opened by the floating AI button on Sales, Buy, Udharo, and Dashboard. Its overlay relies on a stable close callback (`onCloseRef`) and cleared dismiss timers; inline close callbacks restart the effect.
-- All authenticated screens use `AppHeader` (menu or back button + title pill + bell). The header bar and title pill are translucent glass tinted with the page accent (`accentColor ?? colors.primary`), and the title text uses that same accent. Only the floating AI button uses the shared `getAccentColor(isDark)` green, as a translucent glass fill. Sales opts into `edgeToEdge`, which draws the header glass behind the status bar. `PageHeader` is legacy — don't add new usages.
+- AI chat is a bottom sheet (not a route) opened by the floating AI button on Sales, Buy, Udharo, and Dashboard. It is a custom Reanimated + Gesture Handler sheet (96% of window height, dismissed by swipe, backdrop, or close button) wrapped in a full-screen `overlayRoot` layer so it lays out identically on every screen. Its animation effect depends only on `visible`; the close callback is kept current through `onCloseRef` and dismiss timers are cleared on unmount.
+- All authenticated screens use `AppHeader` (menu or back button + title pill + bell). The header bar and title pill are translucent glass tinted with the page accent (`accentColor ?? colors.primary`), and the title text uses that same accent. Every screen renders it as an absolute `headerOverlay` (`zIndex: 20`, `pointerEvents: "box-none"`), uses safe-area `edges={["bottom", "left", "right"]}`, passes `edgeToEdge`, and offsets scrolling content by the measured header height; `getAppHeaderHeight(insets.top)` seeds the first frame. Only the floating AI button uses the shared `getAccentColor(isDark)` green, as a translucent glass fill. `PageHeader` is legacy — don't add new usages.
+- Expo Router 58 replaces `initialRouteName` on `Stack`/`Tabs` with `unstable_settings.anchor`, and custom tab bars receive `{ state, descriptors, emitter, navigateToTab }` instead of `navigation`. The root layout wraps the app in `GestureHandlerRootView` (react-native-gesture-handler v3); keep it — the AI sheet's `PanGestureHandler` needs it.
+- Tab screens swipe horizontally between routes through `SwipeableTabScreen`, wired with the `Tabs` `screenLayout` prop in `src/app/(tabs)/_layout.tsx`. Its `TAB_ROUTE_ORDER` must match the `Tabs.Screen` order. Tab scenes use `animation: "none"` so pages swap instantly (scene animations fade the glass `AppHeader` and make it look transparent), and the only tab-change motion is the selection pill in `CustomTabBar`, which springs between tabs (measured `itemWidth`, positioned on first layout); don't go back to per-tab background colors. The root stack uses `slide_from_right` for push transitions.
+- Haptics are centralized in `src/shared/utils/haptics.ts`: `hapticSuccess()` after successful writes, `hapticError()` for validation failures/failed writes, `hapticDestructive()` for logout and delete-all-data confirmations, and `hapticSelection()` for tab switches and preference toggles. Never call `expo-haptics` directly from a screen.
 - Theme mode is `light`, `dark`, or `system`; `ThemeProvider` resolves `system` through `useColorScheme()`. The bottom tab bar uses `expo-glass-effect` (`GlassView`) on iOS 26+ and `expo-blur` (`BlurView`) elsewhere.
 
 ## Config and generated files
@@ -32,12 +36,15 @@ Repo root is `e-hishabsathi-mobile/` (git, `package.json`, Expo config); the out
 - Env vars: `EXPO_PUBLIC_API_BASE_URL` (default `https://api.e-hishabsathi.com/api/v1`) and `EXPO_PUBLIC_ENABLE_AI` (`"true"` enables). `.env` is ignored, not committed.
 - Strict TypeScript with `@/*` → `src/*`, `@/assets/*` → `assets/*`. React Compiler and typed routes are enabled; `.expo/types` is generated by `expo start` and ignored.
 - `track.ts` / `t.ts` are empty git placeholders—never edit them; many feature folders are stubs.
+- `.agents/skills/` and `skills-lock.json` are tracked Expo/EAS agent-skill installs; leave them alone during app work.
 
 ## Commands
 
-- Dev: `npm start`, `npm run android`, `npm run ios`, `npm run web`.
-- Lint: `npm run lint`; types: `npx tsc --noEmit`; web export: `npx expo export --platform web`.
-- No tests, test script, typecheck script, or CI; `npm run reset-project` is broken (`scripts/reset-project.js` is missing).
+- Install: `bun install` (npm fallback: `npm install`). Never alternate managers in the same `node_modules`; delete it first when switching.
+- Dev: `bun run start`, `bun run android`, `bun run ios`, `bun run web` (npm fallback: `npm start`, etc.).
+- Lint: `bun run lint`; types: `bunx tsc --noEmit`; web export: `bunx expo export --platform web`.
+- Dependencies: `bun add <pkg>` / `bun add -d <pkg>` (or `bunx expo install <pkg>` for Expo-versioned packages). `npx expo install` also picks bun automatically because `bun.lock` exists; pass `--npm` to force the fallback. After changing dependencies, refresh the npm fallback lockfile with `npm install --package-lock-only` and commit both lockfiles.
+- No tests, test script, typecheck script, or CI; `bun run reset-project` is broken (`scripts/reset-project.js` is missing).
 
 ## PRs
 

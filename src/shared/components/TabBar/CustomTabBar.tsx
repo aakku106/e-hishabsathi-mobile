@@ -7,12 +7,19 @@ import {
 } from "expo-glass-effect";
 import React from "react";
 import {
+  LayoutChangeEvent,
   Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 
 import { Colors_NavBar } from "@/shared/constants/colors";
 import { useTheme } from "@/providers/ThemeProvider";
@@ -21,6 +28,7 @@ import { boxShadow } from "@/shared/constants/shadows";
 import { Layout, Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useCopy } from "@/shared/i18n";
+import { hapticSelection } from "@/shared/utils/haptics";
 
 type TabRoute = {
   key: string;
@@ -45,6 +53,13 @@ const ROUTE_SOFT_MAP: Record<string, string> = {
   "05-settings": "rgba(59, 130, 246, 0.16)",
 };
 
+const DEFAULT_SOFT_COLOR = "rgba(99, 102, 241, 0.16)";
+const DARK_SOFT_COLOR = "rgba(255, 255, 255, 0.1)";
+
+// A soft spring: the pill settles without a distracting bounce.
+const PILL_SPRING = { damping: 25, stiffness: 200, mass: 1 } as const;
+const PILL_COLOR_DURATION = 180;
+
 // Icons per tab route
 const ROUTE_ICON_MAP: Record<
   string,
@@ -68,7 +83,7 @@ const ROUTE_ICON_ACTIVE_MAP: Record<
   "05-settings": "cog",
 };
 
-export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
+export const CustomTabBar = ({ state, descriptors, emitter, navigateToTab }: any) => {
   const { t } = useCopy();
   const { isDark } = useTheme();
   const styles = React.useMemo(() => createStyles(isDark), [isDark]);
@@ -79,6 +94,55 @@ export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
     Platform.OS === "ios" &&
     isLiquidGlassAvailable() &&
     isGlassEffectAPIAvailable();
+
+  const routeCount = state.routes.length;
+  const activeIndex = state.index;
+  const activeRouteName = state.routes[activeIndex]?.name;
+
+  const activePillColor = isDark
+    ? DARK_SOFT_COLOR
+    : (ROUTE_SOFT_MAP[activeRouteName] ?? DEFAULT_SOFT_COLOR);
+
+  // Every tab is `flex: 1`, so the row width divided by the route count is
+  // both the pill width and the distance it travels per tab.
+  const [rowWidth, setRowWidth] = React.useState(0);
+  const itemWidth = routeCount > 0 ? rowWidth / routeCount : 0;
+
+  const pillX = useSharedValue(0);
+  const pillColor = useSharedValue(activePillColor);
+  const hasPositioned = React.useRef(false);
+
+  // Place the pill under the active tab as soon as the row is measured, so it
+  // never paints at the wrong end of the bar on the first frame.
+  const onRowLayout = (event: LayoutChangeEvent) => {
+    const { width } = event.nativeEvent.layout;
+    setRowWidth(width);
+
+    if (!hasPositioned.current && routeCount > 0 && width > 0) {
+      hasPositioned.current = true;
+      pillX.value = activeIndex * (width / routeCount);
+      pillColor.value = activePillColor;
+    }
+  };
+
+  // Afterwards the pill springs to the newly focused tab and cross-fades to
+  // that tab's tint instead of teleporting.
+  React.useEffect(() => {
+    if (!hasPositioned.current || itemWidth === 0) return;
+
+    pillX.value = withSpring(activeIndex * itemWidth, PILL_SPRING);
+    pillColor.value = withTiming(activePillColor, {
+      duration: PILL_COLOR_DURATION,
+    });
+  }, [activeIndex, activePillColor, itemWidth, pillColor, pillX]);
+
+  const pillAnimatedStyle = useAnimatedStyle(
+    () => ({
+      backgroundColor: pillColor.value,
+      transform: [{ translateX: pillX.value }],
+    }),
+    [pillColor, pillX],
+  );
 
   const tabs = state.routes.map((route: TabRoute, index: number) => {
     const { options } = descriptors[route.key];
@@ -92,24 +156,21 @@ export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
 
     const colorKey = ROUTE_COLOR_MAP[route.name];
     const activeColor = colorKey ? Colors_NavBar.selected[colorKey] : "#4F46E5";
-    const softColor =
-      isDark ? "rgba(255, 255, 255, 0.1)" : (
-        (ROUTE_SOFT_MAP[route.name] ?? "rgba(99, 102, 241, 0.16)")
-      );
 
     const iconName: keyof typeof MaterialCommunityIcons.glyphMap =
       (isFocused ? ROUTE_ICON_ACTIVE_MAP[route.name] : ROUTE_ICON_MAP[route.name]) ??
       "circle-outline";
 
     const onPress = () => {
-      const event = navigation.emit({
+      const event = emitter.emit({
         type: "tabPress",
         target: route.key,
         canPreventDefault: true,
       });
 
       if (!isFocused && !event.defaultPrevented) {
-        navigation.navigate(route.name);
+        hapticSelection();
+        navigateToTab(route.key);
       }
     };
 
@@ -118,7 +179,7 @@ export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
         key={route.key}
         activeOpacity={0.8}
         onPress={onPress}
-        style={[styles.tabItem, isFocused && { backgroundColor: softColor }]}>
+        style={styles.tabItem}>
         <View style={styles.iconContainer}>
           <MaterialCommunityIcons
             name={iconName}
@@ -139,6 +200,15 @@ export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
     );
   });
 
+  const tabsRow = (
+    <View style={styles.tabsRow} onLayout={onRowLayout}>
+      <Animated.View
+        style={[styles.activePill, { width: itemWidth }, pillAnimatedStyle]}
+      />
+      {tabs}
+    </View>
+  );
+
   return (
     <View style={styles.outerContainer}>
       <View style={styles.navBarShadow}>
@@ -147,13 +217,13 @@ export const CustomTabBar = ({ state, descriptors, navigation }: any) => {
             style={styles.navBar}
             glassEffectStyle="regular"
             colorScheme={isDark ? "dark" : "light"}>
-            {tabs}
+            {tabsRow}
           </GlassView>
         : <BlurView
             intensity={isDark ? 60 : 75}
             tint={isDark ? "dark" : "light"}
             style={styles.navBar}>
-            {tabs}
+            {tabsRow}
           </BlurView>
         }
       </View>
@@ -199,6 +269,21 @@ function createStyles(isDark: boolean) {
       paddingHorizontal: Spacing.xs,
       borderRadius: Radius.md,
       gap: 2,
+    },
+    tabsRow: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "stretch",
+    },
+    // Single shared pill that slides between tabs instead of one background
+    // per tab; `pointerEvents` lives in the style for react-native-web.
+    activePill: {
+      position: "absolute",
+      top: 0,
+      bottom: 0,
+      left: 0,
+      borderRadius: Radius.md,
+      pointerEvents: "none",
     },
     iconContainer: {
       width: 26,

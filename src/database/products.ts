@@ -13,6 +13,21 @@ export type ProductHint = {
 };
 
 /**
+ * Returns the id of an existing product with this name (case-insensitive), or
+ * `null` when the name is not in inventory.
+ */
+export async function findProductIdByName(
+  db: SQLiteDatabase,
+  name: string,
+): Promise<number | null> {
+  const row = await db.getFirstAsync<{ id: number }>(
+    "SELECT id FROM products WHERE name = ? COLLATE NOCASE LIMIT 1",
+    name.trim(),
+  );
+  return row?.id ?? null;
+}
+
+/**
  * Returns the id of the product with this name (case-insensitive), creating the
  * product when it doesn't exist yet.
  *
@@ -26,11 +41,8 @@ export async function findOrCreateProduct(
 ): Promise<number> {
   const trimmed = name.trim();
 
-  const existing = await db.getFirstAsync<{ id: number }>(
-    "SELECT id FROM products WHERE name = ? COLLATE NOCASE LIMIT 1",
-    trimmed,
-  );
-  if (existing) return existing.id;
+  const existingId = await findProductIdByName(db, trimmed);
+  if (existingId !== null) return existingId;
 
   const result = await db.runAsync(
     `INSERT INTO products (name, category, price, cost_price, stock_quantity, created_at, updated_at)

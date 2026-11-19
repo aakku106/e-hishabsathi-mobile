@@ -33,6 +33,11 @@ export type CreateSalesBatchInput = {
   customer?: string | null;
   paymentType?: "cash" | "udharo";
   dueDate?: string | null;
+  /**
+   * When true, every line must match an existing inventory product; unknown
+   * names throw instead of creating a product. Mirrors the Sales page setting.
+   */
+  requireInventory?: boolean;
 };
 
 export type SalesSummary = {

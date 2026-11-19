@@ -1,3 +1,4 @@
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
 
@@ -20,13 +21,22 @@ function StoreHydration() {
 
 export default function RootLayout() {
   return (
-    <QueryProvider>
-      <SQLiteProvider>
-        <ThemeProvider>
-          <StoreHydration />
-          <Stack screenOptions={{ headerShown: false }} />
-        </ThemeProvider>
-      </SQLiteProvider>
-    </QueryProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryProvider>
+        <SQLiteProvider>
+          <ThemeProvider>
+            <StoreHydration />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                // Consistent push transition for the stack routes opened from
+                // Settings (Inventory, Tax, Account) and between auth groups.
+                animation: "slide_from_right",
+              }}
+            />
+          </ThemeProvider>
+        </SQLiteProvider>
+      </QueryProvider>
+    </GestureHandlerRootView>
   );
 }

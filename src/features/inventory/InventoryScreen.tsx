@@ -24,6 +24,11 @@ import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { formatCurrency } from "@/shared/utils/formatter";
+import {
+  hapticError,
+  hapticImpact,
+  hapticSuccess,
+} from "@/shared/utils/haptics";
 
 import {
   useAdjustProductStock,
@@ -54,6 +59,7 @@ export default function InventoryScreen() {
   const [costPrice, setCostPrice] = useState("");
   const [stock, setStock] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const {
     products,
@@ -92,12 +98,14 @@ export default function InventoryScreen() {
         if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
       }
       setErrors(fieldErrors);
+      hapticError();
       return;
     }
 
     setErrors({});
     createProduct.mutate(parsed.data, {
       onSuccess: () => {
+        hapticSuccess();
         setName("");
         setCategory("");
         setPrice("");
@@ -105,22 +113,26 @@ export default function InventoryScreen() {
         setStock("");
         setShowForm(false);
       },
+      onError: hapticError,
     });
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <AppHeader
-        title="Inventory"
-        colors={colors}
-        onBack={() => {
-          if (router.canGoBack()) {
-            router.back();
-          } else {
-            router.replace("/(tabs)/05-settings");
-          }
-        }}
-      />
+    <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+      <View style={styles.headerOverlay} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <AppHeader
+          title="Inventory"
+          colors={colors}
+          onBack={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/(tabs)/05-settings");
+            }
+          }}
+          edgeToEdge
+        />
+      </View>
 
       <FlatList
         data={products}
@@ -163,7 +175,13 @@ export default function InventoryScreen() {
                   style={styles.stockButton}
                   activeOpacity={0.8}
                   onPress={() =>
-                    adjustStock.mutate({ id: product.id, delta: -1 })
+                    adjustStock.mutate(
+                      { id: product.id, delta: -1 },
+                      {
+                        onSuccess: () => hapticImpact(),
+                        onError: hapticError,
+                      },
+                    )
                   }
                   disabled={product.stockQuantity <= 0}>
                   <MaterialCommunityIcons
@@ -176,7 +194,13 @@ export default function InventoryScreen() {
                   style={styles.stockButton}
                   activeOpacity={0.8}
                   onPress={() =>
-                    adjustStock.mutate({ id: product.id, delta: 1 })
+                    adjustStock.mutate(
+                      { id: product.id, delta: 1 },
+                      {
+                        onSuccess: () => hapticImpact(),
+                        onError: hapticError,
+                      },
+                    )
                   }>
                   <MaterialCommunityIcons
                     name="plus"
@@ -191,7 +215,7 @@ export default function InventoryScreen() {
         ItemSeparatorComponent={() => (
           <View style={styles.productDivider} />
         )}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         initialNumToRender={12}
@@ -441,7 +465,7 @@ export default function InventoryScreen() {
               color={colors.primary}
               style={styles.listLoading}
             />
-          : null
+          : undefined
         }
       />
     </SafeAreaView>
@@ -457,6 +481,14 @@ function createStyles(colors: typeof Colors_InventoryPage, isDark: boolean) {
     content: {
       flexGrow: 1,
       paddingBottom: Spacing["4xl"],
+    },
+    headerOverlay: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 20,
+      pointerEvents: "box-none",
     },
     summaryCard: {
       marginTop: Spacing.xl,

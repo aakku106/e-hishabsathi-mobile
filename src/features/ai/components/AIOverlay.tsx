@@ -12,6 +12,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TextInputInstance,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -33,10 +34,16 @@ import { useSalesSummary } from "@/features/sales/hooks/useSalesEntries";
 import { useUdharoSummary } from "@/features/udharo/hooks/useUdharoEntries";
 import { useSettingsStore } from "@/store/settings.store";
 import { useTheme } from "@/providers/ThemeProvider";
+import { hapticError } from "@/shared/utils/haptics";
 
 const { height: WINDOW_HEIGHT } = Dimensions.get("window");
 
-const SHEET_HEIGHT = WINDOW_HEIGHT * 0.85;
+// The AI assistant sheet covers almost the whole screen (including the header
+// area). When the keyboard opens, the KeyboardAvoidingView inside keeps the
+// input row above it.
+// Slightly reduced from the full window height so the drag handle / header /
+// input row stay comfortably reachable without the sheet feeling oversized.
+const SHEET_HEIGHT = WINDOW_HEIGHT * 0.96;
 const DRAG_THRESHOLD = 100;
 const SPRING_CONFIG = { damping: 25, stiffness: 200, mass: 1 };
 
@@ -83,7 +90,7 @@ export default function AIOverlay({
   const [question, setQuestion] = useState(initialQuestion);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<TextInputInstance>(null);
   const onCloseRef = useRef(onClose);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [messages, setMessages] = useState<AssistantMessage[]>([
@@ -142,6 +149,17 @@ export default function AIOverlay({
   // Theme-aware sheet background
   const sheetBackgroundColor = isDark ? colors.background : "#FFFFFF";
 
+  const startDismiss = () => {
+    // eslint-disable-next-line react-hooks/immutability
+    isDismissing.value = true;
+    // eslint-disable-next-line react-hooks/immutability
+    translateY.value = withSpring(SHEET_HEIGHT, SPRING_CONFIG);
+    // eslint-disable-next-line react-hooks/immutability
+    backdropOpacity.value = withTiming(0, { duration: 250 });
+    if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
+    dismissTimerRef.current = setTimeout(() => runOnJS(onCloseRef.current)(), 350);
+  };
+
   // Gesture handler for swipe to dismiss
   const onGestureEvent = (event: { nativeEvent: { translationY: number } }) => {
     // Only allow dragging down (positive translation)
@@ -154,18 +172,9 @@ export default function AIOverlay({
     if (event.nativeEvent.state === State.END) {
       const shouldDismiss = event.nativeEvent.translationY > DRAG_THRESHOLD || event.nativeEvent.velocityY > 1000;
       if (shouldDismiss) {
-        // eslint-disable-next-line react-hooks/immutability
-        isDismissing.value = true;
-        // eslint-disable-next-line react-hooks/immutability
-        translateY.value = withSpring(SHEET_HEIGHT, SPRING_CONFIG);
-        // eslint-disable-next-line react-hooks/immutability
-        backdropOpacity.value = withTiming(0, { duration: 250 });
-        if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current);
-        dismissTimerRef.current = setTimeout(
-          () => runOnJS(onCloseRef.current)(),
-          350,
-        );
+        startDismiss();
       } else {
+        // eslint-disable-next-line react-hooks/immutability
         translateY.value = withSpring(0, SPRING_CONFIG);
       }
     }
@@ -225,6 +234,7 @@ export default function AIOverlay({
 
   const handleVoiceInput = () => {
     if (Platform.OS !== "web") {
+      hapticError();
       Alert.alert("Voice input unavailable", "Voice input is currently enabled in the web version.");
       return;
     }
@@ -235,6 +245,7 @@ export default function AIOverlay({
     };
     const Recognition = browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition;
     if (!Recognition) {
+      hapticError();
       Alert.alert("Voice input unavailable", "Try Chrome or Edge for microphone voice input.");
       return;
     }
@@ -255,6 +266,7 @@ export default function AIOverlay({
     recognition.onerror = () => {
       setIsListening(false);
       recognitionRef.current = null;
+      hapticError();
       Alert.alert("Voice input failed", "Please allow microphone access and try again.");
     };
     recognition.onresult = (event) => {
@@ -292,6 +304,15 @@ export default function AIOverlay({
             {/* Header */}
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
               <Text style={styles.title}>Khata Intelligence</Text>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Close AI Assistant"
+                accessibilityHint="Close the AI assistant"
+                hitSlop={12}
+                onPress={startDismiss}
+                style={styles.closeBtn}>
+                <MaterialCommunityIcons name="close" size={20} color={colors.textMuted} />
+              </TouchableOpacity>
             </View>
 
             {/* Messages */}
@@ -387,7 +408,7 @@ const styles = StyleSheet.create({
   // The actual sheet (backgroundColor applied dynamically)
   sheet: {
     width: "100%",
-    maxHeight: SHEET_HEIGHT,
+    height: SHEET_HEIGHT,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     shadowColor: "#000",
@@ -396,6 +417,14 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 8,
     overflow: "hidden",
+  },
+
+  // Close button (top-right of sheet header)
+  closeBtn: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // Drag handle at top
@@ -412,9 +441,10 @@ const styles = StyleSheet.create({
   // Header
   header: {
     height: 56,
-    paddingHorizontal: Spacing.md,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: Spacing.md,
     borderBottomWidth: 1,
   },
   title: {

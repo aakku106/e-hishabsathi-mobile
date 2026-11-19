@@ -10,9 +10,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppHeader } from "@/shared/components/Header/AppHeader";
+import {
+  AppHeader,
+  getAppHeaderHeight,
+} from "@/shared/components/Header/AppHeader";
 import {
   Dropdown,
   DropdownOption,
@@ -30,6 +33,8 @@ import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useCopy } from "@/shared/i18n";
 import { formatCurrency } from "@/shared/utils/formatter";
+import { hapticError, hapticSuccess } from "@/shared/utils/haptics";
+import { useSettingsStore } from "@/store/settings.store";
 
 import { AIAssistant } from "@/features/ai/components/AIAssistant";
 import { useProducts } from "@/features/inventory/hooks/useInventory";
@@ -134,6 +139,10 @@ export default function SalesEntryForm() {
     [isDark],
   );
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const insets = useSafeAreaInsets();
+  const [headerHeight, setHeaderHeight] = useState(() =>
+    getAppHeaderHeight(insets.top),
+  );
   const emptyProduct = (): ProductDraft => ({
     id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     product: "",
@@ -168,6 +177,10 @@ export default function SalesEntryForm() {
   const { data: summary } = useSalesSummary();
   const { data: inventory = [] } = useProducts();
   const createSale = useCreateSalesBatch();
+  const salesStrictInventory = useSettingsStore(
+    (state) => state.salesStrictInventory,
+  );
+  const recentSales = useSettingsStore((state) => state.recent.sales);
 
   const handleExtraDetailSelect = (
     id: string,
@@ -252,6 +265,7 @@ export default function SalesEntryForm() {
 
   const handleVoiceInput = (id: string) => {
     if (Platform.OS !== "web") {
+      hapticError();
       Alert.alert(
         "Voice input unavailable",
         "Voice input is currently enabled in the web version. Native microphone support can be added with a speech recognition module.",
@@ -267,6 +281,7 @@ export default function SalesEntryForm() {
       browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition;
 
     if (!Recognition) {
+      hapticError();
       Alert.alert(
         "Voice input unavailable",
         "Try Chrome or Edge for microphone support.",
@@ -297,6 +312,7 @@ export default function SalesEntryForm() {
         setListeningProductId(null);
         recognitionRef.current = null;
       }
+      hapticError();
       Alert.alert(
         "Voice input failed",
         "Please allow microphone access and try again.",
@@ -344,6 +360,13 @@ export default function SalesEntryForm() {
           if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
         }
       } else {
+        // The Sales page setting gates on-inventory selling; a product that was
+        // only typed in (no linked inventory row) is rejected at this step.
+        if (salesStrictInventory && item.productId === null) {
+          fieldErrors[`${item.id}.product`] = t(
+            "This product is not in Inventory",
+          );
+        }
         validated.push(parsed.data);
       }
     }
@@ -353,8 +376,13 @@ export default function SalesEntryForm() {
     }
 
     setErrors(fieldErrors);
-    if (validated.length !== products.length) return;
-    if (Object.keys(fieldErrors).length > 0) return;
+    if (
+      validated.length !== products.length ||
+      Object.keys(fieldErrors).length > 0
+    ) {
+      hapticError();
+      return;
+    }
 
     createSale.mutate(
       {
@@ -364,8 +392,15 @@ export default function SalesEntryForm() {
         })),
         customer: paymentType === "udharo" ? customer.trim() : null,
         paymentType,
+        requireInventory: salesStrictInventory,
       },
-      { onSuccess: handleReset },
+      {
+        onSuccess: () => {
+          hapticSuccess();
+          handleReset();
+        },
+        onError: hapticError,
+      },
     );
   };
 
@@ -373,12 +408,21 @@ export default function SalesEntryForm() {
     <SafeAreaView
       style={styles.safeArea}
       edges={["bottom", "left", "right"]}>
-      <AppHeader title={t("Sales")} colors={colors} edgeToEdge />
+      <View
+        style={styles.headerOverlay}
+        onLayout={(event) =>
+          setHeaderHeight(event.nativeEvent.layout.height)
+        }>
+        <AppHeader title={t("Sales")} colors={colors} edgeToEdge />
+      </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.content}>
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: headerHeight + Spacing.lg },
+        ]}>
         <View style={styles.formCard}>
           <View style={styles.productHeaderRow}>
             <Text style={styles.extraTitle}>{t("Products")}</Text>
@@ -395,6 +439,12 @@ export default function SalesEntryForm() {
               <Text style={styles.addButtonText}>{t("Add Product")}</Text>
             </TouchableOpacity>
           </View>
+
+          {salesStrictInventory && (
+            <Text style={styles.inventoryRule}>
+              {t("Only products in Inventory can be sold")}
+            </Text>
+          )}
 
           <TouchableOpacity
             activeOpacity={0.8}
@@ -811,6 +861,7 @@ export default function SalesEntryForm() {
           </View>
         </View>
 
+        {recentSales && (
         <View style={styles.listSection}>
           <Text style={styles.listTitle}>{t("Recent sales")}</Text>
 
@@ -866,9 +917,10 @@ export default function SalesEntryForm() {
             </View>
           }
         </View>
+        )}
       </ScrollView>
 
-      <AIAssistant />
+      <AIAssistant page="sales" />
     </SafeAreaView>
   );
 }
@@ -880,10 +932,18 @@ function createStyles(colors: typeof Colors_SalesPage) {
     backgroundColor: colors.background,
   },
 
+  headerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    pointerEvents: "box-none",
+  },
+
   content: {
     flexGrow: 1,
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
     paddingBottom: 160,
   },
 
@@ -901,6 +961,13 @@ function createStyles(colors: typeof Colors_SalesPage) {
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: Spacing.md,
+  },
+
+  inventoryRule: {
+    color: colors.textMuted,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
+    marginBottom: Spacing.sm,
   },
 
   addButton: {

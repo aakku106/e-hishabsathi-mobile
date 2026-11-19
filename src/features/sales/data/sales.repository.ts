@@ -6,7 +6,11 @@ import {
   enqueueRecord,
   findOrCreateCustomer,
 } from "@/database/edge";
-import { applyStockDelta, findOrCreateProduct } from "@/database/products";
+import {
+  applyStockDelta,
+  findOrCreateProduct,
+  findProductIdByName,
+} from "@/database/products";
 import { generateUuid } from "@/shared/utils/uuid";
 
 import type {
@@ -74,9 +78,22 @@ export async function createSalesBatch(
     for (const item of input.items) {
       // Resolve the inventory row first so the sale can move its stock and
       // inherit the cost price that profit is calculated from.
-      const productId =
-        item.productId ??
-        (await findOrCreateProduct(db, item.product, { price: item.price }));
+      let productId = item.productId;
+
+      // The Sales page setting can forbid selling anything that isn't already
+      // in inventory, in which case an unknown name aborts the batch.
+      if (productId == null && input.requireInventory) {
+        productId = await findProductIdByName(db, item.product);
+        if (productId == null) {
+          throw new Error(`"${item.product}" is not in inventory`);
+        }
+      }
+
+      if (productId == null) {
+        productId = await findOrCreateProduct(db, item.product, {
+          price: item.price,
+        });
+      }
 
       const product = await db.getFirstAsync<{ cost_price: number | null }>(
         "SELECT cost_price FROM products WHERE id = ?",

@@ -18,6 +18,11 @@ import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import {
+  hapticError,
+  hapticSelection,
+  hapticSuccess,
+} from "@/shared/utils/haptics";
 
 import { useBusiness, useUpdateBusinessType } from "../hooks/useBusiness";
 
@@ -44,9 +49,11 @@ export default function BusinessTypeScreen() {
   const currentType = business?.type ?? BusinessTypes.retail;
   const [selected, setSelected] = useState<BusinessType>(currentType);
   const [error, setError] = useState<string | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const handleContinue = () => {
     if (!business) {
+      hapticError();
       setError("Business not found. Please go back and set up your business.");
       return;
     }
@@ -55,17 +62,23 @@ export default function BusinessTypeScreen() {
     updateBusinessType.mutate(
       { id: business.id, type: selected },
       {
-        onSuccess: () => router.replace("/(tabs)/04-dashboard"),
+        onSuccess: () => {
+          hapticSuccess();
+          router.replace("/(tabs)/04-dashboard");
+        },
+        onError: hapticError,
       },
     );
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <AppHeader title="What kind of business?" colors={colors} />
+    <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+      <View style={styles.headerOverlay} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <AppHeader title="What kind of business?" colors={colors} edgeToEdge />
+      </View>
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.options}>
@@ -75,7 +88,10 @@ export default function BusinessTypeScreen() {
               <TouchableOpacity
                 key={option.value}
                 activeOpacity={0.8}
-                onPress={() => setSelected(option.value)}
+                onPress={() => {
+                  hapticSelection();
+                  setSelected(option.value);
+                }}
                 style={[styles.optionCard, isSelected && styles.optionCardSelected]}
               >
                 <View style={[styles.optionIcon, isSelected && styles.optionIconSelected]}>
@@ -124,6 +140,14 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingBottom: Spacing["3xl"],
+  },
+  headerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    pointerEvents: "box-none",
   },
   options: {
     marginTop: Spacing.xl,

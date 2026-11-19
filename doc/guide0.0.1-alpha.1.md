@@ -701,6 +701,7 @@ Only initialization should exist here.
 | Day.js                       | Date utilities                |
 | React Native Reanimated      | Animations                    |
 | React Native Gesture Handler | Gesture support               |
+| expo-haptics                 | Haptic feedback               |
 | @gorhom/bottom-sheet         | Bottom sheet component        |
 | react-native-gifted-charts   | Business charts               |
 | @expo/vector-icons           | Icons                         |

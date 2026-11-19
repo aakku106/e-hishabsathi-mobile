@@ -1,5 +1,5 @@
 /**
- * React Native 0.86 and react-native-web deprecated the `shadow*` style props
+ * React Native 0.88 and react-native-web deprecated the `shadow*` style props
  * (`shadowColor`, `shadowOffset`, `shadowOpacity`, `shadowRadius`) in favour of
  * the CSS-like `boxShadow` string. Keep the shadow recipes here so screens
  * don't repeat the same rgba values.

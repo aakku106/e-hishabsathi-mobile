@@ -2,6 +2,12 @@ import { Redirect, Tabs } from "expo-router";
 
 import { useAuthStore } from "@/store/auth.store";
 import { CustomTabBar } from "@/shared/components/TabBar/CustomTabBar";
+import { SwipeableTabScreen } from "@/shared/components/TabBar/SwipeableTabScreen";
+
+export const unstable_settings = {
+  // Initial tab for the tabs navigator: the dashboard.
+  anchor: "04-dashboard",
+};
 
 export default function TabsLayout() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -13,10 +19,20 @@ export default function TabsLayout() {
 
   return (
     <Tabs
-      initialRouteName="04-dashboard"
       tabBar={(props) => <CustomTabBar {...props} />}
+      screenLayout={({ route, navigation, children }) => (
+        <SwipeableTabScreen
+          routeName={route.name}
+          onNavigate={(name) => navigation.navigate(name)}>
+          {children}
+        </SwipeableTabScreen>
+      )}
       screenOptions={{
         headerShown: false,
+        // Pages swap instantly. The only motion on a tab change is the
+        // selection pill sliding in `CustomTabBar`; animating the scenes made
+        // the glass headers fade and look transparent mid-transition.
+        animation: "none",
       }}>
       <Tabs.Screen name="01-sales" options={{ title: "Sales" }} />
       <Tabs.Screen name="02-purchases" options={{ title: "Buy" }} />

@@ -27,9 +27,11 @@ import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { formatCurrency } from "@/shared/utils/formatter";
+import { hapticError, hapticSuccess } from "@/shared/utils/haptics";
 import { useCopy } from "@/shared/i18n";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useProducts } from "@/features/inventory/hooks/useInventory";
+import { useSettingsStore } from "@/store/settings.store";
 
 import {
   useCreatePurchaseEntry,
@@ -69,12 +71,14 @@ export default function PurchaseScreen() {
   const [price, setPrice] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isListening, setIsListening] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   const { data: entries = [], isLoading } = usePurchaseEntries();
   const { data: summary } = usePurchaseSummary();
   const { data: inventory = [] } = useProducts();
   const createEntry = useCreatePurchaseEntry();
+  const recentBuys = useSettingsStore((state) => state.recent.buy);
   const currentAmount =
     Number.parseFloat(quantity || "0") * Number.parseFloat(price || "0");
 
@@ -100,6 +104,7 @@ export default function PurchaseScreen() {
 
   const handleVoiceInput = () => {
     if (Platform.OS !== "web") {
+      hapticError();
       Alert.alert(
         "Voice input unavailable",
         "Voice input is currently enabled in the web version. Native microphone support can be added with a speech recognition module.",
@@ -115,6 +120,7 @@ export default function PurchaseScreen() {
       browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition;
 
     if (!Recognition) {
+      hapticError();
       Alert.alert(
         "Voice input unavailable",
         "Your browser does not support speech recognition. Try Chrome or Edge.",
@@ -139,6 +145,7 @@ export default function PurchaseScreen() {
     recognition.onerror = () => {
       setIsListening(false);
       recognitionRef.current = null;
+      hapticError();
       Alert.alert(
         "Voice input failed",
         "Please allow microphone access and try again.",
@@ -178,6 +185,7 @@ export default function PurchaseScreen() {
         if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
       }
       setErrors(fieldErrors);
+      hapticError();
       return;
     }
 
@@ -186,26 +194,30 @@ export default function PurchaseScreen() {
       { ...parsed.data, productId },
       {
         onSuccess: () => {
+          hapticSuccess();
           setQuantity("");
           setProduct("");
           setProductId(null);
           setStock(null);
           setPrice("");
         },
+        onError: hapticError,
       },
     );
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <AppHeader title={t("Buy")} colors={colors} />
+    <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+      <View style={styles.headerOverlay} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <AppHeader title={t("Buy")} colors={colors} edgeToEdge />
+      </View>
 
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
           style={styles.container}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           <View style={styles.formCard}>
@@ -381,6 +393,7 @@ export default function PurchaseScreen() {
             </Text>
           </View>
 
+          {recentBuys && (
           <View style={styles.listSection}>
             <View style={styles.listHeading}>
               <Text style={styles.listTitle}>{t("Recent Buys")}</Text>
@@ -432,10 +445,11 @@ export default function PurchaseScreen() {
               </View>
             }
           </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <AIAssistant />
+      <AIAssistant page="buy" />
     </SafeAreaView>
   );
 }
@@ -518,6 +532,14 @@ function createStyles(colors: typeof Colors_PurchasesPage) {
   content: {
     flexGrow: 1,
     paddingBottom: 160,
+  },
+  headerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    pointerEvents: "box-none",
   },
   formCard: {
     marginTop: Spacing.lg,
