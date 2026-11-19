@@ -18,6 +18,11 @@ import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import {
+  hapticError,
+  hapticSelection,
+  hapticSuccess,
+} from "@/shared/utils/haptics";
 
 import { useBusiness, useUpdateBusinessType } from "../hooks/useBusiness";
 
@@ -48,6 +53,7 @@ export default function BusinessTypeScreen() {
 
   const handleContinue = () => {
     if (!business) {
+      hapticError();
       setError("Business not found. Please go back and set up your business.");
       return;
     }
@@ -56,7 +62,11 @@ export default function BusinessTypeScreen() {
     updateBusinessType.mutate(
       { id: business.id, type: selected },
       {
-        onSuccess: () => router.replace("/(tabs)/04-dashboard"),
+        onSuccess: () => {
+          hapticSuccess();
+          router.replace("/(tabs)/04-dashboard");
+        },
+        onError: hapticError,
       },
     );
   };
@@ -78,7 +88,10 @@ export default function BusinessTypeScreen() {
               <TouchableOpacity
                 key={option.value}
                 activeOpacity={0.8}
-                onPress={() => setSelected(option.value)}
+                onPress={() => {
+                  hapticSelection();
+                  setSelected(option.value);
+                }}
                 style={[styles.optionCard, isSelected && styles.optionCardSelected]}
               >
                 <View style={[styles.optionIcon, isSelected && styles.optionIconSelected]}>

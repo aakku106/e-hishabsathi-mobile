@@ -33,6 +33,7 @@ import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useCopy } from "@/shared/i18n";
 import { formatCurrency } from "@/shared/utils/formatter";
+import { hapticError, hapticSuccess } from "@/shared/utils/haptics";
 
 import { AIAssistant } from "@/features/ai/components/AIAssistant";
 import { useProducts } from "@/features/inventory/hooks/useInventory";
@@ -259,6 +260,7 @@ export default function SalesEntryForm() {
 
   const handleVoiceInput = (id: string) => {
     if (Platform.OS !== "web") {
+      hapticError();
       Alert.alert(
         "Voice input unavailable",
         "Voice input is currently enabled in the web version. Native microphone support can be added with a speech recognition module.",
@@ -274,6 +276,7 @@ export default function SalesEntryForm() {
       browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition;
 
     if (!Recognition) {
+      hapticError();
       Alert.alert(
         "Voice input unavailable",
         "Try Chrome or Edge for microphone support.",
@@ -304,6 +307,7 @@ export default function SalesEntryForm() {
         setListeningProductId(null);
         recognitionRef.current = null;
       }
+      hapticError();
       Alert.alert(
         "Voice input failed",
         "Please allow microphone access and try again.",
@@ -360,8 +364,13 @@ export default function SalesEntryForm() {
     }
 
     setErrors(fieldErrors);
-    if (validated.length !== products.length) return;
-    if (Object.keys(fieldErrors).length > 0) return;
+    if (
+      validated.length !== products.length ||
+      Object.keys(fieldErrors).length > 0
+    ) {
+      hapticError();
+      return;
+    }
 
     createSale.mutate(
       {
@@ -372,7 +381,13 @@ export default function SalesEntryForm() {
         customer: paymentType === "udharo" ? customer.trim() : null,
         paymentType,
       },
-      { onSuccess: handleReset },
+      {
+        onSuccess: () => {
+          hapticSuccess();
+          handleReset();
+        },
+        onError: hapticError,
+      },
     );
   };
 

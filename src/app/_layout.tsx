@@ -26,7 +26,14 @@ export default function RootLayout() {
         <SQLiteProvider>
           <ThemeProvider>
             <StoreHydration />
-            <Stack screenOptions={{ headerShown: false }} />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                // Consistent push transition for the stack routes opened from
+                // Settings (Inventory, Tax, Account) and between auth groups.
+                animation: "slide_from_right",
+              }}
+            />
           </ThemeProvider>
         </SQLiteProvider>
       </QueryProvider>

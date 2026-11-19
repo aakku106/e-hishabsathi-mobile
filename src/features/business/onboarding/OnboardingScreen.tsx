@@ -18,6 +18,7 @@ import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { hapticError, hapticSuccess } from "@/shared/utils/haptics";
 
 import { useCreateBusiness } from "../hooks/useBusiness";
 
@@ -36,6 +37,7 @@ export default function OnboardingScreen() {
   const handleContinue = () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
+      hapticError();
       setError("Business name is required to get started.");
       return;
     }
@@ -44,7 +46,11 @@ export default function OnboardingScreen() {
     createBusiness.mutate(
       { name: trimmedName, phone: phone.trim() || null, address: address.trim() || null },
       {
-        onSuccess: () => router.replace("/(auth)/business-type"),
+        onSuccess: () => {
+          hapticSuccess();
+          router.replace("/(auth)/business-type");
+        },
+        onError: hapticError,
       },
     );
   };

@@ -22,6 +22,7 @@ import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { hapticError, hapticSuccess } from "@/shared/utils/haptics";
 import { useAuthStore } from "@/store/auth.store";
 
 const colors = Colors_LoginPage;
@@ -38,10 +39,12 @@ export default function LoginScreen() {
 
   const handleSignIn = () => {
     if (!pan.trim() || !username.trim() || !password.trim()) {
+      hapticError();
       setError("Please fill in all fields to sign in.");
       return;
     }
     setError(null);
+    hapticSuccess();
     login({ pan: pan.trim(), username: username.trim() });
     setSetting(SETTING_KEYS.authPan, pan.trim());
     setSetting(SETTING_KEYS.authUsername, username.trim());

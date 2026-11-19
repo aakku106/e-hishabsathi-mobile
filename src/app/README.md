@@ -86,7 +86,7 @@ The auth layout redirects authenticated users with a business profile to the das
 
 ### `(tabs)/`
 
-The main tab-bar app, entered after auth. `_layout.tsx` guards authentication and renders `Tabs` with the shared [`CustomTabBar`](../shared/components/TabBar/README.md) as the `tabBar` prop:
+The main tab-bar app, entered after auth. `_layout.tsx` guards authentication and renders `Tabs` with the shared [`CustomTabBar`](../shared/components/TabBar/README.md) as the `tabBar` prop and [`SwipeableTabScreen`](../shared/components/TabBar/README.md) as the `screenLayout` wrapper (horizontal swipe between tabs):
 
 ```tsx
 export const unstable_settings = {
@@ -96,7 +96,14 @@ export const unstable_settings = {
 
 <Tabs
   tabBar={(props) => <CustomTabBar {...props} />}
-  screenOptions={{ headerShown: false }}>
+  screenLayout={({ route, navigation, children }) => (
+    <SwipeableTabScreen
+      routeName={route.name}
+      onNavigate={(name) => navigation.navigate(name)}>
+      {children}
+    </SwipeableTabScreen>
+  )}
+  screenOptions={{ headerShown: false, animation: "shift" }}>
   <Tabs.Screen name="01-sales" options={{ title: "Sales" }} />
   <Tabs.Screen name="02-purchases" options={{ title: "Buy" }} />
   <Tabs.Screen name="03-udharo" options={{ title: "Udharo" }} />
@@ -105,7 +112,7 @@ export const unstable_settings = {
 </Tabs>
 ```
 
-If you add a new tab, add both a `Tabs.Screen` entry here **and** route-color/icon mappings in `CustomTabBar` — the two need to stay in sync.
+If you add a new tab, add both a `Tabs.Screen` entry here **and** route-color/icon mappings in `CustomTabBar` plus the route name in `SwipeableTabScreen`'s `TAB_ROUTE_ORDER` — they need to stay in sync.
 
 | Route | Status |
 | --- | --- |

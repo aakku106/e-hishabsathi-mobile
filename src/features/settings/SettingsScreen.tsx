@@ -24,6 +24,7 @@ import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { hapticSelection } from "@/shared/utils/haptics";
 
 const BUSINESS_TYPE_LABELS: Record<string, string> = {
   retail: "Retail",
@@ -151,11 +152,13 @@ export default function SettingsScreen() {
   const [headerHeight, setHeaderHeight] = useState(0);
 
   const handleThemeChange = (mode: ThemeMode) => {
+    hapticSelection();
     setThemeMode(mode);
     void persistThemeMode(mode);
   };
 
   const handleLanguageChange = () => {
+    hapticSelection();
     const nextLanguage = language === "en" ? "np" : "en";
     setLanguage(nextLanguage);
     void setSetting(SETTING_KEYS.language, nextLanguage);

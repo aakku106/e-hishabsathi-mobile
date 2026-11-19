@@ -28,6 +28,11 @@ import {
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import {
+  hapticDestructive,
+  hapticError,
+  hapticWarning,
+} from "@/shared/utils/haptics";
 import { logger } from "@/shared/utils/logger";
 import { useAuthStore } from "@/store/auth.store";
 import { useSettingsStore } from "@/store/settings.store";
@@ -140,10 +145,13 @@ export default function AccountScreen() {
   };
 
   const handleDeleteAllData = async () => {
+    // Strong, patterned feedback the moment the user commits to erasing data.
+    hapticDestructive();
     try {
       await deleteAllData.mutateAsync();
     } catch (error) {
       logger.error("Failed to delete all account data", error);
+      hapticError();
       setErrorMessage(copy.deleteError);
       return;
     }
@@ -156,6 +164,7 @@ export default function AccountScreen() {
   };
 
   const handleLogout = () => {
+    hapticDestructive();
     setLogoutVisible(false);
     removeSetting(SETTING_KEYS.authPan);
     removeSetting(SETTING_KEYS.authUsername);
@@ -229,7 +238,10 @@ export default function AccountScreen() {
           <View style={styles.card}>
             <Pressable
               accessibilityRole="button"
-              onPress={() => setLogoutVisible(true)}
+              onPress={() => {
+                hapticWarning();
+                setLogoutVisible(true);
+              }}
               style={styles.logoutRow}>
               <View style={styles.logoutIcon}>
                 <MaterialCommunityIcons
@@ -258,6 +270,7 @@ export default function AccountScreen() {
             <Pressable
               accessibilityRole="button"
               onPress={() => {
+                hapticWarning();
                 setErrorMessage(null);
                 setConfirmationStep("warning");
               }}

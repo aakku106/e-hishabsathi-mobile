@@ -34,6 +34,7 @@ import { useSalesSummary } from "@/features/sales/hooks/useSalesEntries";
 import { useUdharoSummary } from "@/features/udharo/hooks/useUdharoEntries";
 import { useSettingsStore } from "@/store/settings.store";
 import { useTheme } from "@/providers/ThemeProvider";
+import { hapticError } from "@/shared/utils/haptics";
 
 const { height: WINDOW_HEIGHT } = Dimensions.get("window");
 
@@ -233,6 +234,7 @@ export default function AIOverlay({
 
   const handleVoiceInput = () => {
     if (Platform.OS !== "web") {
+      hapticError();
       Alert.alert("Voice input unavailable", "Voice input is currently enabled in the web version.");
       return;
     }
@@ -243,6 +245,7 @@ export default function AIOverlay({
     };
     const Recognition = browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition;
     if (!Recognition) {
+      hapticError();
       Alert.alert("Voice input unavailable", "Try Chrome or Edge for microphone voice input.");
       return;
     }
@@ -263,6 +266,7 @@ export default function AIOverlay({
     recognition.onerror = () => {
       setIsListening(false);
       recognitionRef.current = null;
+      hapticError();
       Alert.alert("Voice input failed", "Please allow microphone access and try again.");
     };
     recognition.onresult = (event) => {

@@ -21,6 +21,7 @@ import { boxShadow } from "@/shared/constants/shadows";
 import { Layout, Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useCopy } from "@/shared/i18n";
+import { hapticSelection } from "@/shared/utils/haptics";
 
 type TabRoute = {
   key: string;
@@ -109,6 +110,7 @@ export const CustomTabBar = ({ state, descriptors, emitter, navigateToTab }: any
       });
 
       if (!isFocused && !event.defaultPrevented) {
+        hapticSelection();
         navigateToTab(route.key);
       }
     };

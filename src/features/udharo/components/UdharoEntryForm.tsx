@@ -19,6 +19,7 @@ import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { formatCurrency } from "@/shared/utils/formatter";
+import { hapticError, hapticSuccess } from "@/shared/utils/haptics";
 import { useCopy } from "@/shared/i18n";
 import { useTheme } from "@/providers/ThemeProvider";
 
@@ -85,6 +86,7 @@ export default function UdharoEntryForm({ contentPaddingTop = 0 }: UdharoEntryFo
 
   const handleVoiceInput = () => {
     if (Platform.OS !== "web") {
+      hapticError();
       Alert.alert(
         "Voice input unavailable",
         "Voice input is currently enabled in the web version.",
@@ -99,6 +101,7 @@ export default function UdharoEntryForm({ contentPaddingTop = 0 }: UdharoEntryFo
     const Recognition =
       browserWindow.SpeechRecognition ?? browserWindow.webkitSpeechRecognition;
     if (!Recognition) {
+      hapticError();
       Alert.alert(
         "Voice input unavailable",
         "Try Chrome or Edge for microphone voice input.",
@@ -122,6 +125,7 @@ export default function UdharoEntryForm({ contentPaddingTop = 0 }: UdharoEntryFo
     recognition.onerror = () => {
       setIsListening(false);
       recognitionRef.current = null;
+      hapticError();
       Alert.alert(
         "Voice input failed",
         "Please allow microphone access and try again.",
@@ -169,17 +173,20 @@ export default function UdharoEntryForm({ contentPaddingTop = 0 }: UdharoEntryFo
         if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
       }
       setErrors(fieldErrors);
+      hapticError();
       return;
     }
 
     setErrors({});
     createEntry.mutate(parsed.data, {
       onSuccess: () => {
+        hapticSuccess();
         setName("");
         setAmount("");
         setPhoneNumber("");
         setDueDate("");
       },
+      onError: hapticError,
     });
   };
 

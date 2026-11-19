@@ -14,7 +14,7 @@ Every component lives in its own `PascalCase` folder matching the component name
 | Header | Implemented (`AppHeader` default, `PageHeader` legacy) | [Header/README.md](./Header/README.md) |
 | Glass | Implemented (`GlassSurface`) | [Glass/README.md](./Glass/README.md) |
 | ProductPicker | Implemented (`ProductPicker`) | [ProductPicker/README.md](./ProductPicker/README.md) |
-| TabBar | Implemented (`CustomTabBar`) | [TabBar/README.md](./TabBar/README.md) |
+| TabBar | Implemented (`CustomTabBar`, `SwipeableTabScreen`) | [TabBar/README.md](./TabBar/README.md) |
 | BottomSheet | Not yet implemented; folder contains only its README | [BottomSheet/README.md](./BottomSheet/README.md) |
 | Card | Not yet implemented; folder contains only its README | [Card/README.md](./Card/README.md) |
 | CurrencyInput | Not yet implemented; folder contains only its README | [CurrencyInput/README.md](./CurrencyInput/README.md) |

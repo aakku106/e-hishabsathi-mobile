@@ -24,6 +24,11 @@ import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { formatCurrency } from "@/shared/utils/formatter";
+import {
+  hapticError,
+  hapticImpact,
+  hapticSuccess,
+} from "@/shared/utils/haptics";
 
 import {
   useAdjustProductStock,
@@ -93,12 +98,14 @@ export default function InventoryScreen() {
         if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
       }
       setErrors(fieldErrors);
+      hapticError();
       return;
     }
 
     setErrors({});
     createProduct.mutate(parsed.data, {
       onSuccess: () => {
+        hapticSuccess();
         setName("");
         setCategory("");
         setPrice("");
@@ -106,6 +113,7 @@ export default function InventoryScreen() {
         setStock("");
         setShowForm(false);
       },
+      onError: hapticError,
     });
   };
 
@@ -167,7 +175,13 @@ export default function InventoryScreen() {
                   style={styles.stockButton}
                   activeOpacity={0.8}
                   onPress={() =>
-                    adjustStock.mutate({ id: product.id, delta: -1 })
+                    adjustStock.mutate(
+                      { id: product.id, delta: -1 },
+                      {
+                        onSuccess: () => hapticImpact(),
+                        onError: hapticError,
+                      },
+                    )
                   }
                   disabled={product.stockQuantity <= 0}>
                   <MaterialCommunityIcons
@@ -180,7 +194,13 @@ export default function InventoryScreen() {
                   style={styles.stockButton}
                   activeOpacity={0.8}
                   onPress={() =>
-                    adjustStock.mutate({ id: product.id, delta: 1 })
+                    adjustStock.mutate(
+                      { id: product.id, delta: 1 },
+                      {
+                        onSuccess: () => hapticImpact(),
+                        onError: hapticError,
+                      },
+                    )
                   }>
                   <MaterialCommunityIcons
                     name="plus"
