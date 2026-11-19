@@ -31,6 +31,7 @@ import { hapticError, hapticSuccess } from "@/shared/utils/haptics";
 import { useCopy } from "@/shared/i18n";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useProducts } from "@/features/inventory/hooks/useInventory";
+import { useSettingsStore } from "@/store/settings.store";
 
 import {
   useCreatePurchaseEntry,
@@ -77,6 +78,7 @@ export default function PurchaseScreen() {
   const { data: summary } = usePurchaseSummary();
   const { data: inventory = [] } = useProducts();
   const createEntry = useCreatePurchaseEntry();
+  const recentBuys = useSettingsStore((state) => state.recent.buy);
   const currentAmount =
     Number.parseFloat(quantity || "0") * Number.parseFloat(price || "0");
 
@@ -391,6 +393,7 @@ export default function PurchaseScreen() {
             </Text>
           </View>
 
+          {recentBuys && (
           <View style={styles.listSection}>
             <View style={styles.listHeading}>
               <Text style={styles.listTitle}>{t("Recent Buys")}</Text>
@@ -442,6 +445,7 @@ export default function PurchaseScreen() {
               </View>
             }
           </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
 

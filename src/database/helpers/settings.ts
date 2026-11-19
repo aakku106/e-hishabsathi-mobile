@@ -43,4 +43,10 @@ export const SETTING_KEYS = {
     udharo: "settings.aiAssistant.udharo",
     dashboard: "settings.aiAssistant.dashboard",
   },
+  /** Per-page visibility of the recent-entries list. */
+  recent: {
+    sales: "settings.recent.sales",
+    buy: "settings.recent.buy",
+    udharo: "settings.recent.udharo",
+  },
 } as const;

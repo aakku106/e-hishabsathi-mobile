@@ -6,9 +6,11 @@ import {
 import { useAuthStore } from "@/store/auth.store";
 import {
   DEFAULT_AI_ASSISTANT,
+  DEFAULT_RECENT_ENTRIES,
   useSettingsStore,
   type AiAssistantSettings,
   type PageKey,
+  type RecentEntriesSettings,
 } from "@/store/settings.store";
 import type { ThemeMode } from "@/providers/ThemeProvider";
 
@@ -29,6 +31,9 @@ export async function hydrateStores(): Promise<void> {
     aiBuy,
     aiUdharo,
     aiDashboard,
+    recentSales,
+    recentBuy,
+    recentUdharo,
   ] = await Promise.all([
     getSetting(SETTING_KEYS.authPan),
     getSetting(SETTING_KEYS.authUsername),
@@ -39,6 +44,9 @@ export async function hydrateStores(): Promise<void> {
     getSetting(SETTING_KEYS.aiAssistant.buy),
     getSetting(SETTING_KEYS.aiAssistant.udharo),
     getSetting(SETTING_KEYS.aiAssistant.dashboard),
+    getSetting(SETTING_KEYS.recent.sales),
+    getSetting(SETTING_KEYS.recent.buy),
+    getSetting(SETTING_KEYS.recent.udharo),
   ]);
 
   useAuthStore.getState().hydrate({ pan, username });
@@ -52,12 +60,19 @@ export async function hydrateStores(): Promise<void> {
     dashboard: parseFlag(aiDashboard, DEFAULT_AI_ASSISTANT.dashboard),
   };
 
+  const recent: RecentEntriesSettings = {
+    sales: parseFlag(recentSales, DEFAULT_RECENT_ENTRIES.sales),
+    buy: parseFlag(recentBuy, DEFAULT_RECENT_ENTRIES.buy),
+    udharo: parseFlag(recentUdharo, DEFAULT_RECENT_ENTRIES.udharo),
+  };
+
   useSettingsStore.getState().hydrate(
     storedTheme,
     language === "np" ? "np" : "en",
     {
       salesStrictInventory: parseFlag(strictInventory, true),
       aiAssistant,
+      recent,
     },
   );
 }
@@ -77,4 +92,17 @@ export async function persistAiAssistant(
   enabled: boolean,
 ): Promise<void> {
   await setSetting(SETTING_KEYS.aiAssistant[page], String(enabled));
+}
+
+export async function persistRecent(
+  page: "sales" | "buy" | "udharo",
+  enabled: boolean,
+): Promise<void> {
+  const key =
+    page === "sales"
+      ? SETTING_KEYS.recent.sales
+      : page === "buy"
+        ? SETTING_KEYS.recent.buy
+        : SETTING_KEYS.recent.udharo;
+  await setSetting(key, String(enabled));
 }

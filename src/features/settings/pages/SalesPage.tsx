@@ -7,7 +7,7 @@ import { Spacing } from "@/shared/constants/spacing";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useCopy } from "@/shared/i18n";
 import { hapticSelection, hapticSuccess } from "@/shared/utils/haptics";
-import { persistAiAssistant, persistSalesStrictInventory } from "@/lib/hydration";
+import { persistAiAssistant, persistRecent, persistSalesStrictInventory } from "@/lib/hydration";
 import { useSettingsStore } from "@/store/settings.store";
 import { SettingsPageShell } from "@/features/settings/components/SettingsPageShell";
 import { SettingsToggleRow } from "@/features/settings/components/SettingsToggleRow";
@@ -24,6 +24,8 @@ export default function SalesPage() {
   const {
     aiAssistant,
     setAiAssistant,
+    recent,
+    setRecent,
     salesStrictInventory,
     setSalesStrictInventory,
   } = useSettingsStore();
@@ -38,6 +40,12 @@ export default function SalesPage() {
     hapticSelection();
     setSalesStrictInventory(enabled);
     void persistSalesStrictInventory(enabled);
+  };
+
+  const handleRecentToggle = (enabled: boolean) => {
+    hapticSelection();
+    setRecent("sales", enabled);
+    void persistRecent("sales", enabled);
   };
 
   const handleResetToDefault = () => {
@@ -55,6 +63,8 @@ export default function SalesPage() {
             void persistSalesStrictInventory(true);
             setAiAssistant("sales", true);
             void persistAiAssistant("sales", true);
+            setRecent("sales", true);
+            void persistRecent("sales", true);
             hapticSuccess();
           },
         },
@@ -79,6 +89,15 @@ export default function SalesPage() {
           hint={t("Sales must use products that already exist in Inventory")}
           value={salesStrictInventory}
           onValueChange={handleStrictInventoryChange}
+          colors={colors}
+          accent={Colors_NavBar.selected.sales}
+        />
+        <View style={styles.rowDivider} />
+        <SettingsToggleRow
+          label={t("Show recent sales")}
+          hint={t("Show the recent sales list on this page")}
+          value={recent.sales}
+          onValueChange={handleRecentToggle}
           colors={colors}
           accent={Colors_NavBar.selected.sales}
         />

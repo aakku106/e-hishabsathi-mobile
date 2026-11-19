@@ -22,6 +22,7 @@ import { formatCurrency } from "@/shared/utils/formatter";
 import { hapticError, hapticSuccess } from "@/shared/utils/haptics";
 import { useCopy } from "@/shared/i18n";
 import { useTheme } from "@/providers/ThemeProvider";
+import { useSettingsStore } from "@/store/settings.store";
 
 import {
   useCreateUdharoEntry,
@@ -83,6 +84,7 @@ export default function UdharoEntryForm({ contentPaddingTop = 0 }: UdharoEntryFo
   const { data: udharoEntries = [], isLoading } = useUdharoEntries();
   const { data: summary } = useUdharoSummary();
   const createEntry = useCreateUdharoEntry();
+  const recentUdharo = useSettingsStore((state) => state.recent.udharo);
 
   const handleVoiceInput = () => {
     if (Platform.OS !== "web") {
@@ -334,6 +336,7 @@ export default function UdharoEntryForm({ contentPaddingTop = 0 }: UdharoEntryFo
         </View>
       </View>
 
+      {recentUdharo && (
       <View style={styles.listSection}>
         <Text style={styles.sectionTitle}>{t("Recent udharo")}</Text>
 
@@ -389,6 +392,7 @@ export default function UdharoEntryForm({ contentPaddingTop = 0 }: UdharoEntryFo
           </View>
         }
       </View>
+      )}
     </ScrollView>
   );
 }

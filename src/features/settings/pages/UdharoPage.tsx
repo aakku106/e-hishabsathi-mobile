@@ -7,7 +7,7 @@ import { Spacing } from "@/shared/constants/spacing";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useCopy } from "@/shared/i18n";
 import { hapticSelection, hapticSuccess } from "@/shared/utils/haptics";
-import { persistAiAssistant } from "@/lib/hydration";
+import { persistAiAssistant, persistRecent } from "@/lib/hydration";
 import { useSettingsStore } from "@/store/settings.store";
 import { SettingsPageShell } from "@/features/settings/components/SettingsPageShell";
 import { SettingsToggleRow } from "@/features/settings/components/SettingsToggleRow";
@@ -21,12 +21,18 @@ export default function UdharoPage() {
     [isDark],
   );
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { aiAssistant, setAiAssistant } = useSettingsStore();
+  const { aiAssistant, setAiAssistant, recent, setRecent } = useSettingsStore();
 
   const handleAiToggle = (enabled: boolean) => {
     hapticSelection();
     setAiAssistant("udharo", enabled);
     void persistAiAssistant("udharo", enabled);
+  };
+
+  const handleRecentToggle = (enabled: boolean) => {
+    hapticSelection();
+    setRecent("udharo", enabled);
+    void persistRecent("udharo", enabled);
   };
 
   const handleResetToDefault = () => {
@@ -42,6 +48,8 @@ export default function UdharoPage() {
           onPress: () => {
             setAiAssistant("udharo", true);
             void persistAiAssistant("udharo", true);
+            setRecent("udharo", true);
+            void persistRecent("udharo", true);
             hapticSuccess();
           },
         },
@@ -57,6 +65,15 @@ export default function UdharoPage() {
           hint={t("Show the floating AI button on this page")}
           value={aiAssistant.udharo}
           onValueChange={handleAiToggle}
+          colors={colors}
+          accent={Colors_NavBar.selected.udharo}
+        />
+        <View style={styles.rowDivider} />
+        <SettingsToggleRow
+          label={t("Show recent udharo")}
+          hint={t("Show the recent udharo list on this page")}
+          value={recent.udharo}
+          onValueChange={handleRecentToggle}
           colors={colors}
           accent={Colors_NavBar.selected.udharo}
         />
@@ -80,6 +97,10 @@ function createStyles(colors: typeof Colors_SettingsPage) {
       borderColor: colors.border,
       padding: Spacing.lg,
       gap: Spacing.md,
+    },
+    rowDivider: {
+      height: BorderWidth.thin,
+      backgroundColor: colors.border,
     },
     resetButton: {
       marginTop: Spacing.sm,

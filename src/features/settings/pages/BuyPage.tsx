@@ -7,7 +7,7 @@ import { Spacing } from "@/shared/constants/spacing";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useCopy } from "@/shared/i18n";
 import { hapticSelection, hapticSuccess } from "@/shared/utils/haptics";
-import { persistAiAssistant } from "@/lib/hydration";
+import { persistAiAssistant, persistRecent } from "@/lib/hydration";
 import { useSettingsStore } from "@/store/settings.store";
 import { SettingsPageShell } from "@/features/settings/components/SettingsPageShell";
 import { SettingsToggleRow } from "@/features/settings/components/SettingsToggleRow";
@@ -21,12 +21,18 @@ export default function BuyPage() {
     [isDark],
   );
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { aiAssistant, setAiAssistant } = useSettingsStore();
+  const { aiAssistant, setAiAssistant, recent, setRecent } = useSettingsStore();
 
   const handleAiToggle = (enabled: boolean) => {
     hapticSelection();
     setAiAssistant("buy", enabled);
     void persistAiAssistant("buy", enabled);
+  };
+
+  const handleRecentToggle = (enabled: boolean) => {
+    hapticSelection();
+    setRecent("buy", enabled);
+    void persistRecent("buy", enabled);
   };
 
   const handleResetToDefault = () => {
@@ -42,6 +48,8 @@ export default function BuyPage() {
           onPress: () => {
             setAiAssistant("buy", true);
             void persistAiAssistant("buy", true);
+            setRecent("buy", true);
+            void persistRecent("buy", true);
             hapticSuccess();
           },
         },
@@ -57,6 +65,15 @@ export default function BuyPage() {
           hint={t("Show the floating AI button on this page")}
           value={aiAssistant.buy}
           onValueChange={handleAiToggle}
+          colors={colors}
+          accent={Colors_NavBar.selected.buy}
+        />
+        <View style={styles.rowDivider} />
+        <SettingsToggleRow
+          label={t("Show recent buys")}
+          hint={t("Show the recent buys list on this page")}
+          value={recent.buy}
+          onValueChange={handleRecentToggle}
           colors={colors}
           accent={Colors_NavBar.selected.buy}
         />
@@ -80,6 +97,10 @@ function createStyles(colors: typeof Colors_SettingsPage) {
       borderColor: colors.border,
       padding: Spacing.lg,
       gap: Spacing.md,
+    },
+    rowDivider: {
+      height: BorderWidth.thin,
+      backgroundColor: colors.border,
     },
     resetButton: {
       marginTop: Spacing.sm,

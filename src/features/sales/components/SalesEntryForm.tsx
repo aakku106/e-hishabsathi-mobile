@@ -180,6 +180,7 @@ export default function SalesEntryForm() {
   const salesStrictInventory = useSettingsStore(
     (state) => state.salesStrictInventory,
   );
+  const recentSales = useSettingsStore((state) => state.recent.sales);
 
   const handleExtraDetailSelect = (
     id: string,
@@ -860,6 +861,7 @@ export default function SalesEntryForm() {
           </View>
         </View>
 
+        {recentSales && (
         <View style={styles.listSection}>
           <Text style={styles.listTitle}>{t("Recent sales")}</Text>
 
@@ -915,6 +917,7 @@ export default function SalesEntryForm() {
             </View>
           }
         </View>
+        )}
       </ScrollView>
 
       <AIAssistant page="sales" />
