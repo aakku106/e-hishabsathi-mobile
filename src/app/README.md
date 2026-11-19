@@ -124,6 +124,17 @@ If you add a new tab, add both a `Tabs.Screen` entry here **and** route-color/ic
 
 `account.tsx`, `inventory.tsx`, and `tax.tsx` are stack routes outside the tabs, opened from Settings.
 
+### Per-page settings routes
+
+The Settings tab's `Pages` section links to per-page settings screens (owning each page's toggles, e.g. the AI button):
+
+- `/settings/pages/sales`
+- `/settings/pages/buy`
+- `/settings/pages/udharo`
+- `/settings/pages/dashboard`
+
+Each is a thin re-export into `@/features/settings/pages/`, laid out by `src/app/settings/pages/_layout.tsx`.
+
 ### Rules that apply to this folder
 
 - Screens should never communicate directly with SQLite — that flows through a feature hook → feature data layer → SQLite (Rule 1).

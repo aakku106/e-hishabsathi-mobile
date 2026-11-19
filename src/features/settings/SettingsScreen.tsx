@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Text,
   Pressable,
-  Switch,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -15,18 +14,14 @@ import { useMemo, useState } from "react";
 
 import { APP } from "@/config/app";
 import { setSetting, SETTING_KEYS } from "@/database/helpers/settings";
-import {
-  persistAiAssistant,
-  persistSalesStrictInventory,
-  persistThemeMode,
-} from "@/lib/hydration";
+import { persistThemeMode } from "@/lib/hydration";
 import { useBusiness } from "@/features/business/hooks/useBusiness";
 import { useTheme, type ThemeMode } from "@/providers/ThemeProvider";
-import { useSettingsStore, type PageKey } from "@/store/settings.store";
+import { useSettingsStore } from "@/store/settings.store";
 import { AppHeader } from "@/shared/components/Header/AppHeader";
-import { Colors_NavBar, Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
+import { Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
-import { boxShadow, withAlpha } from "@/shared/constants/shadows";
+import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { hapticSelection } from "@/shared/utils/haptics";
@@ -129,6 +124,7 @@ type SettingsLinkProps = {
   value?: string;
   colors: typeof Colors_SettingsPage;
   styles: ReturnType<typeof createStyles>;
+  onPress?: () => void;
 };
 
 function SettingsLink({
@@ -137,8 +133,9 @@ function SettingsLink({
   value,
   colors,
   styles,
+  onPress,
 }: SettingsLinkProps) {
-  return (
+  const row = (
     <View style={styles.settingRow}>
       <View style={styles.rowLeading}>
         <View style={styles.smallIcon}>
@@ -158,87 +155,25 @@ function SettingsLink({
       />
     </View>
   );
-}
 
-type PageSettingEntry = {
-  key: PageKey;
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
-  accent: string;
-};
+  if (!onPress) return row;
 
-const PAGE_SETTINGS: PageSettingEntry[] = [
-  {
-    key: "sales",
-    icon: "cash-register",
-    accent: Colors_NavBar.selected.sales,
-  },
-  {
-    key: "buy",
-    icon: "cart-outline",
-    accent: Colors_NavBar.selected.buy,
-  },
-  {
-    key: "udharo",
-    icon: "account-cash-outline",
-    accent: Colors_NavBar.selected.udharo,
-  },
-  {
-    key: "dashboard",
-    icon: "view-dashboard-outline",
-    accent: Colors_NavBar.selected.dashBoard,
-  },
-];
-
-type ToggleRowProps = {
-  label: string;
-  hint: string;
-  value: boolean;
-  onValueChange: (value: boolean) => void;
-  colors: typeof Colors_SettingsPage;
-  styles: ReturnType<typeof createStyles>;
-};
-
-function ToggleRow({
-  label,
-  hint,
-  value,
-  onValueChange,
-  colors,
-  styles,
-}: ToggleRowProps) {
   return (
-    <View style={styles.settingRow}>
-      <View style={styles.settingTextWrap}>
-        <Text style={styles.settingLabel}>{label}</Text>
-        <Text style={styles.settingHint}>{hint}</Text>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        accessibilityRole="switch"
-        accessibilityLabel={label}
-        accessibilityState={{ checked: value }}
-        trackColor={{ false: colors.border, true: colors.primary }}
-        ios_backgroundColor={colors.border}
-      />
-    </View>
+    <TouchableOpacity
+      accessibilityRole="button"
+      activeOpacity={0.8}
+      onPress={onPress}
+      style={styles.settingRow}>
+      {row}
+    </TouchableOpacity>
   );
 }
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { data: business } = useBusiness();
-  const {
-    themeMode,
-    setThemeMode,
-    currency,
-    language,
-    setLanguage,
-    salesStrictInventory,
-    aiAssistant,
-    setSalesStrictInventory,
-    setAiAssistant,
-  } = useSettingsStore();
+  const { themeMode, setThemeMode, currency, language, setLanguage } =
+    useSettingsStore();
   const copy = COPY[language];
   const { isDark } = useTheme();
   const colors = useMemo(
@@ -252,18 +187,6 @@ export default function SettingsScreen() {
     hapticSelection();
     setThemeMode(mode);
     void persistThemeMode(mode);
-  };
-
-  const handleSalesStrictInventoryChange = (enabled: boolean) => {
-    hapticSelection();
-    setSalesStrictInventory(enabled);
-    void persistSalesStrictInventory(enabled);
-  };
-
-  const handleAiAssistantToggle = (page: PageKey, enabled: boolean) => {
-    hapticSelection();
-    setAiAssistant(page, enabled);
-    void persistAiAssistant(page, enabled);
   };
 
   const handleLanguageChange = () => {
@@ -443,58 +366,6 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{copy.pages}</Text>
-          {PAGE_SETTINGS.map((page) => (
-            <View key={page.key} style={styles.card}>
-              <View style={styles.pageRow}>
-                <View
-                  style={[
-                    styles.smallIcon,
-                    {
-                      backgroundColor: withAlpha(
-                        page.accent,
-                        isDark ? 0.22 : 0.14,
-                      ),
-                    },
-                  ]}>
-                  <MaterialCommunityIcons
-                    name={page.icon}
-                    size={18}
-                    color={page.accent}
-                  />
-                </View>
-                <Text style={styles.settingLabel}>{copy[page.key]}</Text>
-              </View>
-
-              {page.key === "sales" && (
-                <>
-                  <ToggleRow
-                    label={copy.strictInventory}
-                    hint={copy.strictInventoryHint}
-                    value={salesStrictInventory}
-                    onValueChange={handleSalesStrictInventoryChange}
-                    colors={colors}
-                    styles={styles}
-                  />
-                  <View style={styles.rowDivider} />
-                </>
-              )}
-
-              <ToggleRow
-                label={copy.aiAssistant}
-                hint={copy.aiAssistantHint}
-                value={aiAssistant[page.key]}
-                onValueChange={(enabled) =>
-                  handleAiAssistantToggle(page.key, enabled)
-                }
-                colors={colors}
-                styles={styles}
-              />
-            </View>
-          ))}
-        </View>
-
-        <View style={styles.section}>
           <Text style={styles.sectionTitle}>{copy.general}</Text>
           <View style={styles.card}>
             <SettingsLink
@@ -537,6 +408,46 @@ export default function SettingsScreen() {
               label={copy.privacy}
               colors={colors}
               styles={styles}
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{copy.pages}</Text>
+          <View style={styles.card}>
+            <SettingsLink
+              icon="cash-register"
+              label={copy.sales}
+              colors={colors}
+              styles={styles}
+              onPress={() => router.push("/settings/pages/sales")}
+            />
+            <View style={styles.rowDivider} />
+
+            <SettingsLink
+              icon="cart-outline"
+              label={copy.buy}
+              colors={colors}
+              styles={styles}
+              onPress={() => router.push("/settings/pages/buy")}
+            />
+            <View style={styles.rowDivider} />
+
+            <SettingsLink
+              icon="account-cash-outline"
+              label={copy.udharo}
+              colors={colors}
+              styles={styles}
+              onPress={() => router.push("/settings/pages/udharo")}
+            />
+            <View style={styles.rowDivider} />
+
+            <SettingsLink
+              icon="view-dashboard-outline"
+              label={copy.dashboard}
+              colors={colors}
+              styles={styles}
+              onPress={() => router.push("/settings/pages/dashboard")}
             />
           </View>
         </View>
@@ -642,11 +553,6 @@ function createStyles(colors: typeof Colors_SettingsPage) {
     color: colors.textPrimary,
     fontSize: FontSize.md,
     fontWeight: FontWeight.semibold,
-  },
-  pageRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
   },
   settingRow: {
     flexDirection: "row",
