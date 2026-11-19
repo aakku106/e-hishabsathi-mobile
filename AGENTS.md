@@ -1,6 +1,6 @@
 # e-hishabsathi-mobile
 
-Repo root is `e-hishabsathi-mobile/` (git, `package.json`, Expo config); the outer container is not a repo. Run commands here. Use npm: both `package-lock.json` and `bun.lock` are tracked, but the scripts are npm-based.
+Repo root is `e-hishabsathi-mobile/` (git, `package.json`, Expo config); the outer container is not a repo. Run commands here. Use bun as the package manager (`bun install`, `bun run <script>`, `bunx <bin>`); npm is kept as a fallback because both `bun.lock` and `package-lock.json` are tracked. Keep both lockfiles in sync after dependency changes (see Commands).
 
 ## Before writing code
 
@@ -39,9 +39,11 @@ Repo root is `e-hishabsathi-mobile/` (git, `package.json`, Expo config); the out
 
 ## Commands
 
-- Dev: `npm start`, `npm run android`, `npm run ios`, `npm run web`.
-- Lint: `npm run lint`; types: `npx tsc --noEmit`; web export: `npx expo export --platform web`.
-- No tests, test script, typecheck script, or CI; `npm run reset-project` is broken (`scripts/reset-project.js` is missing).
+- Install: `bun install` (npm fallback: `npm install`). Never alternate managers in the same `node_modules`; delete it first when switching.
+- Dev: `bun run start`, `bun run android`, `bun run ios`, `bun run web` (npm fallback: `npm start`, etc.).
+- Lint: `bun run lint`; types: `bunx tsc --noEmit`; web export: `bunx expo export --platform web`.
+- Dependencies: `bun add <pkg>` / `bun add -d <pkg>` (or `bunx expo install <pkg>` for Expo-versioned packages). `npx expo install` also picks bun automatically because `bun.lock` exists; pass `--npm` to force the fallback. After changing dependencies, refresh the npm fallback lockfile with `npm install --package-lock-only` and commit both lockfiles.
+- No tests, test script, typecheck script, or CI; `bun run reset-project` is broken (`scripts/reset-project.js` is missing).
 
 ## PRs
 

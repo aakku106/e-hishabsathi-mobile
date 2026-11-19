@@ -49,19 +49,21 @@ Current version: `0.0.1-alpha.1`
 - Read `src/shared/constants/README.md` before changing colors, spacing, radius, typography, or page token sets.
 - Read `doc/guide0.0.1-alpha.1.md` before changing architecture, folder responsibilities, or data flow.
 - Keep route files thin and let features own the business logic.
-- Run `npm run lint` and `npx tsc --noEmit` before finishing. There is no test script yet.
+- Run `bun run lint` and `bunx tsc --noEmit` before finishing. There is no test script yet.
 - Web is used for testing: run one dev server and keep one browser tab open because expo-sqlite uses an exclusive OPFS handle.
 
 ## Run locally
 
 ```bash
-npm install
-npm start
+bun install
+bun run start
 # or
-npm run web
+bun run web
 ```
 
-Other targets: `npm run android`, `npm run ios`.
+Other targets: `bun run android`, `bun run ios`.
+
+Bun is the primary package manager (`packageManager` is pinned in `package.json`). Use `bunx expo install <pkg>` for Expo-versioned packages; plain `npx expo install` also detects bun from `bun.lock`, and `--npm` forces the fallback. `package-lock.json` is kept as an npm fallback for contributors or CI environments without bun. After changing dependencies, refresh it with `npm install --package-lock-only` and commit both lockfiles. Don't mix `bun install` and `npm install` in the same `node_modules` — delete it first if you switch.
 
 Environment variables are read from `.env` (ignored by git): `EXPO_PUBLIC_API_BASE_URL` and `EXPO_PUBLIC_ENABLE_AI`. The API defaults to `https://api.e-hishabsathi.com/api/v1`.
 
@@ -71,4 +73,4 @@ The app is a working offline-first alpha. Core local flows are implemented, but 
 
 ---
 
-Last Updated on 2026-11-18 by Adarasha Gaihre ( @aakku106 )
+Last Updated on 2026-11-19 by Adarasha Gaihre ( @aakku106 )

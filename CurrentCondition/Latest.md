@@ -13,6 +13,7 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 ### Application structure
 
 - Expo SDK 58 / React Native 0.88.1 app configured with Expo Router.
+- Bun 1.3.6 is the primary package manager (`packageManager` is pinned); `package-lock.json` is kept as an npm fallback.
 - Root layout wires React Query, SQLite, theme handling, and store hydration.
 - All screen route files are thin re-exports into feature screens; layouts and `+not-found.tsx` own code by design.
 - Navigation includes Sales, Purchases, Udharo, Dashboard, Settings, Inventory, Tax, Account, login, onboarding, and business type screens.
@@ -45,9 +46,10 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 
 ### Verification
 
-- `npm run lint` passes on 2026-11-19.
-- `npx tsc --noEmit` passes on 2026-11-19.
-- `npx expo export --platform web` passes on 2026-11-19.
+- `bun install --frozen-lockfile` passes on 2026-11-19.
+- `bun run lint` passes on 2026-11-19.
+- `bunx tsc --noEmit` passes on 2026-11-19.
+- `bunx expo export --platform web` passes on 2026-11-19.
 - The repository currently contains no automated test files, test script, or CI workflows.
 
 ## Remaining work
