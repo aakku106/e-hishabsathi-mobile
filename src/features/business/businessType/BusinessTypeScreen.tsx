@@ -44,6 +44,7 @@ export default function BusinessTypeScreen() {
   const currentType = business?.type ?? BusinessTypes.retail;
   const [selected, setSelected] = useState<BusinessType>(currentType);
   const [error, setError] = useState<string | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const handleContinue = () => {
     if (!business) {
@@ -61,11 +62,13 @@ export default function BusinessTypeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <AppHeader title="What kind of business?" colors={colors} />
+    <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+      <View style={styles.headerOverlay} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <AppHeader title="What kind of business?" colors={colors} edgeToEdge />
+      </View>
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.options}>
@@ -124,6 +127,14 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingBottom: Spacing["3xl"],
+  },
+  headerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    pointerEvents: "box-none",
   },
   options: {
     marginTop: Spacing.xl,

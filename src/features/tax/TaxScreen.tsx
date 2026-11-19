@@ -35,27 +35,31 @@ export default function TaxScreen() {
   const [selected, setSelected] = useState<DropdownOption>(
     options[options.length - 1],
   );
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const { data: summary, isLoading } = useTaxSummary(String(selected.value));
 
   const netPayable = summary?.netVatPayable ?? 0;
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <AppHeader
-        title="Tax / VAT"
-        colors={colors}
-        onBack={() => {
-          if (router.canGoBack()) {
-            router.back();
-          } else {
-            router.replace("/(tabs)/05-settings");
-          }
-        }}
-      />
+    <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+      <View style={styles.headerOverlay} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <AppHeader
+          title="Tax / VAT"
+          colors={colors}
+          onBack={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/(tabs)/05-settings");
+            }
+          }}
+          edgeToEdge
+        />
+      </View>
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}
         showsVerticalScrollIndicator={false}>
         <View style={styles.monthRow}>
           <Dropdown
@@ -185,6 +189,14 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingBottom: Spacing["4xl"],
+  },
+  headerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    pointerEvents: "box-none",
   },
   monthRow: {
     marginTop: Spacing.xl,

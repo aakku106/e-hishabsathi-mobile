@@ -54,6 +54,7 @@ export default function InventoryScreen() {
   const [costPrice, setCostPrice] = useState("");
   const [stock, setStock] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const {
     products,
@@ -109,18 +110,21 @@ export default function InventoryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <AppHeader
-        title="Inventory"
-        colors={colors}
-        onBack={() => {
-          if (router.canGoBack()) {
-            router.back();
-          } else {
-            router.replace("/(tabs)/05-settings");
-          }
-        }}
-      />
+    <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+      <View style={styles.headerOverlay} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <AppHeader
+          title="Inventory"
+          colors={colors}
+          onBack={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/(tabs)/05-settings");
+            }
+          }}
+          edgeToEdge
+        />
+      </View>
 
       <FlatList
         data={products}
@@ -191,7 +195,7 @@ export default function InventoryScreen() {
         ItemSeparatorComponent={() => (
           <View style={styles.productDivider} />
         )}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         initialNumToRender={12}
@@ -457,6 +461,14 @@ function createStyles(colors: typeof Colors_InventoryPage, isDark: boolean) {
     content: {
       flexGrow: 1,
       paddingBottom: Spacing["4xl"],
+    },
+    headerOverlay: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 20,
+      pointerEvents: "box-none",
     },
     summaryCard: {
       marginTop: Spacing.xl,

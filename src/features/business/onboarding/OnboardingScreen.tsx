@@ -29,6 +29,7 @@ export default function OnboardingScreen() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const createBusiness = useCreateBusiness();
 
@@ -49,15 +50,17 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <AppHeader title="Set up your business" colors={colors} />
+    <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+      <View style={styles.headerOverlay} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <AppHeader title="Set up your business" colors={colors} edgeToEdge />
+      </View>
 
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -145,6 +148,14 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingBottom: Spacing["2xl"],
+  },
+  headerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    pointerEvents: "box-none",
   },
   formCard: {
     backgroundColor: colors.surface,

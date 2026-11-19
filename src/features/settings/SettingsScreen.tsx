@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { APP } from "@/config/app";
 import { setSetting, SETTING_KEYS } from "@/database/helpers/settings";
@@ -148,6 +148,7 @@ export default function SettingsScreen() {
     [isDark],
   );
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const handleThemeChange = (mode: ThemeMode) => {
     setThemeMode(mode);
@@ -161,11 +162,13 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <AppHeader title={copy.settings} colors={colors} />
+    <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+      <View style={styles.headerOverlay} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <AppHeader title={copy.settings} colors={colors} edgeToEdge />
+      </View>
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}
         showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{copy.profile}</Text>
@@ -402,6 +405,14 @@ function createStyles(colors: typeof Colors_SettingsPage) {
   content: {
     flexGrow: 1,
     paddingBottom: Spacing["4xl"],
+  },
+  headerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    pointerEvents: "box-none",
   },
   section: {
     marginTop: Spacing.xl,

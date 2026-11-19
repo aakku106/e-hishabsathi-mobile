@@ -9,7 +9,7 @@ export default function DashboardScreen() {
   const colors = getThemedColors(Colors_DashboardPage, isDark);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={["bottom", "left", "right"]}>
       <DashboardOverview />
     </SafeAreaView>
   );

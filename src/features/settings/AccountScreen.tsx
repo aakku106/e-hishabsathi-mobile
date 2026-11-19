@@ -131,6 +131,7 @@ export default function AccountScreen() {
   const [logoutVisible, setLogoutVisible] = useState(false);
   const [typedConfirmation, setTypedConfirmation] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const closeConfirmation = () => {
     setConfirmationStep(null);
@@ -165,21 +166,24 @@ export default function AccountScreen() {
   const canDelete = typedConfirmation === "DELETE" && !deleteAllData.isPending;
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <AppHeader
-        title={copy.title}
-        colors={colors}
-        onBack={() => {
-          if (router.canGoBack()) {
-            router.back();
-          } else {
-            router.replace("/(tabs)/05-settings");
-          }
-        }}
-      />
+    <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+      <View style={styles.headerOverlay} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <AppHeader
+          title={copy.title}
+          colors={colors}
+          onBack={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/(tabs)/05-settings");
+            }
+          }}
+          edgeToEdge
+        />
+      </View>
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}
         showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{copy.business}</Text>
@@ -453,6 +457,14 @@ function createStyles(colors: typeof Colors_SettingsPage) {
     content: {
       flexGrow: 1,
       paddingBottom: Spacing["4xl"],
+    },
+    headerOverlay: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 20,
+      pointerEvents: "box-none",
     },
     section: {
       marginTop: Spacing.xl,

@@ -118,6 +118,7 @@ export default function DashboardOverview() {
   // UI toggle states
   const [incomeMode, setIncomeMode] = useState<string>("Income");
   const [trendMode, setTrendMode] = useState<string>("Month");
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const [chartFade] = useState(() => new Animated.Value(1));
   const [trendFade] = useState(() => new Animated.Value(1));
@@ -181,15 +182,13 @@ export default function DashboardOverview() {
 
   return (
     <View style={styles.screen}>
-      <AppHeader
-        title={t("Dashboard")}
-        colors={colors}
-        accentColor={colors.greenPrimary}
-      />
+      <View style={styles.headerOverlay} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <AppHeader title={t("Dashboard")} colors={colors} accentColor={colors.greenPrimary} edgeToEdge />
+      </View>
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}
         showsVerticalScrollIndicator={false}>
       <View style={styles.todayRow}>
         <Pressable style={styles.periodSelector} onPress={() => setPeriodMenuOpen((open) => !open)}>
@@ -410,6 +409,14 @@ function createStyles(colors: typeof Colors_DashboardPage) {
   content: {
     flexGrow: 1,
     paddingBottom: 120,
+  },
+  headerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    pointerEvents: "box-none",
   },
   periodRow: {
     marginTop: Spacing.sm,

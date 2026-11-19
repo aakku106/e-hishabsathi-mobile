@@ -69,6 +69,7 @@ export default function PurchaseScreen() {
   const [price, setPrice] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isListening, setIsListening] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   const { data: entries = [], isLoading } = usePurchaseEntries();
@@ -197,15 +198,17 @@ export default function PurchaseScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <AppHeader title={t("Buy")} colors={colors} />
+    <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
+      <View style={styles.headerOverlay} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <AppHeader title={t("Buy")} colors={colors} edgeToEdge />
+      </View>
 
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
           style={styles.container}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           <View style={styles.formCard}>
@@ -518,6 +521,14 @@ function createStyles(colors: typeof Colors_PurchasesPage) {
   content: {
     flexGrow: 1,
     paddingBottom: 160,
+  },
+  headerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    pointerEvents: "box-none",
   },
   formCard: {
     marginTop: Spacing.lg,

@@ -57,7 +57,12 @@ const STATUS_BADGE: Record<string, { bg: string; text: string }> = {
   paid: { bg: "#E2E8F0", text: "#475569" },
 };
 
-export default function UdharoEntryForm() {
+type UdharoEntryFormProps = {
+  /** Top padding for the scroll content, offset by the app header height. */
+  contentPaddingTop?: number;
+};
+
+export default function UdharoEntryForm({ contentPaddingTop = 0 }: UdharoEntryFormProps) {
   const { t, language } = useCopy();
   const { isDark } = useTheme();
   const colors = useMemo(
@@ -181,7 +186,7 @@ export default function UdharoEntryForm() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: contentPaddingTop }]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled">
       <View style={styles.formCard}>
