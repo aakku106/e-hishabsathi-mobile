@@ -51,6 +51,8 @@ const translations: Record<string, string> = {
   "AI Voice|AI आवाज": "AI Voice",
   "Speak now|अहिले बोल्नुहोस्": "Speak now",
   "Fill with voice|आवाजद्वारा भर्नुहोस्": "Fill with voice",
+  "This product is not in Inventory|यो उत्पादन इन्भेन्टरीमा छैन": "This product is not in Inventory",
+  "Only products in Inventory can be sold|इन्भेन्टरीमा रहेका उत्पादन मात्र बेच्न सकिन्छ": "Only products in Inventory can be sold",
   "Enter Quantity|परिमाण लेख्नुहोस्": "Enter Quantity",
   "Enter Product name|उत्पादनको नाम लेख्नुहोस्": "Enter Product name",
   "Enter Price|मूल्य लेख्नुहोस्": "Enter Price",

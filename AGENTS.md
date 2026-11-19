@@ -13,6 +13,7 @@ Repo root is `e-hishabsathi-mobile/` (git, `package.json`, Expo config); the out
 - `src/features/<name>/` owns components, hooks, `data/`, `utils/`, `validation.ts` (Zod), and `types.ts`; reusable-only UI goes in `src/shared/components/`.
 - Route files in `src/app/` are thin re-exports only; layouts and `+not-found.tsx` contain code by design.
 - SQLite is the only data source: `initDatabase()` (via `SQLiteProvider` from `@/lib/sqlite`) applies `src/database/schema/` migrations through `PRAGMA user_version`, then seeds; `SEED_DEMO_DATA=false`. There are no `*.mock.ts` fixtures; reads return empty/zero when `getDatabase()` is null.
+- Page-level behaviour settings are stored in SQLite `app_settings` (`SETTING_KEYS` in `src/database/helpers/settings.ts`) and hydrated into `useSettingsStore` via `hydrateStores()`: `sales.strictInventory` (default `true`) and `aiAssistant.<page>` for sales/buy/udharo/dashboard (default `true`). `SettingsScreen` renders them under a `Pages` section; the sales gate is `requireInventory` on `createSalesBatch` plus the inline field error in `SalesEntryForm`.
 - Sales/purchase writes enqueue `local_sync_queue` with client-UUID idempotency and 7-day retention; udhaaro entries go to `local_udaaro_ledger` and never sync.
 - Dashboard profit in code is sales − `totalCost` (COGS), not cash in hand and not net of udhaaro outstanding.
 

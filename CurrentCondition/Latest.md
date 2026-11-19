@@ -27,6 +27,7 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 - Purchases supports validated entry creation, inventory suggestions, web voice input, recent entries, and summaries. Purchases increase stock, update cost price, and enqueue sync records.
 - Udharo supports validated credit entry creation, customer phone/due-date details, status display, recent entries, and summaries. Udharo writes to the local customer/ledger tables and never enters the sync queue.
 - Dashboard reads local data and displays period-based statistics, income bars, monthly trend data, and stock/low-stock metrics. A local rule-based AI assistant opens from a floating AI button on Sales, Buy, Udharo, and Dashboard as a custom Reanimated + Gesture Handler sheet (96% of window height, dismissed by swipe, backdrop, or close button).
+- Settings has a new `Pages` section for Sales, Buy, Udharo, and Dashboard: per-page floating AI button toggles plus a default-on Sales rule that only sells items already in inventory. These persist via `app_settings` and the settings store.
 - Inventory has a route and feature screen with paged product listing, product creation, manual stock adjustment, and product/stock summaries.
 - Tax/VAT has a month selector and calculates output VAT, input VAT, and net payable from local sales and purchase data.
 - Settings includes appearance (System/Dark/Light), language controls, inventory/tax links, and app settings persistence; the business profile card opens the Account page.

@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Text,
   Pressable,
+  Switch,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -14,14 +15,18 @@ import { useMemo, useState } from "react";
 
 import { APP } from "@/config/app";
 import { setSetting, SETTING_KEYS } from "@/database/helpers/settings";
-import { persistThemeMode } from "@/lib/hydration";
+import {
+  persistAiAssistant,
+  persistSalesStrictInventory,
+  persistThemeMode,
+} from "@/lib/hydration";
 import { useBusiness } from "@/features/business/hooks/useBusiness";
 import { useTheme, type ThemeMode } from "@/providers/ThemeProvider";
-import { useSettingsStore } from "@/store/settings.store";
+import { useSettingsStore, type PageKey } from "@/store/settings.store";
 import { AppHeader } from "@/shared/components/Header/AppHeader";
-import { Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
+import { Colors_NavBar, Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
-import { boxShadow } from "@/shared/constants/shadows";
+import { boxShadow, withAlpha } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { hapticSelection } from "@/shared/utils/haptics";
@@ -47,6 +52,15 @@ const COPY = {
     products: "Products and stock",
     tax: "Tax / VAT",
     vat: "Monthly VAT summary",
+    pages: "Pages",
+    sales: "Sales",
+    buy: "Buy",
+    udharo: "Udharo",
+    dashboard: "Dashboard",
+    strictInventory: "Only sell inventory items",
+    strictInventoryHint: "Sales must use products that already exist in Inventory",
+    aiAssistant: "AI assistant",
+    aiAssistantHint: "Show the floating AI button on this page",
     appearance: "Appearance",
     appearanceHint: "Choose how the app looks",
     system: "System",
@@ -74,6 +88,15 @@ const COPY = {
     products: "उत्पादन र स्टक",
     tax: "कर / VAT",
     vat: "मासिक VAT सारांश",
+    pages: "पृष्ठहरू",
+    sales: "बिक्री",
+    buy: "खरिद",
+    udharo: "उधारो",
+    dashboard: "ड्यासबोर्ड",
+    strictInventory: "इन्भेन्टरीका सामान मात्र बेच्नुहोस्",
+    strictInventoryHint: "बिक्री गर्न इन्भेन्टरीमा रहेका उत्पादन मात्र प्रयोग गर्नुपर्छ",
+    aiAssistant: "AI सहायक",
+    aiAssistantHint: "यो पृष्ठमा तैरने AI सहायक बटन देखाउनुहोस्",
     appearance: "देखावट",
     appearanceHint: "एप कस्तो देखिने छान्नुहोस्",
     system: "सिस्टम",
@@ -137,11 +160,85 @@ function SettingsLink({
   );
 }
 
+type PageSettingEntry = {
+  key: PageKey;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  accent: string;
+};
+
+const PAGE_SETTINGS: PageSettingEntry[] = [
+  {
+    key: "sales",
+    icon: "cash-register",
+    accent: Colors_NavBar.selected.sales,
+  },
+  {
+    key: "buy",
+    icon: "cart-outline",
+    accent: Colors_NavBar.selected.buy,
+  },
+  {
+    key: "udharo",
+    icon: "account-cash-outline",
+    accent: Colors_NavBar.selected.udharo,
+  },
+  {
+    key: "dashboard",
+    icon: "view-dashboard-outline",
+    accent: Colors_NavBar.selected.dashBoard,
+  },
+];
+
+type ToggleRowProps = {
+  label: string;
+  hint: string;
+  value: boolean;
+  onValueChange: (value: boolean) => void;
+  colors: typeof Colors_SettingsPage;
+  styles: ReturnType<typeof createStyles>;
+};
+
+function ToggleRow({
+  label,
+  hint,
+  value,
+  onValueChange,
+  colors,
+  styles,
+}: ToggleRowProps) {
+  return (
+    <View style={styles.settingRow}>
+      <View style={styles.settingTextWrap}>
+        <Text style={styles.settingLabel}>{label}</Text>
+        <Text style={styles.settingHint}>{hint}</Text>
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        accessibilityRole="switch"
+        accessibilityLabel={label}
+        accessibilityState={{ checked: value }}
+        trackColor={{ false: colors.border, true: colors.primary }}
+        ios_backgroundColor={colors.border}
+      />
+    </View>
+  );
+}
+
 export default function SettingsScreen() {
   const router = useRouter();
   const { data: business } = useBusiness();
-  const { themeMode, setThemeMode, currency, language, setLanguage } =
-    useSettingsStore();
+  const {
+    themeMode,
+    setThemeMode,
+    currency,
+    language,
+    setLanguage,
+    salesStrictInventory,
+    aiAssistant,
+    setSalesStrictInventory,
+    setAiAssistant,
+  } = useSettingsStore();
   const copy = COPY[language];
   const { isDark } = useTheme();
   const colors = useMemo(
@@ -155,6 +252,18 @@ export default function SettingsScreen() {
     hapticSelection();
     setThemeMode(mode);
     void persistThemeMode(mode);
+  };
+
+  const handleSalesStrictInventoryChange = (enabled: boolean) => {
+    hapticSelection();
+    setSalesStrictInventory(enabled);
+    void persistSalesStrictInventory(enabled);
+  };
+
+  const handleAiAssistantToggle = (page: PageKey, enabled: boolean) => {
+    hapticSelection();
+    setAiAssistant(page, enabled);
+    void persistAiAssistant(page, enabled);
   };
 
   const handleLanguageChange = () => {
@@ -334,6 +443,58 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{copy.pages}</Text>
+          {PAGE_SETTINGS.map((page) => (
+            <View key={page.key} style={styles.card}>
+              <View style={styles.pageRow}>
+                <View
+                  style={[
+                    styles.smallIcon,
+                    {
+                      backgroundColor: withAlpha(
+                        page.accent,
+                        isDark ? 0.22 : 0.14,
+                      ),
+                    },
+                  ]}>
+                  <MaterialCommunityIcons
+                    name={page.icon}
+                    size={18}
+                    color={page.accent}
+                  />
+                </View>
+                <Text style={styles.settingLabel}>{copy[page.key]}</Text>
+              </View>
+
+              {page.key === "sales" && (
+                <>
+                  <ToggleRow
+                    label={copy.strictInventory}
+                    hint={copy.strictInventoryHint}
+                    value={salesStrictInventory}
+                    onValueChange={handleSalesStrictInventoryChange}
+                    colors={colors}
+                    styles={styles}
+                  />
+                  <View style={styles.rowDivider} />
+                </>
+              )}
+
+              <ToggleRow
+                label={copy.aiAssistant}
+                hint={copy.aiAssistantHint}
+                value={aiAssistant[page.key]}
+                onValueChange={(enabled) =>
+                  handleAiAssistantToggle(page.key, enabled)
+                }
+                colors={colors}
+                styles={styles}
+              />
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>{copy.general}</Text>
           <View style={styles.card}>
             <SettingsLink
@@ -481,6 +642,11 @@ function createStyles(colors: typeof Colors_SettingsPage) {
     color: colors.textPrimary,
     fontSize: FontSize.md,
     fontWeight: FontWeight.semibold,
+  },
+  pageRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.md,
   },
   settingRow: {
     flexDirection: "row",

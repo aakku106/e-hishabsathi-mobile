@@ -34,6 +34,7 @@ import { useTheme } from "@/providers/ThemeProvider";
 import { useCopy } from "@/shared/i18n";
 import { formatCurrency } from "@/shared/utils/formatter";
 import { hapticError, hapticSuccess } from "@/shared/utils/haptics";
+import { useSettingsStore } from "@/store/settings.store";
 
 import { AIAssistant } from "@/features/ai/components/AIAssistant";
 import { useProducts } from "@/features/inventory/hooks/useInventory";
@@ -176,6 +177,9 @@ export default function SalesEntryForm() {
   const { data: summary } = useSalesSummary();
   const { data: inventory = [] } = useProducts();
   const createSale = useCreateSalesBatch();
+  const salesStrictInventory = useSettingsStore(
+    (state) => state.salesStrictInventory,
+  );
 
   const handleExtraDetailSelect = (
     id: string,
@@ -355,6 +359,13 @@ export default function SalesEntryForm() {
           if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
         }
       } else {
+        // The Sales page setting gates on-inventory selling; a product that was
+        // only typed in (no linked inventory row) is rejected at this step.
+        if (salesStrictInventory && item.productId === null) {
+          fieldErrors[`${item.id}.product`] = t(
+            "This product is not in Inventory",
+          );
+        }
         validated.push(parsed.data);
       }
     }
@@ -380,6 +391,7 @@ export default function SalesEntryForm() {
         })),
         customer: paymentType === "udharo" ? customer.trim() : null,
         paymentType,
+        requireInventory: salesStrictInventory,
       },
       {
         onSuccess: () => {
@@ -426,6 +438,12 @@ export default function SalesEntryForm() {
               <Text style={styles.addButtonText}>{t("Add Product")}</Text>
             </TouchableOpacity>
           </View>
+
+          {salesStrictInventory && (
+            <Text style={styles.inventoryRule}>
+              {t("Only products in Inventory can be sold")}
+            </Text>
+          )}
 
           <TouchableOpacity
             activeOpacity={0.8}
@@ -899,7 +917,7 @@ export default function SalesEntryForm() {
         </View>
       </ScrollView>
 
-      <AIAssistant />
+      <AIAssistant page="sales" />
     </SafeAreaView>
   );
 }
@@ -940,6 +958,13 @@ function createStyles(colors: typeof Colors_SalesPage) {
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: Spacing.md,
+  },
+
+  inventoryRule: {
+    color: colors.textMuted,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
+    marginBottom: Spacing.sm,
   },
 
   addButton: {

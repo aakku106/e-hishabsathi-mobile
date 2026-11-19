@@ -26,7 +26,7 @@ export default function UdharoScreen() {
       </View>
 
       <UdharoEntryForm contentPaddingTop={headerHeight + Spacing.lg} />
-      <AIAssistant />
+      <AIAssistant page="udharo" />
     </SafeAreaView>
   );
 }

@@ -391,7 +391,7 @@ export default function DashboardOverview() {
 
       </ScrollView>
 
-      <AIAssistant />
+      <AIAssistant page="dashboard" />
     </View>
   );
 }

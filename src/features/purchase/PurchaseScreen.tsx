@@ -445,7 +445,7 @@ export default function PurchaseScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <AIAssistant />
+      <AIAssistant page="buy" />
     </SafeAreaView>
   );
 }

@@ -11,10 +11,13 @@ import {
 import { boxShadow, withAlpha } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontWeight } from "@/shared/constants/typography";
+import { useSettingsStore, type PageKey } from "@/store/settings.store";
 
 import AIOverlay from "./AIOverlay";
 
 type AIAssistantProps = {
+  /** Page this button belongs to; the Settings page can hide it per page. */
+  page: PageKey;
   /** Distance from the bottom of the screen; keeps the button above the tab bar. */
   bottomOffset?: number;
 };
@@ -23,13 +26,17 @@ type AIAssistantProps = {
  * Floating AI button plus the Khata Intelligence bottom sheet. Render it as a
  * sibling of the screen's ScrollView so the absolute overlay covers the page.
  * The button uses the shared theme-aware green as a translucent glass tint so
- * it matches the header without copying the page accent.
+ * it matches the header without copying the page accent. Renders nothing when
+ * the page's AI button is switched off in Settings.
  */
-export function AIAssistant({ bottomOffset = 92 }: AIAssistantProps) {
+export function AIAssistant({ page, bottomOffset = 92 }: AIAssistantProps) {
   const [open, setOpen] = useState(false);
   const { isDark } = useTheme();
+  const enabled = useSettingsStore((state) => state.aiAssistant[page]);
   const accent = getAccentColor(isDark);
   const foreground = getAccentForegroundColor(isDark);
+
+  if (!enabled) return null;
 
   return (
     <View style={styles.overlayRoot} pointerEvents="box-none">
