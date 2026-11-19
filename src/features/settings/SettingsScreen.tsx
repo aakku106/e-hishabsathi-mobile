@@ -19,9 +19,9 @@ import { useBusiness } from "@/features/business/hooks/useBusiness";
 import { useTheme, type ThemeMode } from "@/providers/ThemeProvider";
 import { useSettingsStore } from "@/store/settings.store";
 import { AppHeader } from "@/shared/components/Header/AppHeader";
-import { Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
+import { Colors_NavBar, Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
-import { boxShadow } from "@/shared/constants/shadows";
+import { boxShadow, withAlpha } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { hapticSelection } from "@/shared/utils/haptics";
@@ -125,6 +125,8 @@ type SettingsLinkProps = {
   colors: typeof Colors_SettingsPage;
   styles: ReturnType<typeof createStyles>;
   onPress?: () => void;
+  /** Page accent used for the row icon; defaults to the settings primary. */
+  accent?: string;
 };
 
 function SettingsLink({
@@ -134,15 +136,23 @@ function SettingsLink({
   colors,
   styles,
   onPress,
+  accent,
 }: SettingsLinkProps) {
   const row = (
     <View style={styles.settingRow}>
       <View style={styles.rowLeading}>
-        <View style={styles.smallIcon}>
+        <View
+          style={[
+            styles.smallIcon,
+            {
+              backgroundColor:
+                accent ? withAlpha(accent, 0.14) : colors.primarySoft,
+            },
+          ]}>
           <MaterialCommunityIcons
             name={icon}
             size={18}
-            color={colors.primary}
+            color={accent ?? colors.primary}
           />
         </View>
         <Text style={styles.settingLabel}>{label}</Text>
@@ -199,7 +209,7 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
       <View style={styles.headerOverlay} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
-        <AppHeader title={copy.settings} colors={colors} edgeToEdge />
+        <AppHeader title={copy.settings} colors={colors} edgeToEdge showNotifications={false} />
       </View>
 
       <ScrollView
@@ -420,6 +430,7 @@ export default function SettingsScreen() {
               label={copy.sales}
               colors={colors}
               styles={styles}
+              accent={Colors_NavBar.selected.sales}
               onPress={() => router.push("/settings/pages/sales")}
             />
             <View style={styles.rowDivider} />
@@ -429,6 +440,7 @@ export default function SettingsScreen() {
               label={copy.buy}
               colors={colors}
               styles={styles}
+              accent={Colors_NavBar.selected.buy}
               onPress={() => router.push("/settings/pages/buy")}
             />
             <View style={styles.rowDivider} />
@@ -438,6 +450,7 @@ export default function SettingsScreen() {
               label={copy.udharo}
               colors={colors}
               styles={styles}
+              accent={Colors_NavBar.selected.udharo}
               onPress={() => router.push("/settings/pages/udharo")}
             />
             <View style={styles.rowDivider} />
@@ -447,6 +460,7 @@ export default function SettingsScreen() {
               label={copy.dashboard}
               colors={colors}
               styles={styles}
+              accent={Colors_NavBar.selected.dashBoard}
               onPress={() => router.push("/settings/pages/dashboard")}
             />
           </View>

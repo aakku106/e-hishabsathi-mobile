@@ -82,6 +82,7 @@ export function SettingsPageShell({
             }
           }}
           edgeToEdge
+          showNotifications={false}
         />
       </View>
 

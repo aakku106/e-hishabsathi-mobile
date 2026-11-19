@@ -32,6 +32,8 @@ type AppHeaderProps = {
    * top safe-area inset when this is enabled (use `edges` without `"top"`).
    */
   edgeToEdge?: boolean;
+  /** Hides the notifications button; used on settings screens where it is noise. */
+  showNotifications?: boolean;
 };
 
 /** Height of the header row, excluding the top padding and bottom border. */
@@ -59,6 +61,7 @@ export function AppHeader({
   onMenuPress,
   onNotificationsPress,
   showNotificationDot = true,
+  showNotifications = true,
   edgeToEdge = false,
 }: AppHeaderProps) {
   const { isDark } = useTheme();
@@ -119,20 +122,22 @@ export function AppHeader({
           </Text>
         </View>
 
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Open notifications"
-          style={styles.headerIconButton}
-          onPress={onNotificationsPress}>
-          <MaterialCommunityIcons
-            name="bell-outline"
-            size={27}
-            color={textPrimary}
-          />
-          {showNotificationDot && (
-            <View style={[styles.notificationDot, { backgroundColor: accent }]} />
-          )}
-        </TouchableOpacity>
+        {showNotifications && (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Open notifications"
+            style={styles.headerIconButton}
+            onPress={onNotificationsPress}>
+            <MaterialCommunityIcons
+              name="bell-outline"
+              size={27}
+              color={textPrimary}
+            />
+            {showNotificationDot && (
+              <View style={[styles.notificationDot, { backgroundColor: accent }]} />
+            )}
+          </TouchableOpacity>
+        )}
       </View>
     </GlassSurface>
   );

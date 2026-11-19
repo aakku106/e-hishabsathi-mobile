@@ -11,6 +11,8 @@ type SettingsToggleRowProps = {
   value: boolean;
   onValueChange: (value: boolean) => void;
   colors: typeof Colors_SettingsPage;
+  /** Page accent used for the label and switch; defaults to the settings palette. */
+  accent?: string;
 };
 
 function createStyles(colors: typeof Colors_SettingsPage) {
@@ -48,14 +50,22 @@ export function SettingsToggleRow({
   value,
   onValueChange,
   colors,
+  accent,
 }: SettingsToggleRowProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
     <View style={styles.settingRow}>
       <View style={styles.settingTextWrap}>
-        <Text style={styles.settingLabel}>{label}</Text>
-        {!!hint && <Text style={styles.settingHint}>{hint}</Text>}
+        <Text style={[styles.settingLabel, { color: accent ?? colors.textPrimary }]}>
+          {label}
+        </Text>
+        {!!hint && (
+          <Text
+            style={[styles.settingHint, { color: accent ?? colors.textMuted }]}>
+            {hint}
+          </Text>
+        )}
       </View>
       <Switch
         value={value}
@@ -63,7 +73,7 @@ export function SettingsToggleRow({
         accessibilityRole="switch"
         accessibilityLabel={label}
         accessibilityState={{ checked: value }}
-        trackColor={{ false: colors.border, true: colors.primary }}
+        trackColor={{ false: colors.border, true: accent ?? colors.primary }}
         ios_backgroundColor={colors.border}
       />
     </View>

@@ -1,16 +1,17 @@
 import { useMemo } from "react";
-import { View } from "react-native";
+import { Alert, View } from "react-native";
 
-import { Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
+import { Colors_NavBar, Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useCopy } from "@/shared/i18n";
-import { hapticSelection } from "@/shared/utils/haptics";
+import { hapticSelection, hapticSuccess } from "@/shared/utils/haptics";
 import { persistAiAssistant } from "@/lib/hydration";
 import { useSettingsStore } from "@/store/settings.store";
 import { SettingsPageShell } from "@/features/settings/components/SettingsPageShell";
 import { SettingsToggleRow } from "@/features/settings/components/SettingsToggleRow";
+import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 
 export default function DashboardPage() {
   const { t } = useCopy();
@@ -28,6 +29,26 @@ export default function DashboardPage() {
     void persistAiAssistant("dashboard", enabled);
   };
 
+  const handleResetToDefault = () => {
+    hapticSelection();
+    Alert.alert(
+      t("Reset to default"),
+      t("This restores the default settings for this page."),
+      [
+        { text: t("Cancel"), style: "cancel" },
+        {
+          text: t("Reset"),
+          style: "destructive",
+          onPress: () => {
+            setAiAssistant("dashboard", true);
+            void persistAiAssistant("dashboard", true);
+            hapticSuccess();
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <SettingsPageShell title={t("Dashboard")}>
       <View style={styles.card}>
@@ -37,6 +58,13 @@ export default function DashboardPage() {
           value={aiAssistant.dashboard}
           onValueChange={handleAiToggle}
           colors={colors}
+          accent={Colors_NavBar.selected.dashBoard}
+        />
+        <PrimaryButton
+          title={t("Reset to default")}
+          onPress={handleResetToDefault}
+          gradient={["#4F46E5", "#3730A3"]}
+          style={styles.resetButton}
         />
       </View>
     </SettingsPageShell>
@@ -52,6 +80,9 @@ function createStyles(colors: typeof Colors_SettingsPage) {
       borderColor: colors.border,
       padding: Spacing.lg,
       gap: Spacing.md,
+    },
+    resetButton: {
+      marginTop: Spacing.sm,
     },
   };
 }

@@ -1,16 +1,17 @@
 import { useMemo } from "react";
-import { View } from "react-native";
+import { Alert, View } from "react-native";
 
-import { Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
+import { Colors_NavBar, Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useCopy } from "@/shared/i18n";
-import { hapticSelection } from "@/shared/utils/haptics";
+import { hapticSelection, hapticSuccess } from "@/shared/utils/haptics";
 import { persistAiAssistant, persistSalesStrictInventory } from "@/lib/hydration";
 import { useSettingsStore } from "@/store/settings.store";
 import { SettingsPageShell } from "@/features/settings/components/SettingsPageShell";
 import { SettingsToggleRow } from "@/features/settings/components/SettingsToggleRow";
+import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 
 export default function SalesPage() {
   const { t } = useCopy();
@@ -39,6 +40,28 @@ export default function SalesPage() {
     void persistSalesStrictInventory(enabled);
   };
 
+  const handleResetToDefault = () => {
+    hapticSelection();
+    Alert.alert(
+      t("Reset to default"),
+      t("This restores the default settings for this page."),
+      [
+        { text: t("Cancel"), style: "cancel" },
+        {
+          text: t("Reset"),
+          style: "destructive",
+          onPress: () => {
+            setSalesStrictInventory(true);
+            void persistSalesStrictInventory(true);
+            setAiAssistant("sales", true);
+            void persistAiAssistant("sales", true);
+            hapticSuccess();
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <SettingsPageShell title={t("Sales")}>
       <View style={styles.card}>
@@ -48,6 +71,7 @@ export default function SalesPage() {
           value={aiAssistant.sales}
           onValueChange={handleAiToggle}
           colors={colors}
+          accent={Colors_NavBar.selected.sales}
         />
         <View style={styles.rowDivider} />
         <SettingsToggleRow
@@ -56,6 +80,13 @@ export default function SalesPage() {
           value={salesStrictInventory}
           onValueChange={handleStrictInventoryChange}
           colors={colors}
+          accent={Colors_NavBar.selected.sales}
+        />
+        <PrimaryButton
+          title={t("Reset to default")}
+          onPress={handleResetToDefault}
+          gradient={["#059669", "#047857"]}
+          style={styles.resetButton}
         />
       </View>
     </SettingsPageShell>
@@ -75,6 +106,9 @@ function createStyles(colors: typeof Colors_SettingsPage) {
     rowDivider: {
       height: BorderWidth.thin,
       backgroundColor: colors.border,
+    },
+    resetButton: {
+      marginTop: Spacing.sm,
     },
   };
 }
