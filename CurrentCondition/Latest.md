@@ -1,7 +1,7 @@
 # Current Condition
 
 **Project:** e-HishabSathi Mobile  
-**Assessment date:** 2026-11-18  
+**Assessment date:** 2026-11-19  
 **Release level:** `0.0.1-alpha.1`
 
 ## Overall status
@@ -16,7 +16,7 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 - Root layout wires React Query, SQLite, theme handling, and store hydration.
 - All screen route files are thin re-exports into feature screens; layouts and `+not-found.tsx` own code by design.
 - Navigation includes Sales, Purchases, Udharo, Dashboard, Settings, Inventory, Tax, Account, login, onboarding, and business type screens.
-- Shared UI components, page-specific design tokens, dark-mode color mapping, formatting utilities, validation schemas, and i18n helpers are present. Every authenticated screen uses the shared `AppHeader` with a translucent glass bar and title pill tinted by that page's accent; Sales draws the header behind the status bar. The floating AI button uses the shared green as a translucent glass fill.
+- Shared UI components, page-specific design tokens, dark-mode color mapping, formatting utilities, validation schemas, and i18n helpers are present. Every authenticated screen uses the shared `AppHeader` as an absolute glass overlay: the bar and title pill are tinted by that page's accent, the glass runs behind the status bar, and page content scrolls underneath it. The floating AI button uses the shared green as a translucent glass fill.
 
 ### User-facing features
 
@@ -25,7 +25,7 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 - Sales supports multi-item batch entry, cash/udharo payment selection, customer capture, optional details, color selection, web voice input, recent entries, and summaries. Sales decrement stock, link to inventory, enqueue sync records, and create an Udharo credit entry plus ledger record when paid on credit.
 - Purchases supports validated entry creation, inventory suggestions, web voice input, recent entries, and summaries. Purchases increase stock, update cost price, and enqueue sync records.
 - Udharo supports validated credit entry creation, customer phone/due-date details, status display, recent entries, and summaries. Udharo writes to the local customer/ledger tables and never enters the sync queue.
-- Dashboard reads local data and displays period-based statistics, income bars, monthly trend data, and stock/low-stock metrics. A local rule-based AI assistant bottom sheet opens from a floating AI button on Sales, Buy, Udharo, and Dashboard.
+- Dashboard reads local data and displays period-based statistics, income bars, monthly trend data, and stock/low-stock metrics. A local rule-based AI assistant opens from a floating AI button on Sales, Buy, Udharo, and Dashboard as a custom Reanimated + Gesture Handler sheet (96% of window height, dismissed by swipe, backdrop, or close button).
 - Inventory has a route and feature screen with paged product listing, product creation, manual stock adjustment, and product/stock summaries.
 - Tax/VAT has a month selector and calculates output VAT, input VAT, and net payable from local sales and purchase data.
 - Settings includes appearance (System/Dark/Light), language controls, inventory/tax links, and app settings persistence; the business profile card opens the Account page.
@@ -44,8 +44,9 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 
 ### Verification
 
-- `npm run lint` passes on 2026-11-18.
-- `npx tsc --noEmit` passes on 2026-11-18.
+- `npm run lint` passes on 2026-11-19.
+- `npx tsc --noEmit` passes on 2026-11-19.
+- `npx expo export --platform web` passes on 2026-11-19.
 - The repository currently contains no automated test files, test script, or CI workflows.
 
 ## Remaining work
@@ -75,7 +76,7 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 
 ### Documentation
 
-- Root `README.md`, `AGENTS.md`, `src/app/README.md`, `src/config/README.md`, and the shared/component READMEs were refreshed on 2026-11-18.
+- Root `README.md`, `AGENTS.md`, `src/app/README.md`, `src/config/README.md`, and the shared/component READMEs were refreshed on 2026-11-19.
 - Keep the active roadmap in this file; `doc/todo_JULY22.md` is retained as historical context only.
 - The architecture guide is high-level; treat current repositories and config as the source of truth when details disagree.
 

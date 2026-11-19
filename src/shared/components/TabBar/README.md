@@ -20,10 +20,14 @@ Use it from the tabs layout:
 import { Tabs } from "expo-router";
 import { CustomTabBar } from "@/shared/components/TabBar/CustomTabBar";
 
+export const unstable_settings = {
+  // Expo Router 58 initial-tab API (replaces `initialRouteName`).
+  anchor: "04-dashboard",
+};
+
 export default function TabsLayout() {
   return (
     <Tabs
-      initialRouteName="04-dashboard"
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}>
       <Tabs.Screen name="01-sales" options={{ title: "Sales" }} />
@@ -38,6 +42,7 @@ export default function TabsLayout() {
 
 ## Notes
 
+- Expo Router 58 passes `{ state, descriptors, emitter, navigateToTab }` to a custom `tabBar`; the old `navigation` prop is gone. Emit `tabPress` through `emitter` and switch tabs with `navigateToTab(route.key)`.
 - Keep route names in sync with `ROUTE_COLOR_MAP`, `ROUTE_SOFT_MAP`, `ROUTE_ICON_MAP`, and `ROUTE_ICON_ACTIVE_MAP` inside `CustomTabBar.tsx`.
 - If you add a new tab, update those maps and add a matching `Tabs.Screen` entry.
 - The active tab pills use translucent route tints so they read correctly on top of the glass surface.

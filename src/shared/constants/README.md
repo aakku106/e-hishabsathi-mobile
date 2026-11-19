@@ -8,7 +8,7 @@ This project uses page-specific style constants plus a light/dark/system mode co
 - `src/shared/constants/typography.ts` for font families, font sizes, weights, and page typography presets.
 - `src/shared/constants/spacing.ts` for spacing scale and layout sizes.
 - `src/shared/constants/radius.ts` for border radius and border widths.
-- `src/shared/constants/shadows.ts` for `boxShadow` helpers (`shadow*` props are deprecated in RN 0.86).
+- `src/shared/constants/shadows.ts` for `boxShadow` helpers (`shadow*` props are deprecated in RN 0.88).
 - `src/shared/constants/animation.ts` for the `USE_NATIVE_DRIVER` flag (false on web, where there is no native animated module).
 - `src/shared/constants/routes.ts` for route names.
 - `src/shared/constants/businessTypes.ts` for business type values.

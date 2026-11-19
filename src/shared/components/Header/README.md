@@ -26,20 +26,50 @@ The floating AI button is separate: it always uses the shared `getAccentColor(is
 
 When `onBack` is provided the left button becomes a back arrow; otherwise it renders the hamburger menu.
 
-Tab screen:
+### Standard screen layout
+
+Every authenticated screen renders the header as an absolute overlay so page content scrolls under the glass:
 
 ```tsx
+import { useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppHeader } from "@/shared/components/Header/AppHeader";
 import { Colors_SalesPage } from "@/shared/constants/colors";
+import { Spacing } from "@/shared/constants/spacing";
+
+// inside the screen component
+const [headerHeight, setHeaderHeight] = useState(0);
 
 <SafeAreaView style={{ flex: 1 }} edges={["bottom", "left", "right"]}>
-  <AppHeader title="Sales" colors={Colors_SalesPage} edgeToEdge />
-  {/* ... */}
+  <View
+    style={styles.headerOverlay}
+    onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
+    <AppHeader title="Sales" colors={Colors_SalesPage} edgeToEdge />
+  </View>
+
+  <ScrollView
+    contentContainerStyle={{ paddingTop: headerHeight + Spacing.lg }}>
+    {/* content scrolls under the glass header */}
+  </ScrollView>
 </SafeAreaView>
+
+const styles = StyleSheet.create({
+  headerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    pointerEvents: "box-none",
+  },
+});
 ```
 
-`edgeToEdge` adds the top safe-area inset to the header's padding, so the glass runs behind the status bar. The surrounding screen must then skip its own top inset (`edges` without `"top"`). Sales is the only screen using it so far; every other screen keeps the default inset behavior.
+- `edgeToEdge` adds the top safe-area inset to the header padding, so the glass runs behind the status bar. The screen must omit `"top"` from its safe-area `edges`.
+- Measure the overlay with `onLayout` and offset the scroll content by `headerHeight`; otherwise the first content row sits under the header.
+- `getAppHeaderHeight(insets.top)` (exported from `AppHeader.tsx`) returns the expected height. Sales seeds its state with it to avoid a first-frame jump; the other screens start at `0` and settle after the first layout pass.
+- Screens whose form component owns the `ScrollView` pass the offset down instead, e.g. `UdharoEntryForm contentPaddingTop={headerHeight + Spacing.lg}`.
 
 Dashboard uses its green accent instead of the page's indigo `primary`:
 
@@ -48,6 +78,7 @@ Dashboard uses its green accent instead of the page's indigo `primary`:
   title="Dashboard"
   colors={colors}
   accentColor={colors.greenPrimary}
+  edgeToEdge
 />
 ```
 
@@ -57,6 +88,7 @@ Stack screen:
 <AppHeader
   title="Inventory"
   colors={colors}
+  edgeToEdge
   onBack={() => {
     if (router.canGoBack()) router.back();
     else router.replace("/(tabs)/05-settings");
@@ -97,5 +129,6 @@ import { PageHeader } from "@/shared/components/Header/PageHeader";
 - Both components are also default exports.
 - `PageHeader`'s back button only renders when `onBack` is provided.
 - `AppHeader`'s glass tint and bottom border are derived from the resolved page accent (`accentColor ?? colors.primary`) with `withAlpha()`, so the header always matches that page's identity.
-- `edgeToEdge` is opt-in per screen; only enable it when the screen's safe-area wrapper omits the top edge.
+- Every authenticated screen uses the overlay pattern above; never place `AppHeader` inside a `ScrollView` — it would scroll away with the content.
+- `getAppHeaderHeight(topInset)` mirrors the header's paddings and row height; update it if the header layout changes.
 - `GlassSurface` is the shared glass primitive; see [Glass/README.md](../Glass/README.md).

@@ -52,15 +52,19 @@ app/
 The root layout wraps the app in global providers, hydrates stores once SQLite is ready, then renders the `Stack`:
 
 ```tsx
-<QueryProvider>
-  <SQLiteProvider>
-    <ThemeProvider>
-      <StoreHydration />
-      <Stack screenOptions={{ headerShown: false }} />
-    </ThemeProvider>
-  </SQLiteProvider>
-</QueryProvider>
+<GestureHandlerRootView style={{ flex: 1 }}>
+  <QueryProvider>
+    <SQLiteProvider>
+      <ThemeProvider>
+        <StoreHydration />
+        <Stack screenOptions={{ headerShown: false }} />
+      </ThemeProvider>
+    </SQLiteProvider>
+  </QueryProvider>
+</GestureHandlerRootView>
 ```
+
+`GestureHandlerRootView` is required by react-native-gesture-handler v3 (used by the AI bottom sheet).
 
 If the app needs a new global provider (see [../providers/](../providers/)), add it here — never inside an individual route.
 
@@ -85,8 +89,12 @@ The auth layout redirects authenticated users with a business profile to the das
 The main tab-bar app, entered after auth. `_layout.tsx` guards authentication and renders `Tabs` with the shared [`CustomTabBar`](../shared/components/TabBar/README.md) as the `tabBar` prop:
 
 ```tsx
+export const unstable_settings = {
+  // Expo Router 58 initial-tab API (replaces `initialRouteName`).
+  anchor: "04-dashboard",
+};
+
 <Tabs
-  initialRouteName="04-dashboard"
   tabBar={(props) => <CustomTabBar {...props} />}
   screenOptions={{ headerShown: false }}>
   <Tabs.Screen name="01-sales" options={{ title: "Sales" }} />
