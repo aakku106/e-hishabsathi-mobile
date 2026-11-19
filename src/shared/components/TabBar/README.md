@@ -57,14 +57,7 @@ export default function TabsLayout() {
           {children}
         </SwipeableTabScreen>
       )}
-      screenOptions={{
-        headerShown: false,
-        animation: "shift",
-        transitionSpec: {
-          animation: "timing",
-          config: { duration: 220, easing: Easing.out(Easing.cubic) },
-        },
-      }}>
+      screenOptions={{ headerShown: false, animation: "none" }}>
       <Tabs.Screen name="01-sales" options={{ title: "Sales" }} />
       <Tabs.Screen name="02-purchases" options={{ title: "Buy" }} />
       <Tabs.Screen name="03-udharo" options={{ title: "Udharo" }} />
@@ -79,7 +72,7 @@ export default function TabsLayout() {
 
 - Expo Router 58 passes `{ state, descriptors, emitter, navigateToTab }` to a custom `tabBar`; the old `navigation` prop is gone. Emit `tabPress` through `emitter` and switch tabs with `navigateToTab(route.key)`.
 - `screenLayout` is supported by the vendored bottom-tabs navigator; it wraps each screen inside its scene, so the tab bar itself is not part of the swipe area.
-- `animation: "shift"` slides the scenes sideways on every tab change, including swipes. The tabs layout overrides the 150ms default with a 220ms `Easing.out(Easing.cubic)` timing so the slide is clearly visible.
+- Tab scenes use `animation: "none"`, so a tab change swaps the page instantly and the only motion is the selection pill sliding. Don't re-enable `shift`/`fade`: those animate the whole scene, which fades the translucent `AppHeader` and makes it look transparent mid-switch.
 - The selection pill is a single absolute `Animated.View` inside the `tabsRow` wrapper. It is measured once with `onLayout` (tabs are `flex: 1`, so `itemWidth = rowWidth / routeCount`), placed without animation on first layout, then moved with `withSpring` and re-tinted with `withTiming`. `pointerEvents: "none"` lives in the pill's style for react-native-web.
 - Keep route names in sync with `ROUTE_COLOR_MAP`, `ROUTE_SOFT_MAP`, `ROUTE_ICON_MAP`, and `ROUTE_ICON_ACTIVE_MAP` inside `CustomTabBar.tsx`.
 - If you add a new tab, update those maps, `TAB_ROUTE_ORDER`, and add a matching `Tabs.Screen` entry.

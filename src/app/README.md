@@ -103,7 +103,7 @@ export const unstable_settings = {
       {children}
     </SwipeableTabScreen>
   )}
-  screenOptions={{ headerShown: false, animation: "shift" }}>
+  screenOptions={{ headerShown: false, animation: "none" }}>
   <Tabs.Screen name="01-sales" options={{ title: "Sales" }} />
   <Tabs.Screen name="02-purchases" options={{ title: "Buy" }} />
   <Tabs.Screen name="03-udharo" options={{ title: "Udharo" }} />
