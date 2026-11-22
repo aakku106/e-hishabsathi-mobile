@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -27,6 +28,7 @@ import { formatCurrency } from "@/shared/utils/formatter";
 import {
   hapticError,
   hapticImpact,
+  hapticSelection,
   hapticSuccess,
 } from "@/shared/utils/haptics";
 
@@ -35,7 +37,9 @@ import {
   useCreateProduct,
   usePagedProducts,
   useProductSummary,
+  useUpdateProduct,
 } from "./hooks/useInventory";
+import type { Product } from "./types";
 import { CreateProductSchema } from "./validation";
 
 const LOW_STOCK_THRESHOLD = 10;
@@ -53,6 +57,7 @@ export default function InventoryScreen() {
     [isDark],
   );
   const [showForm, setShowForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
@@ -78,11 +83,23 @@ export default function InventoryScreen() {
   } = useProductSummary();
   const dataError = productsError ?? summaryError;
   const createProduct = useCreateProduct();
+  const updateProduct = useUpdateProduct();
   const adjustStock = useAdjustProductStock();
 
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
-  const handleAddProduct = () => {
+  const resetForm = () => {
+    setEditingProduct(null);
+    setName("");
+    setCategory("");
+    setPrice("");
+    setCostPrice("");
+    setStock("");
+    setErrors({});
+    setShowForm(false);
+  };
+
+  const handleSubmitProduct = () => {
     const parsed = CreateProductSchema.safeParse({
       name,
       category: category || null,
@@ -103,18 +120,51 @@ export default function InventoryScreen() {
     }
 
     setErrors({});
+    const onSuccess = () => {
+      hapticSuccess();
+      resetForm();
+    };
+
+    if (editingProduct) {
+      updateProduct.mutate(
+        { id: editingProduct.id, input: parsed.data },
+        { onSuccess, onError: hapticError },
+      );
+      return;
+    }
+
     createProduct.mutate(parsed.data, {
-      onSuccess: () => {
-        hapticSuccess();
-        setName("");
-        setCategory("");
-        setPrice("");
-        setCostPrice("");
-        setStock("");
-        setShowForm(false);
-      },
+      onSuccess,
       onError: hapticError,
     });
+  };
+
+  /** Row tap (outside the +/- controls) asks before opening the edit form. */
+  const handleEditProductRequest = (product: Product) => {
+    hapticSelection();
+    Alert.alert(
+      "Edit product",
+      `Do you want to edit "${product.name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Edit",
+          onPress: () => {
+            hapticSuccess();
+            setEditingProduct(product);
+            setName(product.name);
+            setCategory(product.category ?? "");
+            setPrice(String(product.price));
+            setCostPrice(
+              product.costPrice !== null ? String(product.costPrice) : "",
+            );
+            setStock(String(product.stockQuantity));
+            setErrors({});
+            setShowForm(true);
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -140,7 +190,11 @@ export default function InventoryScreen() {
         renderItem={({ item: product, index }) => {
           const lowStock = product.stockQuantity < LOW_STOCK_THRESHOLD;
           return (
-            <View
+            <TouchableOpacity
+              activeOpacity={0.9}
+              accessibilityRole="button"
+              accessibilityLabel={`Edit ${product.name}`}
+              onPress={() => handleEditProductRequest(product)}
               style={[
                 styles.productRow,
                 index === 0 && styles.productRowFirst,
@@ -209,7 +263,7 @@ export default function InventoryScreen() {
                   />
                 </TouchableOpacity>
               </View>
-            </View>
+            </TouchableOpacity>
           );
         }}
         ItemSeparatorComponent={() => (
@@ -297,7 +351,13 @@ export default function InventoryScreen() {
             <TouchableOpacity
               style={styles.toggleButton}
               activeOpacity={0.85}
-              onPress={() => setShowForm((v) => !v)}>
+              onPress={() => {
+                if (showForm) {
+                  resetForm();
+                } else {
+                  setShowForm(true);
+                }
+              }}>
               <View style={styles.toggleIcon}>
                 <MaterialCommunityIcons
                   name={showForm ? "minus" : "plus"}
@@ -306,7 +366,11 @@ export default function InventoryScreen() {
                 />
               </View>
               <Text style={styles.toggleButtonText}>
-                {showForm ? "Hide add product" : "Add product"}
+                {showForm ?
+                  editingProduct ?
+                    "Hide edit product"
+                  : "Hide add product"
+                : "Add product"}
               </Text>
               <MaterialCommunityIcons
                 name={showForm ? "chevron-up" : "chevron-down"}
@@ -391,7 +455,7 @@ export default function InventoryScreen() {
 
                 <View style={styles.field}>
                   <LabeledInput
-                    label="Initial Stock"
+                    label={editingProduct ? "Stock" : "Initial Stock"}
                     placeholder="0"
                     keyboardType="number-pad"
                     value={stock}
@@ -412,14 +476,20 @@ export default function InventoryScreen() {
                 </View>
 
                 <PrimaryButton
-                  title="Add product"
-                  loading={createProduct.isPending}
-                  onPress={handleAddProduct}
+                  title={editingProduct ? "Save changes" : "Add product"}
+                  loading={
+                    editingProduct ?
+                      updateProduct.isPending
+                    : createProduct.isPending
+                  }
+                  onPress={handleSubmitProduct}
                   gradient={[colors.primary, colors.primaryDeep]}
                 />
-                {createProduct.isError && (
+                {(editingProduct ? updateProduct : createProduct).isError && (
                   <Text style={styles.errorText}>
-                    Could not add the product. Please try again.
+                    {editingProduct ?
+                      "Could not update the product. Please try again."
+                    : "Could not add the product. Please try again."}
                   </Text>
                 )}
               </View>
