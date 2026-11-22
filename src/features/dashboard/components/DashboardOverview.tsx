@@ -14,7 +14,7 @@ import Svg, { Circle, Line, Polygon, Polyline } from "react-native-svg";
 
 import { USE_NATIVE_DRIVER } from "@/shared/constants/animation";
 import { APP } from "@/config/app";
-import { Colors_DashboardPage, Colors_NavBar, getThemedColors } from "@/shared/constants/colors";
+import { Colors_DashboardPage, getThemedColors } from "@/shared/constants/colors";
 import { useTheme } from "@/providers/ThemeProvider";
 import { Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
@@ -184,12 +184,7 @@ export default function DashboardOverview() {
   return (
     <View style={styles.screen}>
       <View style={styles.headerOverlay} onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}>
-        <AppHeader
-          title={t("Dashboard")}
-          colors={colors}
-          accentColor={Colors_NavBar.selected.dashBoard}
-          edgeToEdge
-        />
+        <AppHeader title={t("Dashboard")} colors={colors} accentColor={colors.greenPrimary} edgeToEdge />
       </View>
 
       <ScrollView

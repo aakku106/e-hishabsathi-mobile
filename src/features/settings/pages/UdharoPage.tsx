@@ -58,7 +58,9 @@ export default function UdharoPage() {
   };
 
   return (
-    <SettingsPageShell title={t("Udharo")}>
+    <SettingsPageShell
+      title={t("Udharo")}
+      accent={Colors_NavBar.selected.udharo}>
       <View style={styles.card}>
         <SettingsToggleRow
           label={t("AI assistant")}

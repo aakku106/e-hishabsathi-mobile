@@ -73,7 +73,9 @@ export default function SalesPage() {
   };
 
   return (
-    <SettingsPageShell title={t("Sales")}>
+    <SettingsPageShell
+      title={t("Sales")}
+      accent={Colors_NavBar.selected.sales}>
       <View style={styles.card}>
         <SettingsToggleRow
           label={t("AI assistant")}

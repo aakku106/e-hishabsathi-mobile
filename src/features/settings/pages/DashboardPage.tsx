@@ -50,7 +50,9 @@ export default function DashboardPage() {
   };
 
   return (
-    <SettingsPageShell title={t("Dashboard")}>
+    <SettingsPageShell
+      title={t("Dashboard")}
+      accent={Colors_NavBar.selected.dashBoard}>
       <View style={styles.card}>
         <SettingsToggleRow
           label={t("AI assistant")}

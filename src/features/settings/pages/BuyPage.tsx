@@ -58,7 +58,9 @@ export default function BuyPage() {
   };
 
   return (
-    <SettingsPageShell title={t("Buy")}>
+    <SettingsPageShell
+      title={t("Buy")}
+      accent={Colors_NavBar.selected.buy}>
       <View style={styles.card}>
         <SettingsToggleRow
           label={t("AI assistant")}
