@@ -32,12 +32,18 @@ export type PageSettings = {
   salesStrictInventory: boolean;
   aiAssistant: AiAssistantSettings;
   recent: RecentEntriesSettings;
+  /**
+   * Horizontal swipe between tab pages. The default is tier-dependent
+   * (on for high/mid, off for low) and is resolved during hydration.
+   */
+  tabSwipeEnabled: boolean;
 };
 
 export const DEFAULT_PAGE_SETTINGS: PageSettings = {
   salesStrictInventory: true,
   aiAssistant: DEFAULT_AI_ASSISTANT,
   recent: DEFAULT_RECENT_ENTRIES,
+  tabSwipeEnabled: true,
 };
 
 type SettingsState = PageSettings & {
@@ -51,6 +57,7 @@ type SettingsState = PageSettings & {
   setSalesStrictInventory: (enabled: boolean) => void;
   setAiAssistant: (page: PageKey, enabled: boolean) => void;
   setRecent: (page: "sales" | "buy" | "udharo", enabled: boolean) => void;
+  setTabSwipeEnabled: (enabled: boolean) => void;
   hydrate: (
     mode: ThemeMode,
     language?: "en" | "np",
@@ -77,6 +84,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     set((state) => ({
       recent: { ...state.recent, [page]: enabled },
     })),
+  setTabSwipeEnabled: (tabSwipeEnabled) => set({ tabSwipeEnabled }),
   hydrate: (themeMode, language = "en", pageSettings) =>
     set({
       themeMode,
@@ -86,6 +94,9 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         DEFAULT_PAGE_SETTINGS.salesStrictInventory,
       aiAssistant: pageSettings?.aiAssistant ?? DEFAULT_AI_ASSISTANT,
       recent: pageSettings?.recent ?? DEFAULT_RECENT_ENTRIES,
+      tabSwipeEnabled:
+        pageSettings?.tabSwipeEnabled ??
+        DEFAULT_PAGE_SETTINGS.tabSwipeEnabled,
       isHydrated: true,
     }),
 }));

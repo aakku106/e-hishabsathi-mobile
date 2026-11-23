@@ -30,8 +30,8 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 - Settings has a new `Pages` section for Sales, Buy, Udharo, and Dashboard: it is now a link list to per-page sub-routes (`/settings/pages/<page>`), and each per-page screen owns that page's toggles (floating AI button; Sales also the default-on inventory-only rule), offers a `Reset to default` button, and uses the tab-bar per-page accent for its icon/toggles. These persist via `app_settings` and the settings store. The Settings header hides the notifications icon.
 - Inventory has a route and feature screen with paged product listing, product creation, manual stock adjustment, and product/stock summaries.
 - Tax/VAT has a month selector and calculates output VAT, input VAT, and net payable from local sales and purchase data.
-- Settings includes appearance (System/Dark/Light), language controls, inventory/tax links, and app settings persistence; the business profile card opens the Account page.
-- The bottom tab bar is a floating translucent surface with a three-tier visual budget (`useDeviceTier`): native Liquid Glass on iOS 26+, native blur on iOS 17–25, and a solid translucent fallback on older iOS, Reduce Transparency, and Android (where `expo-blur` would need a `BlurTargetView` around screen content). Tab screens can be paged with horizontal swipes (`SwipeableTabScreen`); pages swap instantly and a single selection pill springs between tabs instead of each tab toggling its own background.
+- Settings includes appearance (System/Dark/Light), language controls, inventory/tax links, and app settings persistence; the business profile card opens the Account page. A `Performance` section shows the device tier as a colored `Tier 1/2/3` badge with a short reason line and owns the horizontal-swipe toggle, and a `Device` section lists the tier inputs (platform/OS, model, reported RAM, plus iOS-only Liquid Glass availability and Reduce Transparency state).
+- The bottom tab bar is a floating translucent surface with a three-tier visual budget (`useDeviceTier`): native Liquid Glass on iOS 26+, native blur on iOS 17–25, and a solid translucent fallback on older iOS, Reduce Transparency, and Android (where `expo-blur` would need a `BlurTargetView` around screen content). Tab screens can be paged with horizontal swipes (`SwipeableTabScreen`); the gesture is on by default for Tier 1/2 and off for Tier 3, can be toggled from Settings, and a stored choice always wins. Pages swap instantly and a single selection pill springs between tabs instead of each tab toggling its own background.
 - List-heavy screens are memoized for older hardware: inventory renders a memoized `ProductRow` fed by stable `useCallback` handlers (and `usePagedProducts` memoizes the flattened product array), sales/purchases render memoized entry rows, and card shadows scale through `tierBoxShadow()` so the low tier rasterizes smaller, fainter shadows.
 - Haptic feedback is centralized in `src/shared/utils/haptics.ts`: success after writes, error on validation failures/failed writes, selection ticks for tab and preference changes, and a strong patterned vibration for logout and delete-all-data confirmations.
 - Account includes a confirmed local-data deletion flow and logout.
@@ -49,9 +49,10 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 ### Verification
 
 - `bun install --frozen-lockfile` passes on 2026-11-19.
-- `bun run lint` passes on 2026-11-19.
-- `bunx tsc --noEmit` passes on 2026-11-19.
-- `bunx expo export --platform web` passes on 2026-11-19.
+- `bun run lint` passes on 2026-11-23.
+- `bunx tsc --noEmit` passes on 2026-11-23.
+- `bunx expo export --platform web` passes on 2026-11-23.
+- Real-device profiling of the three tiers (especially a low-end Android) is still pending.
 - The repository currently contains no automated test files, test script, or CI workflows.
 
 ## Remaining work

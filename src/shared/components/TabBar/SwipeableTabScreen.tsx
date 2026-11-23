@@ -30,6 +30,11 @@ type SwipeableTabScreenProps = {
   routeName: string;
   /** Switches to the adjacent tab; receives a route name from the tab order. */
   onNavigate: (routeName: TabRouteName) => void;
+  /**
+   * When false the gesture is not attached at all (the Settings toggle turns
+   * this off by default on low-tier devices). Defaults to true.
+   */
+  enabled?: boolean;
 };
 
 /**
@@ -44,6 +49,7 @@ type SwipeableTabScreenProps = {
 export function SwipeableTabScreen({
   routeName,
   onNavigate,
+  enabled = true,
   children,
 }: PropsWithChildren<SwipeableTabScreenProps>) {
   const index = TAB_ROUTE_ORDER.indexOf(routeName as TabRouteName);
@@ -76,7 +82,7 @@ export function SwipeableTabScreen({
       }
     });
 
-  if (index < 0) {
+  if (!enabled || index < 0) {
     return <>{children}</>;
   }
 

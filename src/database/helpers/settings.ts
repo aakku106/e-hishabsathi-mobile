@@ -49,4 +49,6 @@ export const SETTING_KEYS = {
     buy: "settings.recent.buy",
     udharo: "settings.recent.udharo",
   },
+  /** Horizontal swipe between tab pages. */
+  tabSwipe: "settings.tabSwipe",
 } as const;

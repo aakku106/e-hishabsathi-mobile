@@ -2,6 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,7 +15,7 @@ import { useMemo, useState } from "react";
 
 import { APP } from "@/config/app";
 import { setSetting, SETTING_KEYS } from "@/database/helpers/settings";
-import { persistThemeMode } from "@/lib/hydration";
+import { persistTabSwipe, persistThemeMode } from "@/lib/hydration";
 import { useBusiness } from "@/features/business/hooks/useBusiness";
 import { useTheme, type ThemeMode } from "@/providers/ThemeProvider";
 import { useSettingsStore } from "@/store/settings.store";
@@ -24,8 +25,14 @@ import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { tierBoxShadow, withAlpha } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
-import { useDeviceTier, type DeviceTier } from "@/shared/utils/deviceTier";
+import {
+  getDeviceTierInfo,
+  useDeviceTier,
+  type DeviceTier,
+} from "@/shared/utils/deviceTier";
 import { hapticSelection } from "@/shared/utils/haptics";
+
+import { SettingsToggleRow } from "./components/SettingsToggleRow";
 
 const BUSINESS_TYPE_LABELS: Record<string, string> = {
   retail: "Retail",
@@ -71,6 +78,24 @@ const COPY = {
     version: "Version",
     english: "English",
     nepali: "नेपाली",
+    performance: "Performance",
+    performanceTier: "Performance tier",
+    swipePages: "Swipe between pages",
+    swipePagesHint: "Swipe left or right to switch tabs",
+    device: "Device",
+    platform: "Platform",
+    model: "Model",
+    memory: "Memory",
+    liquidGlass: "Liquid Glass",
+    reduceTransparency: "Reduce transparency",
+    available: "Available",
+    unavailable: "Not available",
+    enabled: "On",
+    disabled: "Off",
+    unknown: "Unknown",
+    tierCuttingEdge: "Cutting edge",
+    tierMid: "Mid-range",
+    tierLow: "Low-end",
   },
   np: {
     settings: "सेटिङहरू",
@@ -107,6 +132,24 @@ const COPY = {
     version: "संस्करण",
     english: "English",
     nepali: "नेपाली",
+    performance: "प्रदर्शन",
+    performanceTier: "प्रदर्शन स्तर",
+    swipePages: "पृष्ठहरू बीच स्वाइप",
+    swipePagesHint: "ट्याब परिवर्तन गर्न बायाँ वा दायाँ स्वाइप गर्नुहोस्",
+    device: "यन्त्र",
+    platform: "प्लेटफर्म",
+    model: "मोडेल",
+    memory: "मेमोरी",
+    liquidGlass: "Liquid Glass",
+    reduceTransparency: "पारदर्शिता घटाउनु",
+    available: "उपलब्ध",
+    unavailable: "उपलब्ध छैन",
+    enabled: "सक्रिय",
+    disabled: "निष्क्रिय",
+    unknown: "अज्ञात",
+    tierCuttingEdge: "उच्च स्तर",
+    tierMid: "मध्यम स्तर",
+    tierLow: "न्यून स्तर",
   },
 } as const;
 
@@ -118,6 +161,13 @@ const THEME_OPTIONS: {
   { mode: "dark", icon: "weather-night" },
   { mode: "light", icon: "white-balance-sunny" },
 ];
+
+/** Formats reported RAM bytes as `"5.7 GB"`; `null` when unavailable. */
+function formatMemory(bytes: number | null): string | null {
+  if (!bytes || bytes <= 0) return null;
+  const gigabytes = bytes / 1024 ** 3;
+  return `${gigabytes.toFixed(1).replace(/\.0$/, "")} GB`;
+}
 
 type SettingsLinkProps = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
@@ -183,8 +233,15 @@ function SettingsLink({
 export default function SettingsScreen() {
   const router = useRouter();
   const { data: business } = useBusiness();
-  const { themeMode, setThemeMode, currency, language, setLanguage } =
-    useSettingsStore();
+  const {
+    themeMode,
+    setThemeMode,
+    currency,
+    language,
+    setLanguage,
+    tabSwipeEnabled,
+    setTabSwipeEnabled,
+  } = useSettingsStore();
   const copy = COPY[language];
   const { isDark } = useTheme();
   const tier = useDeviceTier();
@@ -194,6 +251,20 @@ export default function SettingsScreen() {
   );
   const styles = useMemo(() => createStyles(colors, tier), [colors, tier]);
   const [headerHeight, setHeaderHeight] = useState(0);
+
+  const deviceInfo = getDeviceTierInfo();
+  const tierName =
+    tier === "high" ? copy.tierCuttingEdge
+    : tier === "mid" ? copy.tierMid
+    : copy.tierLow;
+  const tierBadgeLabel =
+    tier === "high" ? "Tier 1"
+    : tier === "mid" ? "Tier 2"
+    : "Tier 3";
+  const tierColor =
+    tier === "high" ? colors.success
+    : tier === "mid" ? colors.warning
+    : colors.danger;
 
   const handleThemeChange = (mode: ThemeMode) => {
     hapticSelection();
@@ -206,6 +277,12 @@ export default function SettingsScreen() {
     const nextLanguage = language === "en" ? "np" : "en";
     setLanguage(nextLanguage);
     void setSetting(SETTING_KEYS.language, nextLanguage);
+  };
+
+  const handleTabSwipeChange = (enabled: boolean) => {
+    hapticSelection();
+    setTabSwipeEnabled(enabled);
+    void persistTabSwipe(enabled);
   };
 
   return (
@@ -374,6 +451,87 @@ export default function SettingsScreen() {
                 <Text style={styles.currencyBadgeText}>{currency}</Text>
               </View>
             </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{copy.performance}</Text>
+          <View style={styles.card}>
+            <View style={styles.settingRow}>
+              <View style={styles.settingTextWrap}>
+                <Text style={styles.settingLabel}>
+                  {copy.performanceTier}
+                </Text>
+                <Text style={styles.settingHint}>
+                  {tierName} · {deviceInfo.reason}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.tierBadge,
+                  { backgroundColor: withAlpha(tierColor, 0.14) },
+                ]}>
+                <Text style={[styles.tierBadgeText, { color: tierColor }]}>
+                  {tierBadgeLabel}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.rowDivider} />
+
+            <SettingsToggleRow
+              label={copy.swipePages}
+              hint={copy.swipePagesHint}
+              value={tabSwipeEnabled}
+              onValueChange={handleTabSwipeChange}
+              colors={colors}
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{copy.device}</Text>
+          <View style={styles.card}>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>{copy.platform}</Text>
+              <Text style={styles.detailValue}>{deviceInfo.os}</Text>
+            </View>
+            <View style={styles.rowDivider} />
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>{copy.model}</Text>
+              <Text style={styles.detailValue}>{deviceInfo.model}</Text>
+            </View>
+            <View style={styles.rowDivider} />
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>{copy.memory}</Text>
+              <Text style={styles.detailValue}>
+                {formatMemory(deviceInfo.totalMemory) ?? copy.unknown}
+              </Text>
+            </View>
+            {Platform.OS === "ios" && (
+              <>
+                <View style={styles.rowDivider} />
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>{copy.liquidGlass}</Text>
+                  <Text style={styles.detailValue}>
+                    {deviceInfo.liquidGlass ?
+                      copy.available
+                    : copy.unavailable}
+                  </Text>
+                </View>
+                <View style={styles.rowDivider} />
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>
+                    {copy.reduceTransparency}
+                  </Text>
+                  <Text style={styles.detailValue}>
+                    {deviceInfo.reduceTransparency ?
+                      copy.enabled
+                    : copy.disabled}
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
         </View>
 
@@ -673,6 +831,15 @@ function createStyles(colors: typeof Colors_SettingsPage, tier: DeviceTier) {
   },
   currencyBadgeText: {
     color: colors.primaryDeep,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+  },
+  tierBadge: {
+    borderRadius: Radius.pill,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 4,
+  },
+  tierBadgeText: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.bold,
   },

@@ -13,6 +13,7 @@ import {
   type RecentEntriesSettings,
 } from "@/store/settings.store";
 import type { ThemeMode } from "@/providers/ThemeProvider";
+import { resolveDeviceTierForDefaults } from "@/shared/utils/deviceTier";
 
 /** Stored booleans are `"true"` / `"false"`; anything else falls back. */
 function parseFlag(value: string | null, fallback: boolean): boolean {
@@ -34,6 +35,8 @@ export async function hydrateStores(): Promise<void> {
     recentSales,
     recentBuy,
     recentUdharo,
+    tabSwipe,
+    tier,
   ] = await Promise.all([
     getSetting(SETTING_KEYS.authPan),
     getSetting(SETTING_KEYS.authUsername),
@@ -47,6 +50,8 @@ export async function hydrateStores(): Promise<void> {
     getSetting(SETTING_KEYS.recent.sales),
     getSetting(SETTING_KEYS.recent.buy),
     getSetting(SETTING_KEYS.recent.udharo),
+    getSetting(SETTING_KEYS.tabSwipe),
+    resolveDeviceTierForDefaults(),
   ]);
 
   useAuthStore.getState().hydrate({ pan, username });
@@ -73,6 +78,7 @@ export async function hydrateStores(): Promise<void> {
       salesStrictInventory: parseFlag(strictInventory, true),
       aiAssistant,
       recent,
+      tabSwipeEnabled: parseFlag(tabSwipe, tier !== "low"),
     },
   );
 }
@@ -105,4 +111,8 @@ export async function persistRecent(
         ? SETTING_KEYS.recent.buy
         : SETTING_KEYS.recent.udharo;
   await setSetting(key, String(enabled));
+}
+
+export async function persistTabSwipe(enabled: boolean): Promise<void> {
+  await setSetting(SETTING_KEYS.tabSwipe, String(enabled));
 }

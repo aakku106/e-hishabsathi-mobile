@@ -1,6 +1,7 @@
 import { Redirect, Tabs } from "expo-router";
 
 import { useAuthStore } from "@/store/auth.store";
+import { useSettingsStore } from "@/store/settings.store";
 import { CustomTabBar } from "@/shared/components/TabBar/CustomTabBar";
 import { SwipeableTabScreen } from "@/shared/components/TabBar/SwipeableTabScreen";
 
@@ -12,6 +13,7 @@ export const unstable_settings = {
 export default function TabsLayout() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isHydrated = useAuthStore((state) => state.isHydrated);
+  const tabSwipeEnabled = useSettingsStore((state) => state.tabSwipeEnabled);
 
   if (isHydrated && !isAuthenticated) {
     return <Redirect href="/(auth)/login" />;
@@ -23,6 +25,7 @@ export default function TabsLayout() {
       screenLayout={({ route, navigation, children }) => (
         <SwipeableTabScreen
           routeName={route.name}
+          enabled={tabSwipeEnabled}
           onNavigate={(name) => navigation.navigate(name)}>
           {children}
         </SwipeableTabScreen>
