@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -26,6 +27,7 @@ import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useDeviceTier, type DeviceTier } from "@/shared/utils/deviceTier";
 import { formatCurrency } from "@/shared/utils/formatter";
 import {
+  hapticDestructive,
   hapticError,
   hapticImpact,
   hapticSelection,
@@ -37,6 +39,7 @@ import { LOW_STOCK_THRESHOLD } from "./constants";
 import {
   useAdjustProductStock,
   useCreateProduct,
+  useDeleteProduct,
   usePagedProducts,
   useProductSummary,
   useUpdateProduct,
@@ -93,13 +96,14 @@ export default function InventoryScreen() {
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const { mutate: adjustProductStock } = useAdjustProductStock();
+  const { mutate: deleteProductById } = useDeleteProduct();
 
   const styles = useMemo(
     () => createStyles(colors, isDark, tier),
     [colors, isDark, tier],
   );
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setEditingProduct(null);
     setName("");
     setCategory("");
@@ -108,7 +112,7 @@ export default function InventoryScreen() {
     setStock("");
     setErrors({});
     setShowForm(false);
-  };
+  }, []);
 
   const handleSubmitProduct = () => {
     const parsed = CreateProductSchema.safeParse({
@@ -176,6 +180,49 @@ export default function InventoryScreen() {
     shouldScrollToForm.current = true;
     setShowForm(true);
   }, []);
+
+  /**
+   * Destructive action from the detail sheet. Sales and purchase rows store
+   * the product name as text, so deleting a product keeps past history intact.
+   */
+  const handleDeleteProduct = useCallback(
+    (product: Product) => {
+      hapticSelection();
+      Alert.alert(
+        "Delete product",
+        `Delete "${product.name}"? Its stock will be removed. Past sales and purchases keep the name they were recorded with.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: () => {
+              hapticDestructive();
+              setIsDetailsOpen(false);
+              deleteProductById(product.id, {
+                onSuccess: () => {
+                  hapticSuccess();
+                  setDetailsProduct((current) =>
+                    current?.id === product.id ? null : current,
+                  );
+                  // The edit form may still hold the deleted product.
+                  if (editingProduct?.id === product.id) resetForm();
+                },
+                onError: () => {
+                  hapticError();
+                  Alert.alert(
+                    "Could not delete",
+                    "The product could not be deleted. Please try again.",
+                  );
+                },
+              });
+            },
+          },
+        ],
+      );
+    },
+    [deleteProductById, editingProduct, resetForm],
+  );
 
   /**
    * The form lives in the list header, so opening it from a scrolled list would
@@ -539,6 +586,7 @@ export default function InventoryScreen() {
         colors={colors}
         onDismiss={handleCloseDetails}
         onEdit={handleEditFromDetails}
+        onDelete={handleDeleteProduct}
       />
     </SafeAreaView>
   );

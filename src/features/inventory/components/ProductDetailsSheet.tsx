@@ -24,6 +24,8 @@ type ProductDetailsSheetProps = {
   colors: typeof Colors_InventoryPage;
   onDismiss: () => void;
   onEdit: (product: Product) => void;
+  /** Confirmation and the actual delete live in the screen. */
+  onDelete: (product: Product) => void;
 };
 
 type DetailRow = {
@@ -58,6 +60,7 @@ export const ProductDetailsSheet = memo(function ProductDetailsSheet({
   colors,
   onDismiss,
   onEdit,
+  onDelete,
 }: ProductDetailsSheetProps) {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const status = product ? getStockStatus(product.stockQuantity, colors) : null;
@@ -162,14 +165,32 @@ export const ProductDetailsSheet = memo(function ProductDetailsSheet({
               style={styles.editButton}
             />
 
-            <TouchableOpacity
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Close product details"
-              onPress={onDismiss}
-              style={styles.closeButton}>
-              <Text style={styles.closeText}>Close</Text>
-            </TouchableOpacity>
+            <View style={styles.footerRow}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={`Delete ${product.name}`}
+                hitSlop={8}
+                onPress={() => onDelete(product)}
+                style={styles.footerButton}>
+                <MaterialCommunityIcons
+                  name="trash-can-outline"
+                  size={18}
+                  color={colors.danger}
+                />
+                <Text style={styles.deleteText}>Delete</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Close product details"
+                hitSlop={8}
+                onPress={onDismiss}
+                style={styles.footerButton}>
+                <Text style={styles.closeText}>Close</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </RNHostView>
       )}
@@ -250,9 +271,23 @@ function createStyles(colors: typeof Colors_InventoryPage) {
     editButton: {
       marginTop: Spacing.xs,
     },
-    closeButton: {
+    footerRow: {
+      flexDirection: "row",
       alignItems: "center",
-      paddingVertical: Spacing.sm,
+      justifyContent: "center",
+      gap: Spacing.xl,
+    },
+    footerButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.xs,
+      paddingVertical: Spacing.xs,
+      paddingHorizontal: Spacing.sm,
+    },
+    deleteText: {
+      color: colors.danger,
+      fontSize: FontSize.md,
+      fontWeight: FontWeight.semibold,
     },
     closeText: {
       color: colors.textMuted,
