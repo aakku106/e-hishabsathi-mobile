@@ -17,10 +17,11 @@ import { APP } from "@/config/app";
 import { Colors_DashboardPage, getThemedColors } from "@/shared/constants/colors";
 import { useTheme } from "@/providers/ThemeProvider";
 import { Radius } from "@/shared/constants/radius";
-import { boxShadow } from "@/shared/constants/shadows";
+import { tierBoxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useCopy } from "@/shared/i18n";
+import { useDeviceTier, type DeviceTier } from "@/shared/utils/deviceTier";
 import { formatCurrency } from "@/shared/utils/formatter";
 import { AppHeader } from "@/shared/components/Header/AppHeader";
 
@@ -39,11 +40,12 @@ type ToggleProps = {
 
 function Toggle({ active, left, right, leftLabel = left, rightLabel = right, onChange }: ToggleProps) {
   const { isDark } = useTheme();
+  const tier = useDeviceTier();
   const colors = useMemo(
     () => getThemedColors(Colors_DashboardPage, isDark),
     [isDark],
   );
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors, tier), [colors, tier]);
   const [progress] = useState(
     () => new Animated.Value(active === left ? 0 : 1),
   );
@@ -99,11 +101,12 @@ function Toggle({ active, left, right, leftLabel = left, rightLabel = right, onC
 export default function DashboardOverview() {
   const { t } = useCopy();
   const { isDark } = useTheme();
+  const tier = useDeviceTier();
   const colors = useMemo(
     () => getThemedColors(Colors_DashboardPage, isDark),
     [isDark],
   );
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors, tier), [colors, tier]);
   const [period, setPeriod] = useState<DashboardPeriod>("today");
   const [periodMenuOpen, setPeriodMenuOpen] = useState(false);
   const {
@@ -402,7 +405,7 @@ export default function DashboardOverview() {
   );
 }
 
-function createStyles(colors: typeof Colors_DashboardPage) {
+function createStyles(colors: typeof Colors_DashboardPage, tier: DeviceTier) {
   return StyleSheet.create({
   screen: {
     flex: 1,
@@ -457,7 +460,7 @@ function createStyles(colors: typeof Colors_DashboardPage) {
     zIndex: 5,
   },
   periodSelector: { flexDirection: "row", alignItems: "center", gap: Spacing.xs, paddingVertical: Spacing.xs },
-  periodMenu: { position: "absolute", top: 38, left: 0, minWidth: 150, padding: Spacing.xs, backgroundColor: colors.surface, borderRadius: Radius.md, borderWidth: 1, borderColor: colors.border, boxShadow: boxShadow({ y: 5, blur: 12, color: "#0F172A", opacity: 0.12 }) },
+  periodMenu: { position: "absolute", top: 38, left: 0, minWidth: 150, padding: Spacing.xs, backgroundColor: colors.surface, borderRadius: Radius.md, borderWidth: 1, borderColor: colors.border, boxShadow: tierBoxShadow(tier, { y: 5, blur: 12, color: "#0F172A", opacity: 0.12 }) },
   periodOption: { minHeight: 40, paddingHorizontal: Spacing.sm, borderRadius: Radius.sm, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   periodOptionActive: { backgroundColor: colors.surfaceAlt },
   periodOptionText: { color: colors.textPrimary, fontSize: FontSize.sm },
@@ -536,7 +539,12 @@ function createStyles(colors: typeof Colors_DashboardPage) {
     gap: Spacing.xs,
     borderWidth: 1,
     borderColor: colors.border,
-    boxShadow: boxShadow({ y: 6, blur: 12, color: "#0F172A", opacity: 0.04 }),
+    boxShadow: tierBoxShadow(tier, {
+      y: 6,
+      blur: 12,
+      color: "#0F172A",
+      opacity: 0.04,
+    }),
   },
   statIcon: {
     width: 40,
@@ -629,7 +637,12 @@ function createStyles(colors: typeof Colors_DashboardPage) {
     left: 3,
     borderRadius: Radius.pill,
     backgroundColor: colors.surface,
-    boxShadow: boxShadow({ y: 2, blur: 6, color: "#0F172A", opacity: 0.12 }),
+    boxShadow: tierBoxShadow(tier, {
+      y: 2,
+      blur: 6,
+      color: "#0F172A",
+      opacity: 0.12,
+    }),
   },
   toggleLabel: {
     textAlign: "center",

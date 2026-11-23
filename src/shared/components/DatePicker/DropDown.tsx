@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   FlatList,
   Modal,
@@ -14,9 +14,10 @@ import {
 
 import { Colors_SalesPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
-import { boxShadow } from "@/shared/constants/shadows";
+import { tierBoxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { useDeviceTier } from "@/shared/utils/deviceTier";
 
 export interface DropdownOption {
   label: string;
@@ -68,6 +69,11 @@ export const Dropdown: React.FC<DropdownProps> = ({
   dropdownListStyle,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const tier = useDeviceTier();
+  const dropdownShadow = useMemo(
+    () => tierBoxShadow(tier, { y: 4, blur: 8, color: "#000", opacity: 0.2 }),
+    [tier],
+  );
   const [selectedItems, setSelectedItems] = useState<DropdownOption[]>(() => {
     if (!defaultValue) return [];
     return Array.isArray(defaultValue) ? defaultValue : [defaultValue];
@@ -131,7 +137,11 @@ export const Dropdown: React.FC<DropdownProps> = ({
             <View
               style={[
                 styles.dropdownList,
-                { backgroundColor: dropdownBgColor, borderColor: borderColor },
+                {
+                  backgroundColor: dropdownBgColor,
+                  borderColor: borderColor,
+                  boxShadow: dropdownShadow,
+                },
                 dropdownListStyle,
               ]}>
               <FlatList
@@ -224,7 +234,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.lg,
     borderWidth: BorderWidth.base,
     paddingVertical: Spacing.xs,
-    boxShadow: boxShadow({ y: 4, blur: 8, color: "#000", opacity: 0.2 }),
   },
   optionItem: {
     flexDirection: "row",

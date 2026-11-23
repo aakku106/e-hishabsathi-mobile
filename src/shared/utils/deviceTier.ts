@@ -3,7 +3,7 @@ import {
   isGlassEffectAPIAvailable,
   isLiquidGlassAvailable,
 } from "expo-glass-effect";
-import { useEffect, useMemo, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { AccessibilityInfo, Platform } from "react-native";
 
 /**
@@ -72,43 +72,59 @@ export function resolveDeviceTier(reduceTransparency: boolean): DeviceTier {
 }
 
 /**
- * Resolves the device tier and keeps it current when iOS Reduce Transparency
- * changes. The first frame assumes the setting is off; the async check settles
- * before the first interaction.
+ * One shared snapshot for the whole app: every header, card, and row reads the
+ * same tier without each component adding its own AccessibilityInfo listener.
+ * The tier is resolved lazily and cached until Reduce Transparency changes.
+ */
+let reduceTransparency = false;
+let cachedTier: DeviceTier | null = null;
+let listening = false;
+const listeners = new Set<() => void>();
+
+function getSnapshot(): DeviceTier {
+  cachedTier ??= resolveDeviceTier(reduceTransparency);
+  return cachedTier;
+}
+
+function publish(enabled: boolean) {
+  if (enabled === reduceTransparency) return;
+
+  reduceTransparency = enabled;
+  cachedTier = null;
+  for (const listener of listeners) listener();
+}
+
+function startListening() {
+  if (listening) return;
+  listening = true;
+
+  // `isReduceTransparencyEnabled` is iOS-only; react-native-web omits it.
+  const check =
+    typeof AccessibilityInfo.isReduceTransparencyEnabled === "function" ?
+      AccessibilityInfo.isReduceTransparencyEnabled()
+    : Promise.resolve(false);
+
+  void check.then(publish).catch(() => {
+    // Keep the default when the platform cannot report it.
+  });
+
+  AccessibilityInfo.addEventListener("reduceTransparencyChanged", publish);
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  startListening();
+
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+/**
+ * Returns the device tier and re-renders when iOS Reduce Transparency changes.
+ * The first frame assumes the setting is off; the async check settles before
+ * the first interaction.
  */
 export function useDeviceTier(): DeviceTier {
-  const [reduceTransparency, setReduceTransparency] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-
-    // `isReduceTransparencyEnabled` is iOS-only; react-native-web omits it.
-    const check =
-      typeof AccessibilityInfo.isReduceTransparencyEnabled === "function" ?
-        AccessibilityInfo.isReduceTransparencyEnabled()
-      : Promise.resolve(false);
-
-    void check
-      .then((enabled) => {
-        if (mounted) setReduceTransparency(enabled);
-      })
-      .catch(() => {
-        // Keep the default when the platform cannot report it.
-      });
-
-    const subscription = AccessibilityInfo.addEventListener(
-      "reduceTransparencyChanged",
-      setReduceTransparency,
-    );
-
-    return () => {
-      mounted = false;
-      subscription.remove();
-    };
-  }, []);
-
-  return useMemo(
-    () => resolveDeviceTier(reduceTransparency),
-    [reduceTransparency],
-  );
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }

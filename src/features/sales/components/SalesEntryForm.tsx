@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -27,11 +27,12 @@ import {
 } from "@/shared/components/ProductPicker/ProductPicker";
 import { Colors_SalesPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
-import { boxShadow } from "@/shared/constants/shadows";
+import { boxShadow, tierBoxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useCopy } from "@/shared/i18n";
+import { useDeviceTier, type DeviceTier } from "@/shared/utils/deviceTier";
 import { formatCurrency } from "@/shared/utils/formatter";
 import { hapticError, hapticSuccess } from "@/shared/utils/haptics";
 import { useSettingsStore } from "@/store/settings.store";
@@ -48,6 +49,7 @@ import {
   CreateSalesEntryFormValues,
   CreateSalesEntrySchema,
 } from "../validation";
+import type { SalesEntry } from "../types";
 
 type SpeechRecognitionLike = {
   lang: string;
@@ -134,11 +136,12 @@ type ProductDraft = {
 export default function SalesEntryForm() {
   const { t, language } = useCopy();
   const { isDark } = useTheme();
+  const tier = useDeviceTier();
   const colors = useMemo(
     () => getThemedColors(Colors_SalesPage, isDark),
     [isDark],
   );
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors, tier), [colors, tier]);
   const insets = useSafeAreaInsets();
   const [headerHeight, setHeaderHeight] = useState(() =>
     getAppHeaderHeight(insets.top),
@@ -874,45 +877,13 @@ export default function SalesEntryForm() {
                 </Text>
               )}
               {entries.map((entry, index) => (
-                <View
+                <SalesEntryRow
                   key={entry.id}
-                  style={[
-                    styles.entryRow,
-                    index !== entries.length - 1 && styles.entryDivider,
-                  ]}>
-                  <View style={styles.entryIcon}>
-                    <MaterialCommunityIcons
-                      name="shopping-outline"
-                      size={18}
-                      color={colors.primary}
-                    />
-                  </View>
-
-                  <View style={styles.entryContent}>
-                    <Text style={styles.entryName}>{entry.product}</Text>
-                    <View style={styles.entryMetaRow}>
-                      {!!entry.color && (
-                        <View
-                          style={[
-                            styles.colorDot,
-                            {
-                              backgroundColor:
-                                COLOR_HEX[entry.color] ?? "#94A3B8",
-                            },
-                          ]}
-                        />
-                      )}
-                      <Text style={styles.entryMeta}>
-                        Qty {entry.quantity} × {formatCurrency(entry.price)}
-                        {entry.extraDetail ? ` · ${entry.extraDetail}` : ""}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <Text style={styles.entryAmount}>
-                    {formatCurrency(entry.amount)}
-                  </Text>
-                </View>
+                  entry={entry}
+                  isLast={index === entries.length - 1}
+                  colors={colors}
+                  styles={styles}
+                />
               ))}
             </View>
           }
@@ -925,7 +896,57 @@ export default function SalesEntryForm() {
   );
 }
 
-function createStyles(colors: typeof Colors_SalesPage) {
+type SalesEntryRowProps = {
+  entry: SalesEntry;
+  isLast: boolean;
+  colors: typeof Colors_SalesPage;
+  styles: ReturnType<typeof createStyles>;
+};
+
+/**
+ * Memoized so typing in the form — which re-renders the whole screen — does
+ * not re-render every recent-sale row.
+ */
+const SalesEntryRow = memo(function SalesEntryRow({
+  entry,
+  isLast,
+  colors,
+  styles,
+}: SalesEntryRowProps) {
+  return (
+    <View style={[styles.entryRow, !isLast && styles.entryDivider]}>
+      <View style={styles.entryIcon}>
+        <MaterialCommunityIcons
+          name="shopping-outline"
+          size={18}
+          color={colors.primary}
+        />
+      </View>
+
+      <View style={styles.entryContent}>
+        <Text style={styles.entryName}>{entry.product}</Text>
+        <View style={styles.entryMetaRow}>
+          {!!entry.color && (
+            <View
+              style={[
+                styles.colorDot,
+                { backgroundColor: COLOR_HEX[entry.color] ?? "#94A3B8" },
+              ]}
+            />
+          )}
+          <Text style={styles.entryMeta}>
+            Qty {entry.quantity} × {formatCurrency(entry.price)}
+            {entry.extraDetail ? ` · ${entry.extraDetail}` : ""}
+          </Text>
+        </View>
+      </View>
+
+      <Text style={styles.entryAmount}>{formatCurrency(entry.amount)}</Text>
+    </View>
+  );
+});
+
+function createStyles(colors: typeof Colors_SalesPage, tier: DeviceTier) {
   return StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -953,7 +974,12 @@ function createStyles(colors: typeof Colors_SalesPage) {
     padding: Spacing.md,
     borderWidth: BorderWidth.thin,
     borderColor: colors.border,
-    boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
+    boxShadow: tierBoxShadow(tier, {
+      y: 6,
+      blur: 16,
+      color: "#0F172A",
+      opacity: 0.05,
+    }),
   },
 
   productHeaderRow: {
@@ -1334,7 +1360,12 @@ function createStyles(colors: typeof Colors_SalesPage) {
     borderColor: colors.border,
     paddingVertical: Spacing.lg,
     paddingHorizontal: Spacing.sm,
-    boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
+    boxShadow: tierBoxShadow(tier, {
+      y: 6,
+      blur: 16,
+      color: "#0F172A",
+      opacity: 0.05,
+    }),
   },
 
   summaryItem: {

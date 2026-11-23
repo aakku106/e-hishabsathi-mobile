@@ -32,6 +32,7 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 - Tax/VAT has a month selector and calculates output VAT, input VAT, and net payable from local sales and purchase data.
 - Settings includes appearance (System/Dark/Light), language controls, inventory/tax links, and app settings persistence; the business profile card opens the Account page.
 - The bottom tab bar is a floating translucent surface with a three-tier visual budget (`useDeviceTier`): native Liquid Glass on iOS 26+, native blur on iOS 17–25, and a solid translucent fallback on older iOS, Reduce Transparency, and Android (where `expo-blur` would need a `BlurTargetView` around screen content). Tab screens can be paged with horizontal swipes (`SwipeableTabScreen`); pages swap instantly and a single selection pill springs between tabs instead of each tab toggling its own background.
+- List-heavy screens are memoized for older hardware: inventory renders a memoized `ProductRow` fed by stable `useCallback` handlers (and `usePagedProducts` memoizes the flattened product array), sales/purchases render memoized entry rows, and card shadows scale through `tierBoxShadow()` so the low tier rasterizes smaller, fainter shadows.
 - Haptic feedback is centralized in `src/shared/utils/haptics.ts`: success after writes, error on validation failures/failed writes, selection ticks for tab and preference changes, and a strong patterned vibration for logout and delete-all-data confirmations.
 - Account includes a confirmed local-data deletion flow and logout.
 

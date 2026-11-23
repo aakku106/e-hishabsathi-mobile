@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -21,9 +21,10 @@ import {
   getThemedColors,
 } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
-import { boxShadow } from "@/shared/constants/shadows";
+import { tierBoxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { useDeviceTier, type DeviceTier } from "@/shared/utils/deviceTier";
 import { formatCurrency } from "@/shared/utils/formatter";
 import {
   hapticError,
@@ -49,9 +50,12 @@ const lowStockColors = {
   dark: { bg: "#3D2A00", border: "#854D0E", text: "#FDE68A" },
 };
 
+const keyExtractor = (product: Product) => String(product.id);
+
 export default function InventoryScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
+  const tier = useDeviceTier();
   const colors = useMemo(
     () => getThemedColors(Colors_InventoryPage, isDark),
     [isDark],
@@ -84,9 +88,12 @@ export default function InventoryScreen() {
   const dataError = productsError ?? summaryError;
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
-  const adjustStock = useAdjustProductStock();
+  const { mutate: adjustProductStock } = useAdjustProductStock();
 
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const styles = useMemo(
+    () => createStyles(colors, isDark, tier),
+    [colors, isDark, tier],
+  );
 
   const resetForm = () => {
     setEditingProduct(null);
@@ -140,7 +147,7 @@ export default function InventoryScreen() {
   };
 
   /** Row tap (outside the +/- controls) asks before opening the edit form. */
-  const handleEditProductRequest = (product: Product) => {
+  const handleEditProductRequest = useCallback((product: Product) => {
     hapticSelection();
     Alert.alert(
       "Edit product",
@@ -165,7 +172,48 @@ export default function InventoryScreen() {
         },
       ],
     );
-  };
+  }, []);
+
+  /** Stable so the memoized product rows keep their identity. */
+  const handleAdjustStock = useCallback(
+    (product: Product, delta: number) => {
+      adjustProductStock(
+        { id: product.id, delta },
+        {
+          onSuccess: () => hapticImpact(),
+          onError: hapticError,
+        },
+      );
+    },
+    [adjustProductStock],
+  );
+
+  const renderProduct = useCallback(
+    ({ item, index }: { item: Product; index: number }) => (
+      <ProductRow
+        product={item}
+        isFirst={index === 0}
+        isLast={index === products.length - 1 && !hasNextPage}
+        colors={colors}
+        styles={styles}
+        onEdit={handleEditProductRequest}
+        onAdjust={handleAdjustStock}
+      />
+    ),
+    [
+      colors,
+      styles,
+      products.length,
+      hasNextPage,
+      handleEditProductRequest,
+      handleAdjustStock,
+    ],
+  );
+
+  const renderProductSeparator = useCallback(
+    () => <View style={styles.productDivider} />,
+    [styles],
+  );
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
@@ -186,89 +234,9 @@ export default function InventoryScreen() {
 
       <FlatList
         data={products}
-        keyExtractor={(product) => String(product.id)}
-        renderItem={({ item: product, index }) => {
-          const lowStock = product.stockQuantity < LOW_STOCK_THRESHOLD;
-          return (
-            <TouchableOpacity
-              activeOpacity={0.9}
-              accessibilityRole="button"
-              accessibilityLabel={`Edit ${product.name}`}
-              onPress={() => handleEditProductRequest(product)}
-              style={[
-                styles.productRow,
-                index === 0 && styles.productRowFirst,
-                index === products.length - 1 &&
-                  !hasNextPage &&
-                  styles.productRowLast,
-              ]}>
-              <View style={styles.productIcon}>
-                <MaterialCommunityIcons
-                  name="package-variant-closed"
-                  size={18}
-                  color={colors.primary}
-                />
-              </View>
-              <View style={styles.productContent}>
-                <Text style={styles.productName}>{product.name}</Text>
-                <Text style={styles.productMeta}>
-                  {product.category ?? "No category"} ·{" "}
-                  {formatCurrency(product.price)}
-                </Text>
-                <Text
-                  style={[
-                    styles.stockText,
-                    lowStock && styles.stockTextLow,
-                  ]}>
-                  Stock: {product.stockQuantity} {lowStock ? "(low)" : ""}
-                </Text>
-              </View>
-
-              <View style={styles.stockControls}>
-                <TouchableOpacity
-                  style={styles.stockButton}
-                  activeOpacity={0.8}
-                  onPress={() =>
-                    adjustStock.mutate(
-                      { id: product.id, delta: -1 },
-                      {
-                        onSuccess: () => hapticImpact(),
-                        onError: hapticError,
-                      },
-                    )
-                  }
-                  disabled={product.stockQuantity <= 0}>
-                  <MaterialCommunityIcons
-                    name="minus"
-                    size={16}
-                    color={colors.textPrimary}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.stockButton}
-                  activeOpacity={0.8}
-                  onPress={() =>
-                    adjustStock.mutate(
-                      { id: product.id, delta: 1 },
-                      {
-                        onSuccess: () => hapticImpact(),
-                        onError: hapticError,
-                      },
-                    )
-                  }>
-                  <MaterialCommunityIcons
-                    name="plus"
-                    size={16}
-                    color={colors.textPrimary}
-                  />
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          );
-        }}
-        ItemSeparatorComponent={() => (
-          <View style={styles.productDivider} />
-        )}
+        keyExtractor={keyExtractor}
+        renderItem={renderProduct}
+        ItemSeparatorComponent={renderProductSeparator}
         contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -542,7 +510,92 @@ export default function InventoryScreen() {
   );
 }
 
-function createStyles(colors: typeof Colors_InventoryPage, isDark: boolean) {
+type ProductRowProps = {
+  product: Product;
+  isFirst: boolean;
+  isLast: boolean;
+  colors: typeof Colors_InventoryPage;
+  styles: ReturnType<typeof createStyles>;
+  onEdit: (product: Product) => void;
+  onAdjust: (product: Product, delta: number) => void;
+};
+
+/**
+ * Memoized so adjusting stock or opening the form doesn't re-render every
+ * product row. All props are stable (`colors`/`styles` are memoized by the
+ * screen and the callbacks are `useCallback`-wrapped).
+ */
+const ProductRow = memo(function ProductRow({
+  product,
+  isFirst,
+  isLast,
+  colors,
+  styles,
+  onEdit,
+  onAdjust,
+}: ProductRowProps) {
+  const lowStock = product.stockQuantity < LOW_STOCK_THRESHOLD;
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.9}
+      accessibilityRole="button"
+      accessibilityLabel={`Edit ${product.name}`}
+      onPress={() => onEdit(product)}
+      style={[
+        styles.productRow,
+        isFirst && styles.productRowFirst,
+        isLast && styles.productRowLast,
+      ]}>
+      <View style={styles.productIcon}>
+        <MaterialCommunityIcons
+          name="package-variant-closed"
+          size={18}
+          color={colors.primary}
+        />
+      </View>
+      <View style={styles.productContent}>
+        <Text style={styles.productName}>{product.name}</Text>
+        <Text style={styles.productMeta}>
+          {product.category ?? "No category"} · {formatCurrency(product.price)}
+        </Text>
+        <Text style={[styles.stockText, lowStock && styles.stockTextLow]}>
+          Stock: {product.stockQuantity} {lowStock ? "(low)" : ""}
+        </Text>
+      </View>
+
+      <View style={styles.stockControls}>
+        <TouchableOpacity
+          style={styles.stockButton}
+          activeOpacity={0.8}
+          onPress={() => onAdjust(product, -1)}
+          disabled={product.stockQuantity <= 0}>
+          <MaterialCommunityIcons
+            name="minus"
+            size={16}
+            color={colors.textPrimary}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.stockButton}
+          activeOpacity={0.8}
+          onPress={() => onAdjust(product, 1)}>
+          <MaterialCommunityIcons
+            name="plus"
+            size={16}
+            color={colors.textPrimary}
+          />
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
+});
+
+function createStyles(
+  colors: typeof Colors_InventoryPage,
+  isDark: boolean,
+  tier: DeviceTier,
+) {
   return StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -571,7 +624,12 @@ function createStyles(colors: typeof Colors_InventoryPage, isDark: boolean) {
       borderColor: colors.border,
       paddingVertical: Spacing.lg,
       paddingHorizontal: Spacing.sm,
-      boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
+      boxShadow: tierBoxShadow(tier, {
+        y: 6,
+        blur: 16,
+        color: "#0F172A",
+        opacity: 0.05,
+      }),
     },
     summaryItem: {
       flex: 1,
@@ -647,7 +705,12 @@ function createStyles(colors: typeof Colors_InventoryPage, isDark: boolean) {
       borderColor: colors.border,
       padding: Spacing.lg,
       gap: Spacing.lg,
-      boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
+      boxShadow: tierBoxShadow(tier, {
+        y: 6,
+        blur: 16,
+        color: "#0F172A",
+        opacity: 0.05,
+      }),
     },
     field: {
       gap: Spacing.xs,

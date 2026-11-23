@@ -21,9 +21,10 @@ import { useSettingsStore } from "@/store/settings.store";
 import { AppHeader } from "@/shared/components/Header/AppHeader";
 import { Colors_NavBar, Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
-import { boxShadow, withAlpha } from "@/shared/constants/shadows";
+import { tierBoxShadow, withAlpha } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { useDeviceTier, type DeviceTier } from "@/shared/utils/deviceTier";
 import { hapticSelection } from "@/shared/utils/haptics";
 
 const BUSINESS_TYPE_LABELS: Record<string, string> = {
@@ -186,11 +187,12 @@ export default function SettingsScreen() {
     useSettingsStore();
   const copy = COPY[language];
   const { isDark } = useTheme();
+  const tier = useDeviceTier();
   const colors = useMemo(
     () => getThemedColors(Colors_SettingsPage, isDark),
     [isDark],
   );
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors, tier), [colors, tier]);
   const [headerHeight, setHeaderHeight] = useState(0);
 
   const handleThemeChange = (mode: ThemeMode) => {
@@ -485,7 +487,7 @@ export default function SettingsScreen() {
   );
 }
 
-function createStyles(colors: typeof Colors_SettingsPage) {
+function createStyles(colors: typeof Colors_SettingsPage, tier: DeviceTier) {
   return StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -520,7 +522,12 @@ function createStyles(colors: typeof Colors_SettingsPage) {
     borderColor: colors.border,
     padding: Spacing.lg,
     gap: Spacing.md,
-    boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
+    boxShadow: tierBoxShadow(tier, {
+      y: 6,
+      blur: 16,
+      color: "#0F172A",
+      opacity: 0.05,
+    }),
   },
   profileRow: {
     flexDirection: "row",
