@@ -1,9 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -33,6 +32,8 @@ import {
   hapticSuccess,
 } from "@/shared/utils/haptics";
 
+import { ProductDetailsSheet } from "./components/ProductDetailsSheet";
+import { LOW_STOCK_THRESHOLD } from "./constants";
 import {
   useAdjustProductStock,
   useCreateProduct,
@@ -42,8 +43,6 @@ import {
 } from "./hooks/useInventory";
 import type { Product } from "./types";
 import { CreateProductSchema } from "./validation";
-
-const LOW_STOCK_THRESHOLD = 10;
 
 const lowStockColors = {
   light: { bg: "#FEF3C7", border: "#FDE68A", text: "#92400E" },
@@ -62,6 +61,8 @@ export default function InventoryScreen() {
   );
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [detailsProduct, setDetailsProduct] = useState<Product | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
@@ -69,6 +70,9 @@ export default function InventoryScreen() {
   const [stock, setStock] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [formOffset, setFormOffset] = useState(0);
+  const listRef = useRef<FlatList<Product>>(null);
+  const shouldScrollToForm = useRef(false);
 
   const {
     products,
@@ -146,33 +150,49 @@ export default function InventoryScreen() {
     });
   };
 
-  /** Row tap (outside the +/- controls) asks before opening the edit form. */
-  const handleEditProductRequest = useCallback((product: Product) => {
+  /**
+   * Row tap (outside the +/- controls) opens the read-only detail sheet; the
+   * sheet's own button starts an edit.
+   */
+  const handleOpenDetails = useCallback((product: Product) => {
     hapticSelection();
-    Alert.alert(
-      "Edit product",
-      `Do you want to edit "${product.name}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Edit",
-          onPress: () => {
-            hapticSuccess();
-            setEditingProduct(product);
-            setName(product.name);
-            setCategory(product.category ?? "");
-            setPrice(String(product.price));
-            setCostPrice(
-              product.costPrice !== null ? String(product.costPrice) : "",
-            );
-            setStock(String(product.stockQuantity));
-            setErrors({});
-            setShowForm(true);
-          },
-        },
-      ],
-    );
+    setDetailsProduct(product);
+    setIsDetailsOpen(true);
   }, []);
+
+  const handleCloseDetails = useCallback(() => setIsDetailsOpen(false), []);
+
+  /** "Edit product" inside the sheet: close it and reveal the edit form. */
+  const handleEditFromDetails = useCallback((product: Product) => {
+    hapticSelection();
+    setIsDetailsOpen(false);
+    setEditingProduct(product);
+    setName(product.name);
+    setCategory(product.category ?? "");
+    setPrice(String(product.price));
+    setCostPrice(product.costPrice !== null ? String(product.costPrice) : "");
+    setStock(String(product.stockQuantity));
+    setErrors({});
+    shouldScrollToForm.current = true;
+    setShowForm(true);
+  }, []);
+
+  /**
+   * The form lives in the list header, so opening it from a scrolled list would
+   * leave it off-screen. Once it has a measured offset, bring it up to sit just
+   * below the glass header.
+   */
+  useEffect(() => {
+    if (!showForm || formOffset <= 0 || !shouldScrollToForm.current) return;
+
+    requestAnimationFrame(() => {
+      shouldScrollToForm.current = false;
+      listRef.current?.scrollToOffset({
+        offset: Math.max(0, formOffset + Spacing.lg),
+        animated: true,
+      });
+    });
+  }, [showForm, formOffset]);
 
   /** Stable so the memoized product rows keep their identity. */
   const handleAdjustStock = useCallback(
@@ -196,7 +216,7 @@ export default function InventoryScreen() {
         isLast={index === products.length - 1 && !hasNextPage}
         colors={colors}
         styles={styles}
-        onEdit={handleEditProductRequest}
+        onOpenDetails={handleOpenDetails}
         onAdjust={handleAdjustStock}
       />
     ),
@@ -205,7 +225,7 @@ export default function InventoryScreen() {
       styles,
       products.length,
       hasNextPage,
-      handleEditProductRequest,
+      handleOpenDetails,
       handleAdjustStock,
     ],
   );
@@ -233,6 +253,7 @@ export default function InventoryScreen() {
       </View>
 
       <FlatList
+        ref={listRef}
         data={products}
         keyExtractor={keyExtractor}
         renderItem={renderProduct}
@@ -323,6 +344,7 @@ export default function InventoryScreen() {
                 if (showForm) {
                   resetForm();
                 } else {
+                  shouldScrollToForm.current = true;
                   setShowForm(true);
                 }
               }}>
@@ -348,7 +370,11 @@ export default function InventoryScreen() {
             </TouchableOpacity>
 
             {showForm && (
-              <View style={styles.formCard}>
+              <View
+                style={styles.formCard}
+                onLayout={(event) =>
+                  setFormOffset(event.nativeEvent.layout.y)
+                }>
                 <View style={styles.field}>
                   <LabeledInput
                     label="Product Name"
@@ -506,6 +532,14 @@ export default function InventoryScreen() {
           : undefined
         }
       />
+
+      <ProductDetailsSheet
+        product={detailsProduct}
+        isPresented={isDetailsOpen}
+        colors={colors}
+        onDismiss={handleCloseDetails}
+        onEdit={handleEditFromDetails}
+      />
     </SafeAreaView>
   );
 }
@@ -516,7 +550,7 @@ type ProductRowProps = {
   isLast: boolean;
   colors: typeof Colors_InventoryPage;
   styles: ReturnType<typeof createStyles>;
-  onEdit: (product: Product) => void;
+  onOpenDetails: (product: Product) => void;
   onAdjust: (product: Product, delta: number) => void;
 };
 
@@ -531,7 +565,7 @@ const ProductRow = memo(function ProductRow({
   isLast,
   colors,
   styles,
-  onEdit,
+  onOpenDetails,
   onAdjust,
 }: ProductRowProps) {
   const lowStock = product.stockQuantity < LOW_STOCK_THRESHOLD;
@@ -540,8 +574,8 @@ const ProductRow = memo(function ProductRow({
     <TouchableOpacity
       activeOpacity={0.9}
       accessibilityRole="button"
-      accessibilityLabel={`Edit ${product.name}`}
-      onPress={() => onEdit(product)}
+      accessibilityLabel={`View details for ${product.name}`}
+      onPress={() => onOpenDetails(product)}
       style={[
         styles.productRow,
         isFirst && styles.productRowFirst,
