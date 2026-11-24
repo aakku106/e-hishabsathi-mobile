@@ -70,7 +70,6 @@ const COPY = {
     system: "System",
     dark: "Dark",
     light: "Light",
-    currency: "Currency",
     notifications: "Notifications",
     language: "Change Language",
     terms: "Terms & Conditions",
@@ -79,7 +78,6 @@ const COPY = {
     version: "Version",
     english: "English",
     nepali: "नेपाली",
-    performance: "Performance",
     performanceTier: "Performance tier",
     swipePages: "Swipe between pages",
     swipePagesHint: "Swipe left or right to switch tabs",
@@ -125,7 +123,6 @@ const COPY = {
     system: "सिस्टम",
     dark: "गाढा",
     light: "उज्यालो",
-    currency: "मुद्रा",
     notifications: "सूचनाहरू",
     language: "भाषा परिवर्तन",
     terms: "नियम तथा सर्तहरू",
@@ -134,7 +131,6 @@ const COPY = {
     version: "संस्करण",
     english: "English",
     nepali: "नेपाली",
-    performance: "प्रदर्शन",
     performanceTier: "प्रदर्शन स्तर",
     swipePages: "पृष्ठहरू बीच स्वाइप",
     swipePagesHint: "ट्याब परिवर्तन गर्न बायाँ वा दायाँ स्वाइप गर्नुहोस्",
@@ -238,7 +234,6 @@ export default function SettingsScreen() {
   const {
     themeMode,
     setThemeMode,
-    currency,
     language,
     setLanguage,
     tabSwipeEnabled,
@@ -444,20 +439,18 @@ export default function SettingsScreen() {
 
             <View style={styles.rowDivider} />
 
-            <View style={styles.settingRow}>
-              <View style={styles.settingTextWrap}>
-                <Text style={styles.settingLabel}>{copy.currency}</Text>
-                <Text style={styles.settingHint}>{currency}</Text>
-              </View>
-              <View style={styles.currencyBadge}>
-                <Text style={styles.currencyBadgeText}>{currency}</Text>
-              </View>
-            </View>
+            <SettingsToggleRow
+              label={copy.swipePages}
+              hint={copy.swipePagesHint}
+              value={tabSwipeEnabled}
+              onValueChange={handleTabSwipeChange}
+              colors={colors}
+            />
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{copy.performance}</Text>
+          <Text style={styles.sectionTitle}>{copy.device}</Text>
           <View style={styles.card}>
             <View style={styles.settingRow}>
               <View style={styles.settingTextWrap}>
@@ -478,22 +471,7 @@ export default function SettingsScreen() {
                 </Text>
               </View>
             </View>
-
             <View style={styles.rowDivider} />
-
-            <SettingsToggleRow
-              label={copy.swipePages}
-              hint={copy.swipePagesHint}
-              value={tabSwipeEnabled}
-              onValueChange={handleTabSwipeChange}
-              colors={colors}
-            />
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{copy.device}</Text>
-          <View style={styles.card}>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>{copy.platform}</Text>
               <Text style={styles.detailValue}>{deviceInfo.os}</Text>
@@ -834,17 +812,6 @@ function createStyles(colors: typeof Colors_SettingsPage, tier: DeviceTier) {
     color: colors.textPrimary,
     fontSize: FontSize.md,
     fontWeight: FontWeight.semibold,
-  },
-  currencyBadge: {
-    backgroundColor: colors.primarySoft,
-    borderRadius: Radius.pill,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 4,
-  },
-  currencyBadgeText: {
-    color: colors.primaryDeep,
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.bold,
   },
   tierBadge: {
     borderRadius: Radius.pill,

@@ -45,6 +45,7 @@ const COPY = {
     subtitle: "Manage your account and local data",
     business: "Business",
     noBusiness: "No business profile",
+    currency: "Currency",
     username: "Username",
     pan: "PAN",
     localData: "Your data stays on this device",
@@ -81,6 +82,7 @@ const COPY = {
     subtitle: "आफ्नो खाता र स्थानीय डेटा व्यवस्थापन गर्नुहोस्",
     business: "व्यवसाय",
     noBusiness: "व्यवसाय प्रोफाइल छैन",
+    currency: "मुद्रा",
     username: "प्रयोगकर्ता नाम",
     pan: "PAN",
     localData: "तपाईंको डेटा यसै उपकरणमा रहन्छ",
@@ -124,6 +126,7 @@ export default function AccountScreen() {
   );
   const styles = useMemo(() => createStyles(colors), [colors]);
   const language = useSettingsStore((state) => state.language);
+  const currency = useSettingsStore((state) => state.currency);
   const pan = useAuthStore((state) => state.pan);
   const username = useAuthStore((state) => state.username);
   const logout = useAuthStore((state) => state.logout);
@@ -201,6 +204,12 @@ export default function AccountScreen() {
             <AccountDetail
               label={copy.business}
               value={business?.name ?? copy.noBusiness}
+              styles={styles}
+              colors={colors}
+            />
+            <AccountDetail
+              label={copy.currency}
+              value={currency}
               styles={styles}
               colors={colors}
             />
