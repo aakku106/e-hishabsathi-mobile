@@ -39,6 +39,7 @@ Use both pieces from the tabs layout:
 
 ```tsx
 import { Tabs } from "expo-router";
+import { useSettingsStore } from "@/store/settings.store";
 import { CustomTabBar } from "@/shared/components/TabBar/CustomTabBar";
 import { SwipeableTabScreen } from "@/shared/components/TabBar/SwipeableTabScreen";
 
@@ -48,12 +49,17 @@ export const unstable_settings = {
 };
 
 export default function TabsLayout() {
+  // The Settings > Preferences switch. Pass it as `enabled` so the example
+  // respects the stored preference instead of always allowing swipes.
+  const tabSwipeEnabled = useSettingsStore((state) => state.tabSwipeEnabled);
+
   return (
     <Tabs
       tabBar={(props) => <CustomTabBar {...props} />}
       screenLayout={({ route, navigation, children }) => (
         <SwipeableTabScreen
           routeName={route.name}
+          enabled={tabSwipeEnabled}
           onNavigate={(name) => navigation.navigate(name)}>
           {children}
         </SwipeableTabScreen>

@@ -13,7 +13,7 @@ export async function getSetting(key: string): Promise<string | null> {
 
 export async function setSetting(key: string, value: string): Promise<void> {
   const db = getDatabase();
-  if (!db) return;
+  if (!db) throw new Error("Database is not ready yet");
 
   await db.runAsync(
     "INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -24,7 +24,7 @@ export async function setSetting(key: string, value: string): Promise<void> {
 
 export async function removeSetting(key: string): Promise<void> {
   const db = getDatabase();
-  if (!db) return;
+  if (!db) throw new Error("Database is not ready yet");
 
   await db.runAsync("DELETE FROM app_settings WHERE key = ?", key);
 }

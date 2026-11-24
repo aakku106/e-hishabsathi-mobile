@@ -16,6 +16,7 @@ import { useMemo, useState } from "react";
 import { APP } from "@/config/app";
 import { setSetting, SETTING_KEYS } from "@/database/helpers/settings";
 import { persistTabSwipe, persistThemeMode } from "@/lib/hydration";
+import { persistSetting } from "@/features/settings/utils/persistSetting";
 import { useBusiness } from "@/features/business/hooks/useBusiness";
 import { useTheme, type ThemeMode } from "@/providers/ThemeProvider";
 import { useSettingsStore } from "@/store/settings.store";
@@ -30,7 +31,8 @@ import {
   useDeviceTier,
   type DeviceTier,
 } from "@/shared/utils/deviceTier";
-import { hapticSelection } from "@/shared/utils/haptics";
+import { hapticError, hapticSelection } from "@/shared/utils/haptics";
+import { notify } from "@/shared/utils/dialogs";
 
 import { SettingsToggleRow } from "./components/SettingsToggleRow";
 
@@ -79,6 +81,8 @@ const COPY = {
     english: "English",
     nepali: "नेपाली",
     performanceTier: "Performance tier",
+    saveErrorTitle: "Could not save the setting",
+    saveErrorBody: "Please try again.",
     swipePages: "Swipe between pages",
     swipePagesHint: "Swipe left or right to switch tabs",
     device: "Device",
@@ -132,6 +136,8 @@ const COPY = {
     english: "English",
     nepali: "नेपाली",
     performanceTier: "प्रदर्शन स्तर",
+    saveErrorTitle: "सेटिङ सुरक्षित गर्न सकिएन",
+    saveErrorBody: "कृपया फेरि प्रयास गर्नुहोस्।",
     swipePages: "पृष्ठहरू बीच स्वाइप",
     swipePagesHint: "ट्याब परिवर्तन गर्न बायाँ वा दायाँ स्वाइप गर्नुहोस्",
     device: "यन्त्र",
@@ -263,23 +269,45 @@ export default function SettingsScreen() {
     : tier === "mid" ? colors.warning
     : colors.danger;
 
-  const handleThemeChange = (mode: ThemeMode) => {
-    hapticSelection();
-    setThemeMode(mode);
-    void persistThemeMode(mode);
+  const showSaveError = () => {
+    hapticError();
+    notify(copy.saveErrorTitle, copy.saveErrorBody);
   };
 
-  const handleLanguageChange = () => {
+  const handleThemeChange = async (mode: ThemeMode) => {
+    if (mode === themeMode) return;
+
     hapticSelection();
+    const saved = await persistSetting({
+      previous: themeMode,
+      next: mode,
+      apply: setThemeMode,
+      persist: persistThemeMode,
+    });
+    if (!saved) showSaveError();
+  };
+
+  const handleLanguageChange = async () => {
     const nextLanguage = language === "en" ? "np" : "en";
-    setLanguage(nextLanguage);
-    void setSetting(SETTING_KEYS.language, nextLanguage);
+    hapticSelection();
+    const saved = await persistSetting({
+      previous: language,
+      next: nextLanguage,
+      apply: setLanguage,
+      persist: (value) => setSetting(SETTING_KEYS.language, value),
+    });
+    if (!saved) showSaveError();
   };
 
-  const handleTabSwipeChange = (enabled: boolean) => {
+  const handleTabSwipeChange = async (enabled: boolean) => {
     hapticSelection();
-    setTabSwipeEnabled(enabled);
-    void persistTabSwipe(enabled);
+    const saved = await persistSetting({
+      previous: tabSwipeEnabled,
+      next: enabled,
+      apply: setTabSwipeEnabled,
+      persist: persistTabSwipe,
+    });
+    if (!saved) showSaveError();
   };
 
   return (

@@ -28,6 +28,7 @@ import {
   hapticSelection,
   hapticSuccess,
 } from "@/shared/utils/haptics";
+import { logger } from "@/shared/utils/logger";
 import { useAuthStore } from "@/store/auth.store";
 
 const colors = Colors_LoginPage;
@@ -42,27 +43,55 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
+    if (isSubmitting) return;
     if (!pan.trim() || !username.trim() || !password.trim()) {
       hapticError();
       setError("Please fill in all fields to sign in.");
       return;
     }
     setError(null);
+    setIsSubmitting(true);
+    try {
+      await Promise.all([
+        setSetting(SETTING_KEYS.authPan, pan.trim()),
+        setSetting(SETTING_KEYS.authUsername, username.trim()),
+        persistGuestSession(false),
+      ]);
+    } catch (cause) {
+      logger.error("Failed to persist the sign-in session", cause);
+      hapticError();
+      setError("Could not save your sign-in. Please try again.");
+      return;
+    } finally {
+      setIsSubmitting(false);
+    }
+
     hapticSuccess();
     login({ pan: pan.trim(), username: username.trim() });
-    void setSetting(SETTING_KEYS.authPan, pan.trim());
-    void setSetting(SETTING_KEYS.authUsername, username.trim());
-    void persistGuestSession(false);
     router.replace("/(auth)/onboarding");
   };
 
   /** Skip credentials entirely; the guest session persists across launches. */
-  const handleGuest = () => {
+  const handleGuest = async () => {
+    if (isSubmitting) return;
     hapticSelection();
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await persistGuestSession(true);
+    } catch (cause) {
+      logger.error("Failed to persist the guest session", cause);
+      hapticError();
+      setError("Could not start a guest session. Please try again.");
+      return;
+    } finally {
+      setIsSubmitting(false);
+    }
+
     loginAsGuest();
-    void persistGuestSession(true);
     router.replace("/(tabs)/04-dashboard");
   };
 
@@ -147,7 +176,11 @@ export default function LoginScreen() {
 
             <TouchableOpacity
               activeOpacity={0.85}
-              style={styles.signInButton}
+              disabled={isSubmitting}
+              style={[
+                styles.signInButton,
+                isSubmitting && styles.submitDisabled,
+              ]}
               onPress={handleSignIn}
             >
               <LinearGradient
@@ -187,8 +220,12 @@ export default function LoginScreen() {
               activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel="Continue as guest"
+              disabled={isSubmitting}
               onPress={handleGuest}
-              style={styles.guestButton}>
+              style={[
+                styles.guestButton,
+                isSubmitting && styles.submitDisabled,
+              ]}>
               <MaterialCommunityIcons
                 name="account-outline"
                 size={20}
@@ -378,6 +415,9 @@ const styles = StyleSheet.create({
   signInButton: {
     marginTop: Spacing["3xl"],
     boxShadow: boxShadow({ y: 8, blur: 16, color: colors.primaryDeep, opacity: 0.3 }),
+  },
+  submitDisabled: {
+    opacity: 0.6,
   },
   signInGradient: {
     minHeight: 64,

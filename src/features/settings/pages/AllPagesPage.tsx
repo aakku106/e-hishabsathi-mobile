@@ -1,16 +1,22 @@
 import { useMemo } from "react";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 
 import { Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useCopy } from "@/shared/i18n";
-import { hapticSelection, hapticSuccess } from "@/shared/utils/haptics";
+import {
+  hapticError,
+  hapticSelection,
+  hapticSuccess,
+} from "@/shared/utils/haptics";
+import { confirmAction, notify } from "@/shared/utils/dialogs";
 import { persistAiVoiceEntry } from "@/lib/hydration";
 import { useSettingsStore } from "@/store/settings.store";
 import { SettingsPageShell } from "@/features/settings/components/SettingsPageShell";
 import { SettingsToggleRow } from "@/features/settings/components/SettingsToggleRow";
+import { persistSetting } from "@/features/settings/utils/persistSetting";
 import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 
 /**
@@ -27,30 +33,43 @@ export default function AllPagesPage() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { aiVoiceEntry, setAiVoiceEntry } = useSettingsStore();
 
-  const handleVoiceToggle = (enabled: boolean) => {
+  const handleVoiceToggle = async (enabled: boolean) => {
     hapticSelection();
-    setAiVoiceEntry(enabled);
-    void persistAiVoiceEntry(enabled);
+    const saved = await persistSetting({
+      previous: aiVoiceEntry,
+      next: enabled,
+      apply: setAiVoiceEntry,
+      persist: persistAiVoiceEntry,
+    });
+    if (!saved) {
+      hapticError();
+      notify(t("Could not save the setting"), t("Please try again."));
+    }
   };
 
   const handleResetToDefault = () => {
     hapticSelection();
-    Alert.alert(
-      t("Reset to default"),
-      t("This restores the default settings shared by every page"),
-      [
-        { text: t("Cancel"), style: "cancel" },
-        {
-          text: t("Reset"),
-          style: "destructive",
-          onPress: () => {
-            setAiVoiceEntry(true);
-            void persistAiVoiceEntry(true);
-            hapticSuccess();
-          },
-        },
-      ],
-    );
+    confirmAction({
+      title: t("Reset to default"),
+      message: t("This restores the default settings shared by every page"),
+      confirmLabel: t("Reset"),
+      cancelLabel: t("Cancel"),
+      destructive: true,
+      onConfirm: async () => {
+        const saved = await persistSetting({
+          previous: aiVoiceEntry,
+          next: true,
+          apply: setAiVoiceEntry,
+          persist: persistAiVoiceEntry,
+        });
+        if (saved) {
+          hapticSuccess();
+        } else {
+          hapticError();
+          notify(t("Could not save the setting"), t("Please try again."));
+        }
+      },
+    });
   };
 
   return (

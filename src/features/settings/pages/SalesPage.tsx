@@ -1,16 +1,22 @@
 import { useMemo } from "react";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 
 import { Colors_NavBar, Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useCopy } from "@/shared/i18n";
-import { hapticSelection, hapticSuccess } from "@/shared/utils/haptics";
+import {
+  hapticError,
+  hapticSelection,
+  hapticSuccess,
+} from "@/shared/utils/haptics";
+import { confirmAction, notify } from "@/shared/utils/dialogs";
 import { persistAiAssistant, persistRecent, persistSalesStrictInventory } from "@/lib/hydration";
 import { useSettingsStore } from "@/store/settings.store";
 import { SettingsPageShell } from "@/features/settings/components/SettingsPageShell";
 import { SettingsToggleRow } from "@/features/settings/components/SettingsToggleRow";
+import { persistSetting } from "@/features/settings/utils/persistSetting";
 import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 
 export default function SalesPage() {
@@ -30,46 +36,80 @@ export default function SalesPage() {
     setSalesStrictInventory,
   } = useSettingsStore();
 
-  const handleAiToggle = (enabled: boolean) => {
-    hapticSelection();
-    setAiAssistant("sales", enabled);
-    void persistAiAssistant("sales", enabled);
+  const showSaveError = () => {
+    hapticError();
+    notify(t("Could not save the setting"), t("Please try again."));
   };
 
-  const handleStrictInventoryChange = (enabled: boolean) => {
+  const handleAiToggle = async (enabled: boolean) => {
     hapticSelection();
-    setSalesStrictInventory(enabled);
-    void persistSalesStrictInventory(enabled);
+    const saved = await persistSetting({
+      previous: aiAssistant.sales,
+      next: enabled,
+      apply: (value) => setAiAssistant("sales", value),
+      persist: (value) => persistAiAssistant("sales", value),
+    });
+    if (!saved) showSaveError();
   };
 
-  const handleRecentToggle = (enabled: boolean) => {
+  const handleStrictInventoryChange = async (enabled: boolean) => {
     hapticSelection();
-    setRecent("sales", enabled);
-    void persistRecent("sales", enabled);
+    const saved = await persistSetting({
+      previous: salesStrictInventory,
+      next: enabled,
+      apply: setSalesStrictInventory,
+      persist: persistSalesStrictInventory,
+    });
+    if (!saved) showSaveError();
+  };
+
+  const handleRecentToggle = async (enabled: boolean) => {
+    hapticSelection();
+    const saved = await persistSetting({
+      previous: recent.sales,
+      next: enabled,
+      apply: (value) => setRecent("sales", value),
+      persist: (value) => persistRecent("sales", value),
+    });
+    if (!saved) showSaveError();
   };
 
   const handleResetToDefault = () => {
     hapticSelection();
-    Alert.alert(
-      t("Reset to default"),
-      t("This restores the default settings for this page."),
-      [
-        { text: t("Cancel"), style: "cancel" },
-        {
-          text: t("Reset"),
-          style: "destructive",
-          onPress: () => {
-            setSalesStrictInventory(true);
-            void persistSalesStrictInventory(true);
-            setAiAssistant("sales", true);
-            void persistAiAssistant("sales", true);
-            setRecent("sales", true);
-            void persistRecent("sales", true);
-            hapticSuccess();
-          },
-        },
-      ],
-    );
+    confirmAction({
+      title: t("Reset to default"),
+      message: t("This restores the default settings for this page"),
+      confirmLabel: t("Reset"),
+      cancelLabel: t("Cancel"),
+      destructive: true,
+      onConfirm: async () => {
+        const results = await Promise.all([
+          persistSetting({
+            previous: salesStrictInventory,
+            next: true,
+            apply: setSalesStrictInventory,
+            persist: persistSalesStrictInventory,
+          }),
+          persistSetting({
+            previous: aiAssistant.sales,
+            next: true,
+            apply: (value) => setAiAssistant("sales", value),
+            persist: (value) => persistAiAssistant("sales", value),
+          }),
+          persistSetting({
+            previous: recent.sales,
+            next: true,
+            apply: (value) => setRecent("sales", value),
+            persist: (value) => persistRecent("sales", value),
+          }),
+        ]);
+        if (results.every(Boolean)) {
+          hapticSuccess();
+        } else {
+          showSaveError();
+        }
+      },
+    });
   };
 
   return (

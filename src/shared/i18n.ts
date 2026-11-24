@@ -26,6 +26,9 @@ const translations: Record<string, string> = {
   "Save Buy|खरिद सुरक्षित गर्नुहोस्": "Save Buy",
   "Save entry|प्रविष्टि सुरक्षित गर्नुहोस्": "Save entry",
   "Reset|रिसेट": "Reset",
+  "Could not save the setting|सेटिङ सुरक्षित गर्न सकिएन":
+    "Could not save the setting",
+  "Please try again.|कृपया फेरि प्रयास गर्नुहोस्": "Please try again.",
   "Total Amount|कुल रकम": "Total Amount",
   "Recent Buys|हालका खरिदहरू": "Recent Buys",
   "Recent udharo|हालका उधारोहरू": "Recent udharo",
