@@ -11,9 +11,12 @@ export const unstable_settings = {
 export default function AuthLayout() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isHydrated = useAuthStore((state) => state.isHydrated);
+  const isGuest = useAuthStore((state) => state.isGuest);
   const { data: business } = useBusiness();
 
-  if (isHydrated && isAuthenticated && business) {
+  // Guests skip the business onboarding flow, so they are let in even when no
+  // business profile exists yet.
+  if (isHydrated && isAuthenticated && (business || isGuest)) {
     return <Redirect href="/(tabs)/04-dashboard" />;
   }
 

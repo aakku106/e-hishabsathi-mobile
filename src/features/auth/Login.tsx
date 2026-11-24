@@ -17,12 +17,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { APP } from "@/config/app";
 import { setSetting, SETTING_KEYS } from "@/database/helpers/settings";
+import { persistGuestSession } from "@/lib/hydration";
 import { Colors_LoginPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
-import { hapticError, hapticSuccess } from "@/shared/utils/haptics";
+import {
+  hapticError,
+  hapticSelection,
+  hapticSuccess,
+} from "@/shared/utils/haptics";
 import { useAuthStore } from "@/store/auth.store";
 
 const colors = Colors_LoginPage;
@@ -30,6 +35,7 @@ const colors = Colors_LoginPage;
 export default function LoginScreen() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
+  const loginAsGuest = useAuthStore((state) => state.loginAsGuest);
 
   const [pan, setPan] = useState("");
   const [username, setUsername] = useState("");
@@ -46,9 +52,18 @@ export default function LoginScreen() {
     setError(null);
     hapticSuccess();
     login({ pan: pan.trim(), username: username.trim() });
-    setSetting(SETTING_KEYS.authPan, pan.trim());
-    setSetting(SETTING_KEYS.authUsername, username.trim());
+    void setSetting(SETTING_KEYS.authPan, pan.trim());
+    void setSetting(SETTING_KEYS.authUsername, username.trim());
+    void persistGuestSession(false);
     router.replace("/(auth)/onboarding");
+  };
+
+  /** Skip credentials entirely; the guest session persists across launches. */
+  const handleGuest = () => {
+    hapticSelection();
+    loginAsGuest();
+    void persistGuestSession(true);
+    router.replace("/(tabs)/04-dashboard");
   };
 
   return (
@@ -165,6 +180,25 @@ export default function LoginScreen() {
                 <Text style={styles.registerAction}>Create your account</Text>
               </Text>
             </TouchableOpacity>
+
+            <View style={styles.guestDivider} />
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Continue as guest"
+              onPress={handleGuest}
+              style={styles.guestButton}>
+              <MaterialCommunityIcons
+                name="account-outline"
+                size={20}
+                color={colors.primary}
+              />
+              <Text style={styles.guestText}>Continue as guest</Text>
+            </TouchableOpacity>
+            <Text style={styles.guestHint}>
+              Try the app without an account.
+            </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -392,5 +426,32 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
+  },
+  guestDivider: {
+    height: BorderWidth.thin,
+    backgroundColor: colors.border,
+    marginVertical: Spacing.xl,
+  },
+  guestButton: {
+    minHeight: 56,
+    borderRadius: Radius.lg,
+    borderWidth: BorderWidth.thin,
+    borderColor: colors.primarySoft,
+    backgroundColor: colors.surfaceAlt,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+  },
+  guestText: {
+    color: colors.primary,
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.semibold,
+  },
+  guestHint: {
+    marginTop: Spacing.sm,
+    textAlign: "center",
+    color: colors.textMuted,
+    fontSize: FontSize.sm,
   },
 });

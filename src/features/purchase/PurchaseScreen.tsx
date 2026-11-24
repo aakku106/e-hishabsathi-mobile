@@ -82,6 +82,7 @@ export default function PurchaseScreen() {
   const { data: inventory = [] } = useProducts();
   const createEntry = useCreatePurchaseEntry();
   const recentBuys = useSettingsStore((state) => state.recent.buy);
+  const aiVoiceEntry = useSettingsStore((state) => state.aiVoiceEntry);
   const currentAmount =
     Number.parseFloat(quantity || "0") * Number.parseFloat(price || "0");
 
@@ -235,29 +236,31 @@ export default function PurchaseScreen() {
                 <Text style={styles.addProductText}>{t("Add Product")}</Text>
               </Pressable>
             </View>
-            <Pressable
-              style={[
-                styles.voiceButton,
-                styles.voiceButtonFull,
-                isListening && styles.voiceButtonActive,
-              ]}
-              onPress={handleVoiceInput}>
-              <MaterialCommunityIcons
-                name={
-                  isListening ? "stop-circle-outline" : "microphone-outline"
-                }
-                size={20}
-                color={colors.primary}
-              />
-              <View>
-                <Text style={styles.voiceTitle}>
-                  {isListening ? t("Listening") : t("AI Voice")}
-                </Text>
-                <Text style={styles.voiceSubtitle}>
-                  {isListening ? t("Speak now") : t("Fill with voice")}
-                </Text>
-              </View>
-            </Pressable>
+            {aiVoiceEntry && (
+              <Pressable
+                style={[
+                  styles.voiceButton,
+                  styles.voiceButtonFull,
+                  isListening && styles.voiceButtonActive,
+                ]}
+                onPress={handleVoiceInput}>
+                <MaterialCommunityIcons
+                  name={
+                    isListening ? "stop-circle-outline" : "microphone-outline"
+                  }
+                  size={20}
+                  color={colors.primary}
+                />
+                <View>
+                  <Text style={styles.voiceTitle}>
+                    {isListening ? t("Listening") : t("AI Voice")}
+                  </Text>
+                  <Text style={styles.voiceSubtitle}>
+                    {isListening ? t("Speak now") : t("Fill with voice")}
+                  </Text>
+                </View>
+              </Pressable>
+            )}
             <View style={styles.form}>
               <View style={styles.itemCard}>
                 <Text style={styles.itemTitle}>{t("Item 1")}</Text>

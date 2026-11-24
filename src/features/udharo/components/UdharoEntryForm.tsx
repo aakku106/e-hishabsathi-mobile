@@ -87,6 +87,7 @@ export default function UdharoEntryForm({ contentPaddingTop = 0 }: UdharoEntryFo
   const { data: summary } = useUdharoSummary();
   const createEntry = useCreateUdharoEntry();
   const recentUdharo = useSettingsStore((state) => state.recent.udharo);
+  const aiVoiceEntry = useSettingsStore((state) => state.aiVoiceEntry);
 
   const handleVoiceInput = () => {
     if (Platform.OS !== "web") {
@@ -201,18 +202,20 @@ export default function UdharoEntryForm({ contentPaddingTop = 0 }: UdharoEntryFo
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled">
       <View style={styles.formCard}>
-        <Pressable
-          style={[styles.voiceButton, styles.voiceButtonFull]}
-          onPress={handleVoiceInput}>
-          <MaterialCommunityIcons
-            name={isListening ? "stop-circle-outline" : "microphone-outline"}
-            size={18}
-            color={colors.primary}
-          />
-          <Text style={styles.voiceText}>
-            {isListening ? t("Listening") : t("AI Voice")}
-          </Text>
-        </Pressable>
+        {aiVoiceEntry && (
+          <Pressable
+            style={[styles.voiceButton, styles.voiceButtonFull]}
+            onPress={handleVoiceInput}>
+            <MaterialCommunityIcons
+              name={isListening ? "stop-circle-outline" : "microphone-outline"}
+              size={18}
+              color={colors.primary}
+            />
+            <Text style={styles.voiceText}>
+              {isListening ? t("Listening") : t("AI Voice")}
+            </Text>
+          </Pressable>
+        )}
 
         <View style={styles.fieldGroup}>
           <View style={styles.inputBlock}>

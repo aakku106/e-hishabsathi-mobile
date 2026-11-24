@@ -184,6 +184,7 @@ export default function SalesEntryForm() {
     (state) => state.salesStrictInventory,
   );
   const recentSales = useSettingsStore((state) => state.recent.sales);
+  const aiVoiceEntry = useSettingsStore((state) => state.aiVoiceEntry);
 
   const handleExtraDetailSelect = (
     id: string,
@@ -449,40 +450,42 @@ export default function SalesEntryForm() {
             </Text>
           )}
 
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => {
-              const targetProduct = products[products.length - 1];
-              if (targetProduct) handleVoiceInput(targetProduct.id);
-            }}
-            style={[
-              styles.voiceButton,
-              styles.voiceButtonFull,
-              listeningProductId === products[products.length - 1]?.id &&
-                styles.voiceButtonActive,
-            ]}>
-            <MaterialCommunityIcons
-              name={
-                listeningProductId === products[products.length - 1]?.id ?
-                  "stop-circle-outline"
-                : "microphone-outline"
-              }
-              size={19}
-              color={colors.primary}
-            />
-            <View>
-              <Text style={styles.voiceTitle}>
-                {listeningProductId === products[products.length - 1]?.id ?
-                  t("Listening")
-                : t("AI Voice")}
-              </Text>
-              <Text style={styles.voiceSubtitle}>
-                {listeningProductId === products[products.length - 1]?.id ?
-                  t("Speak now")
-                : `${t("Fill with voice")} - ${t("Item")} ${products.length}`}
-              </Text>
-            </View>
-          </TouchableOpacity>
+          {aiVoiceEntry && (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                const targetProduct = products[products.length - 1];
+                if (targetProduct) handleVoiceInput(targetProduct.id);
+              }}
+              style={[
+                styles.voiceButton,
+                styles.voiceButtonFull,
+                listeningProductId === products[products.length - 1]?.id &&
+                  styles.voiceButtonActive,
+              ]}>
+              <MaterialCommunityIcons
+                name={
+                  listeningProductId === products[products.length - 1]?.id ?
+                    "stop-circle-outline"
+                  : "microphone-outline"
+                }
+                size={19}
+                color={colors.primary}
+              />
+              <View>
+                <Text style={styles.voiceTitle}>
+                  {listeningProductId === products[products.length - 1]?.id ?
+                    t("Listening")
+                  : t("AI Voice")}
+                </Text>
+                <Text style={styles.voiceSubtitle}>
+                  {listeningProductId === products[products.length - 1]?.id ?
+                    t("Speak now")
+                  : `${t("Fill with voice")} - ${t("Item")} ${products.length}`}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
 
           {products.map((p, index) => {
             const hasExtraDetail = !!p.extraDetail?.value;

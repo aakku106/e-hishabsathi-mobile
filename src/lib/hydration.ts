@@ -35,7 +35,9 @@ export async function hydrateStores(): Promise<void> {
     recentSales,
     recentBuy,
     recentUdharo,
+    aiVoiceEntry,
     tabSwipe,
+    guest,
     tier,
   ] = await Promise.all([
     getSetting(SETTING_KEYS.authPan),
@@ -50,11 +52,15 @@ export async function hydrateStores(): Promise<void> {
     getSetting(SETTING_KEYS.recent.sales),
     getSetting(SETTING_KEYS.recent.buy),
     getSetting(SETTING_KEYS.recent.udharo),
+    getSetting(SETTING_KEYS.aiVoiceEntry),
     getSetting(SETTING_KEYS.tabSwipe),
+    getSetting(SETTING_KEYS.authGuest),
     resolveDeviceTierForDefaults(),
   ]);
 
-  useAuthStore.getState().hydrate({ pan, username });
+  useAuthStore
+    .getState()
+    .hydrate({ pan, username, isGuest: parseFlag(guest, false) });
   const storedTheme: ThemeMode =
     themeMode === "dark" || themeMode === "system" ? themeMode : "light";
 
@@ -78,6 +84,7 @@ export async function hydrateStores(): Promise<void> {
       salesStrictInventory: parseFlag(strictInventory, true),
       aiAssistant,
       recent,
+      aiVoiceEntry: parseFlag(aiVoiceEntry, true),
       tabSwipeEnabled: parseFlag(tabSwipe, tier !== "low"),
     },
   );
@@ -115,4 +122,12 @@ export async function persistRecent(
 
 export async function persistTabSwipe(enabled: boolean): Promise<void> {
   await setSetting(SETTING_KEYS.tabSwipe, String(enabled));
+}
+
+export async function persistAiVoiceEntry(enabled: boolean): Promise<void> {
+  await setSetting(SETTING_KEYS.aiVoiceEntry, String(enabled));
+}
+
+export async function persistGuestSession(isGuest: boolean): Promise<void> {
+  await setSetting(SETTING_KEYS.authGuest, String(isGuest));
 }

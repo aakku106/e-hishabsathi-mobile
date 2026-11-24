@@ -168,6 +168,7 @@ export default function AccountScreen() {
     setLogoutVisible(false);
     removeSetting(SETTING_KEYS.authPan);
     removeSetting(SETTING_KEYS.authUsername);
+    removeSetting(SETTING_KEYS.authGuest);
     logout();
     router.replace("/(auth)/login");
   };

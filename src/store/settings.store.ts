@@ -33,6 +33,11 @@ export type PageSettings = {
   aiAssistant: AiAssistantSettings;
   recent: RecentEntriesSettings;
   /**
+   * The AI voice entry button on the Sales, Buy and Udharo forms. Shared by
+   * every page, so it is edited from Settings → Pages → All pages.
+   */
+  aiVoiceEntry: boolean;
+  /**
    * Horizontal swipe between tab pages. The default is tier-dependent
    * (on for high/mid, off for low) and is resolved during hydration.
    */
@@ -43,6 +48,7 @@ export const DEFAULT_PAGE_SETTINGS: PageSettings = {
   salesStrictInventory: true,
   aiAssistant: DEFAULT_AI_ASSISTANT,
   recent: DEFAULT_RECENT_ENTRIES,
+  aiVoiceEntry: true,
   tabSwipeEnabled: true,
 };
 
@@ -57,6 +63,7 @@ type SettingsState = PageSettings & {
   setSalesStrictInventory: (enabled: boolean) => void;
   setAiAssistant: (page: PageKey, enabled: boolean) => void;
   setRecent: (page: "sales" | "buy" | "udharo", enabled: boolean) => void;
+  setAiVoiceEntry: (enabled: boolean) => void;
   setTabSwipeEnabled: (enabled: boolean) => void;
   hydrate: (
     mode: ThemeMode,
@@ -84,6 +91,7 @@ export const useSettingsStore = create<SettingsState>((set) => ({
     set((state) => ({
       recent: { ...state.recent, [page]: enabled },
     })),
+  setAiVoiceEntry: (aiVoiceEntry) => set({ aiVoiceEntry }),
   setTabSwipeEnabled: (tabSwipeEnabled) => set({ tabSwipeEnabled }),
   hydrate: (themeMode, language = "en", pageSettings) =>
     set({
@@ -94,6 +102,8 @@ export const useSettingsStore = create<SettingsState>((set) => ({
         DEFAULT_PAGE_SETTINGS.salesStrictInventory,
       aiAssistant: pageSettings?.aiAssistant ?? DEFAULT_AI_ASSISTANT,
       recent: pageSettings?.recent ?? DEFAULT_RECENT_ENTRIES,
+      aiVoiceEntry:
+        pageSettings?.aiVoiceEntry ?? DEFAULT_PAGE_SETTINGS.aiVoiceEntry,
       tabSwipeEnabled:
         pageSettings?.tabSwipeEnabled ??
         DEFAULT_PAGE_SETTINGS.tabSwipeEnabled,

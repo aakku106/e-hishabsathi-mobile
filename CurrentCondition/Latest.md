@@ -21,13 +21,13 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 
 ### User-facing features
 
-- Login screen and authenticated/unauthenticated route guards are implemented. Authentication is local-only.
+- Login screen and authenticated/unauthenticated route guards are implemented. Authentication is local-only, and a `Continue as guest` button persists a guest session (no PAN/username) that skips onboarding and lands on the Dashboard; logout clears it.
 - Business onboarding creates and updates the local business profile and business type.
 - Sales supports multi-item batch entry, cash/udharo payment selection, customer capture, optional details, color selection, web voice input, recent entries, and summaries. Sales decrement stock, link to inventory, enqueue sync records, and create an Udharo credit entry plus ledger record when paid on credit.
 - Purchases supports validated entry creation, inventory suggestions, web voice input, recent entries, and summaries. Purchases increase stock, update cost price, and enqueue sync records.
 - Udharo supports validated credit entry creation, customer phone/due-date details, status display, recent entries, and summaries. Udharo writes to the local customer/ledger tables and never enters the sync queue.
 - Dashboard reads local data and displays period-based statistics, income bars, monthly trend data, and stock/low-stock metrics. A local rule-based AI assistant opens from a floating AI button on Sales, Buy, Udharo, and Dashboard as a custom Reanimated + Gesture Handler sheet (96% of window height, dismissed by swipe, backdrop, or close button).
-- Settings has a new `Pages` section for Sales, Buy, Udharo, and Dashboard: it is now a link list to per-page sub-routes (`/settings/pages/<page>`), and each per-page screen owns that page's toggles (floating AI button; Sales also the default-on inventory-only rule), offers a `Reset to default` button, and uses the tab-bar per-page accent for its icon/toggles. These persist via `app_settings` and the settings store. The Settings header hides the notifications icon.
+- Settings has a `Pages` section listing `All pages` and the Sales, Buy, Udharo, and Dashboard sub-routes (`/settings/pages/<page>`); each page screen owns its toggles (floating AI button; Sales also the default-on inventory-only rule), and `All pages` owns the shared `AI voice entry` toggle (default on) that shows/hides the voice button on the Sales, Buy, and Udharo forms. Every page screen offers a `Reset to default` button and uses the tab-bar per-page accent for its icon/toggles. These persist via `app_settings` and the settings store. The Settings header hides the notifications icon.
 - Inventory has a route and feature screen with paged product listing, product creation, manual stock adjustment, and product/stock summaries. Tapping a product row opens a read-only detail sheet (native `@expo/ui` bottom sheet) with selling/cost price, stock, stock value, and per-unit profit; editing starts from a separate `Edit product` button inside the sheet, which reveals the inline form, and a confirmed `Delete` button in the sheet footer removes the product without touching past sales/purchase history.
 - Tax/VAT has a month selector and calculates output VAT, input VAT, and net payable from local sales and purchase data.
 - Settings includes appearance (System/Dark/Light), language controls, inventory/tax links, and app settings persistence; the business profile card opens the Account page. A `Performance` section shows the device tier as a colored `Tier 1/2/3` badge with a short reason line and owns the horizontal-swipe toggle, and a `Device` section lists the tier inputs (platform/OS, model, reported RAM, plus iOS-only Liquid Glass availability and Reduce Transparency state).
@@ -49,9 +49,9 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 ### Verification
 
 - `bun install --frozen-lockfile` passes on 2026-11-19.
-- `bun run lint` passes on 2026-11-23.
-- `bunx tsc --noEmit` passes on 2026-11-23.
-- `bunx expo export --platform web` passes on 2026-11-23.
+- `bun run lint` passes on 2026-11-24.
+- `bunx tsc --noEmit` passes on 2026-11-24.
+- `bunx expo export --platform web` passes on 2026-11-24.
 - Real-device profiling of the three tiers (especially a low-end Android) is still pending.
 - The repository currently contains no automated test files, test script, or CI workflows.
 
@@ -66,7 +66,7 @@ The project is a working offline-first alpha with a feature-based Expo Router st
 
 ### Product functionality
 
-- Add edit/delete UI for sales, purchases, Udharo, and products. Repository deletion/update hooks exist, but the screens do not expose them.
+- Add edit/delete UI for sales, purchases, and Udharo. Product create/edit/delete is implemented, and repository update/delete hooks exist for the others but the screens do not expose them.
 - Finish payment/settlement flows and richer customer history; current Udharo status is display-only.
 - Persist the Purchases supplier field, which is currently rendered as a non-persistent input.
 - Add stock movement history/audit. Sales and purchases already adjust stock.
