@@ -15,9 +15,10 @@ import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 import { LabeledInput } from "@/shared/components/Input/LabledInput";
 import { Colors_UdharoPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
-import { boxShadow } from "@/shared/constants/shadows";
+import { tierBoxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { useDeviceTier, type DeviceTier } from "@/shared/utils/deviceTier";
 import { formatCurrency } from "@/shared/utils/formatter";
 import { hapticError, hapticSuccess } from "@/shared/utils/haptics";
 import { useCopy } from "@/shared/i18n";
@@ -67,11 +68,12 @@ type UdharoEntryFormProps = {
 export default function UdharoEntryForm({ contentPaddingTop = 0 }: UdharoEntryFormProps) {
   const { t, language } = useCopy();
   const { isDark } = useTheme();
+  const tier = useDeviceTier();
   const colors = useMemo(
     () => getThemedColors(Colors_UdharoPage, isDark),
     [isDark],
   );
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors, tier), [colors, tier]);
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -85,6 +87,7 @@ export default function UdharoEntryForm({ contentPaddingTop = 0 }: UdharoEntryFo
   const { data: summary } = useUdharoSummary();
   const createEntry = useCreateUdharoEntry();
   const recentUdharo = useSettingsStore((state) => state.recent.udharo);
+  const aiVoiceEntry = useSettingsStore((state) => state.aiVoiceEntry);
 
   const handleVoiceInput = () => {
     if (Platform.OS !== "web") {
@@ -199,18 +202,20 @@ export default function UdharoEntryForm({ contentPaddingTop = 0 }: UdharoEntryFo
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled">
       <View style={styles.formCard}>
-        <Pressable
-          style={[styles.voiceButton, styles.voiceButtonFull]}
-          onPress={handleVoiceInput}>
-          <MaterialCommunityIcons
-            name={isListening ? "stop-circle-outline" : "microphone-outline"}
-            size={18}
-            color={colors.primary}
-          />
-          <Text style={styles.voiceText}>
-            {isListening ? t("Listening") : t("AI Voice")}
-          </Text>
-        </Pressable>
+        {aiVoiceEntry && (
+          <Pressable
+            style={[styles.voiceButton, styles.voiceButtonFull]}
+            onPress={handleVoiceInput}>
+            <MaterialCommunityIcons
+              name={isListening ? "stop-circle-outline" : "microphone-outline"}
+              size={18}
+              color={colors.primary}
+            />
+            <Text style={styles.voiceText}>
+              {isListening ? t("Listening") : t("AI Voice")}
+            </Text>
+          </Pressable>
+        )}
 
         <View style={styles.fieldGroup}>
           <View style={styles.inputBlock}>
@@ -397,7 +402,7 @@ export default function UdharoEntryForm({ contentPaddingTop = 0 }: UdharoEntryFo
   );
 }
 
-function createStyles(colors: typeof Colors_UdharoPage) {
+function createStyles(colors: typeof Colors_UdharoPage, tier: DeviceTier) {
   return StyleSheet.create({
   container: {
     flex: 1,
@@ -416,7 +421,12 @@ function createStyles(colors: typeof Colors_UdharoPage) {
     borderColor: colors.border,
     padding: Spacing.lg,
     gap: Spacing.xl,
-    boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
+    boxShadow: tierBoxShadow(tier, {
+      y: 6,
+      blur: 16,
+      color: "#0F172A",
+      opacity: 0.05,
+    }),
   },
   fieldGroup: {
     gap: Spacing.lg,
@@ -507,7 +517,12 @@ function createStyles(colors: typeof Colors_UdharoPage) {
     borderColor: colors.border,
     paddingVertical: Spacing.lg,
     paddingHorizontal: Spacing.sm,
-    boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
+    boxShadow: tierBoxShadow(tier, {
+      y: 6,
+      blur: 16,
+      color: "#0F172A",
+      opacity: 0.05,
+    }),
   },
   summaryItem: {
     flex: 1,

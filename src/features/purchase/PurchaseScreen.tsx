@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useMemo, useRef, useState } from "react";
+import { memo, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -23,9 +23,10 @@ import {
 } from "@/shared/components/ProductPicker/ProductPicker";
 import { Colors_PurchasesPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
-import { boxShadow } from "@/shared/constants/shadows";
+import { tierBoxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { useDeviceTier, type DeviceTier } from "@/shared/utils/deviceTier";
 import { formatCurrency } from "@/shared/utils/formatter";
 import { hapticError, hapticSuccess } from "@/shared/utils/haptics";
 import { useCopy } from "@/shared/i18n";
@@ -38,6 +39,7 @@ import {
   usePurchaseEntries,
   usePurchaseSummary,
 } from "./hooks/usePurchaseEntries";
+import type { PurchaseEntry } from "./types";
 import { CreatePurchaseEntrySchema } from "./validation";
 
 type SpeechRecognitionLike = {
@@ -59,11 +61,12 @@ type SpeechRecognitionLike = {
 export default function PurchaseScreen() {
   const { t, language } = useCopy();
   const { isDark } = useTheme();
+  const tier = useDeviceTier();
   const colors = useMemo(
     () => getThemedColors(Colors_PurchasesPage, isDark),
     [isDark],
   );
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors, tier), [colors, tier]);
   const [quantity, setQuantity] = useState("");
   const [product, setProduct] = useState("");
   const [productId, setProductId] = useState<number | null>(null);
@@ -79,6 +82,7 @@ export default function PurchaseScreen() {
   const { data: inventory = [] } = useProducts();
   const createEntry = useCreatePurchaseEntry();
   const recentBuys = useSettingsStore((state) => state.recent.buy);
+  const aiVoiceEntry = useSettingsStore((state) => state.aiVoiceEntry);
   const currentAmount =
     Number.parseFloat(quantity || "0") * Number.parseFloat(price || "0");
 
@@ -232,29 +236,31 @@ export default function PurchaseScreen() {
                 <Text style={styles.addProductText}>{t("Add Product")}</Text>
               </Pressable>
             </View>
-            <Pressable
-              style={[
-                styles.voiceButton,
-                styles.voiceButtonFull,
-                isListening && styles.voiceButtonActive,
-              ]}
-              onPress={handleVoiceInput}>
-              <MaterialCommunityIcons
-                name={
-                  isListening ? "stop-circle-outline" : "microphone-outline"
-                }
-                size={20}
-                color={colors.primary}
-              />
-              <View>
-                <Text style={styles.voiceTitle}>
-                  {isListening ? t("Listening") : t("AI Voice")}
-                </Text>
-                <Text style={styles.voiceSubtitle}>
-                  {isListening ? t("Speak now") : t("Fill with voice")}
-                </Text>
-              </View>
-            </Pressable>
+            {aiVoiceEntry && (
+              <Pressable
+                style={[
+                  styles.voiceButton,
+                  styles.voiceButtonFull,
+                  isListening && styles.voiceButtonActive,
+                ]}
+                onPress={handleVoiceInput}>
+                <MaterialCommunityIcons
+                  name={
+                    isListening ? "stop-circle-outline" : "microphone-outline"
+                  }
+                  size={20}
+                  color={colors.primary}
+                />
+                <View>
+                  <Text style={styles.voiceTitle}>
+                    {isListening ? t("Listening") : t("AI Voice")}
+                  </Text>
+                  <Text style={styles.voiceSubtitle}>
+                    {isListening ? t("Speak now") : t("Fill with voice")}
+                  </Text>
+                </View>
+              </Pressable>
+            )}
             <View style={styles.form}>
               <View style={styles.itemCard}>
                 <Text style={styles.itemTitle}>{t("Item 1")}</Text>
@@ -418,29 +424,13 @@ export default function PurchaseScreen() {
               </View>
             : <View style={styles.listCard}>
                 {entries.map((entry, index) => (
-                  <View
+                  <PurchaseEntryRow
                     key={entry.id}
-                    style={[
-                      styles.entryRow,
-                      index !== entries.length - 1 && styles.entryDivider,
-                    ]}>
-                    <View style={styles.entryIcon}>
-                      <MaterialCommunityIcons
-                        name="package-variant-closed"
-                        size={18}
-                        color={colors.primary}
-                      />
-                    </View>
-                    <View style={styles.entryContent}>
-                      <Text style={styles.entryName}>{entry.product}</Text>
-                      <Text style={styles.entryMeta}>
-                        Qty {entry.quantity} × {formatCurrency(entry.price)}
-                      </Text>
-                    </View>
-                    <Text style={styles.entryAmount}>
-                      {formatCurrency(entry.amount)}
-                    </Text>
-                  </View>
+                    entry={entry}
+                    isLast={index === entries.length - 1}
+                    colors={colors}
+                    styles={styles}
+                  />
                 ))}
               </View>
             }
@@ -460,11 +450,12 @@ type PurchaseFieldProps = React.ComponentProps<typeof LabeledInput> & {
 
 function PurchaseField({ error, ...props }: PurchaseFieldProps) {
   const { isDark } = useTheme();
+  const tier = useDeviceTier();
   const colors = useMemo(
     () => getThemedColors(Colors_PurchasesPage, isDark),
     [isDark],
   );
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors, tier), [colors, tier]);
 
   return (
     <View style={styles.fieldInput}>
@@ -495,11 +486,12 @@ function SummaryMetric({
   accent?: boolean;
 }) {
   const { isDark } = useTheme();
+  const tier = useDeviceTier();
   const colors = useMemo(
     () => getThemedColors(Colors_PurchasesPage, isDark),
     [isDark],
   );
-  const styles = useMemo(() => createStyles(colors), [colors]);
+  const styles = useMemo(() => createStyles(colors, tier), [colors, tier]);
 
   return (
     <View style={styles.metric}>
@@ -516,7 +508,44 @@ function SummaryMetric({
   );
 }
 
-function createStyles(colors: typeof Colors_PurchasesPage) {
+type PurchaseEntryRowProps = {
+  entry: PurchaseEntry;
+  isLast: boolean;
+  colors: typeof Colors_PurchasesPage;
+  styles: ReturnType<typeof createStyles>;
+};
+
+/**
+ * Memoized so typing in the form — which re-renders the whole screen — does
+ * not re-render every recent-purchase row.
+ */
+const PurchaseEntryRow = memo(function PurchaseEntryRow({
+  entry,
+  isLast,
+  colors,
+  styles,
+}: PurchaseEntryRowProps) {
+  return (
+    <View style={[styles.entryRow, !isLast && styles.entryDivider]}>
+      <View style={styles.entryIcon}>
+        <MaterialCommunityIcons
+          name="package-variant-closed"
+          size={18}
+          color={colors.primary}
+        />
+      </View>
+      <View style={styles.entryContent}>
+        <Text style={styles.entryName}>{entry.product}</Text>
+        <Text style={styles.entryMeta}>
+          Qty {entry.quantity} × {formatCurrency(entry.price)}
+        </Text>
+      </View>
+      <Text style={styles.entryAmount}>{formatCurrency(entry.amount)}</Text>
+    </View>
+  );
+});
+
+function createStyles(colors: typeof Colors_PurchasesPage, tier: DeviceTier) {
   return StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -550,7 +579,12 @@ function createStyles(colors: typeof Colors_PurchasesPage) {
     borderColor: colors.border,
     padding: Spacing.md,
     gap: Spacing.lg,
-    boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
+    boxShadow: tierBoxShadow(tier, {
+      y: 6,
+      blur: 16,
+      color: "#0F172A",
+      opacity: 0.05,
+    }),
   },
   form: {
     gap: Spacing.md,
@@ -714,7 +748,12 @@ function createStyles(colors: typeof Colors_PurchasesPage) {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    boxShadow: boxShadow({ y: 5, blur: 14, color: "#0F172A", opacity: 0.04 }),
+    boxShadow: tierBoxShadow(tier, {
+      y: 5,
+      blur: 14,
+      color: "#0F172A",
+      opacity: 0.04,
+    }),
   },
   metric: {
     width: "31%",

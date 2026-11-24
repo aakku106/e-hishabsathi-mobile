@@ -1,14 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
-import {
-  GlassView,
-  isGlassEffectAPIAvailable,
-  isLiquidGlassAvailable,
-} from "expo-glass-effect";
 import React from "react";
 import {
   LayoutChangeEvent,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -23,11 +16,13 @@ import Animated, {
 
 import { Colors_NavBar } from "@/shared/constants/colors";
 import { useTheme } from "@/providers/ThemeProvider";
+import { GlassSurface } from "@/shared/components/Glass/GlassSurface";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
 import { Layout, Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useCopy } from "@/shared/i18n";
+import { useDeviceTier } from "@/shared/utils/deviceTier";
 import { hapticSelection } from "@/shared/utils/haptics";
 
 type TabRoute = {
@@ -86,14 +81,8 @@ const ROUTE_ICON_ACTIVE_MAP: Record<
 export const CustomTabBar = ({ state, descriptors, emitter, navigateToTab }: any) => {
   const { t } = useCopy();
   const { isDark } = useTheme();
+  const tier = useDeviceTier();
   const styles = React.useMemo(() => createStyles(isDark), [isDark]);
-
-  // iOS 26+ gets the native liquid-glass material. Other platforms use a
-  // translucent blur (Android falls back to a semi-transparent surface).
-  const useLiquidGlass =
-    Platform.OS === "ios" &&
-    isLiquidGlassAvailable() &&
-    isGlassEffectAPIAvailable();
 
   const routeCount = state.routes.length;
   const activeIndex = state.index;
@@ -211,21 +200,14 @@ export const CustomTabBar = ({ state, descriptors, emitter, navigateToTab }: any
 
   return (
     <View style={styles.outerContainer}>
-      <View style={styles.navBarShadow}>
-        {useLiquidGlass ?
-          <GlassView
-            style={styles.navBar}
-            glassEffectStyle="regular"
-            colorScheme={isDark ? "dark" : "light"}>
-            {tabsRow}
-          </GlassView>
-        : <BlurView
-            intensity={isDark ? 60 : 75}
-            tint={isDark ? "dark" : "light"}
-            style={styles.navBar}>
-            {tabsRow}
-          </BlurView>
-        }
+      <View
+        style={[
+          styles.navBarShadow,
+          tier === "low" && styles.navBarShadowLow,
+        ]}>
+        <GlassSurface style={styles.navBar} intensity={isDark ? 60 : 75}>
+          {tabsRow}
+        </GlassSurface>
       </View>
     </View>
   );
@@ -247,6 +229,9 @@ function createStyles(isDark: boolean) {
       borderRadius: Radius.xl,
       backgroundColor: isDark ? "rgba(17, 17, 17, 0.01)" : "rgba(255, 255, 255, 0.01)",
       boxShadow: boxShadow({ y: 10, blur: 24, color: "#0F172A", opacity: 0.12 }),
+    },
+    navBarShadowLow: {
+      boxShadow: boxShadow({ y: 6, blur: 14, color: "#0F172A", opacity: 0.06 }),
     },
     navBar: {
       width: "100%",

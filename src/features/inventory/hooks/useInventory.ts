@@ -4,6 +4,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 import { useSQLite } from "@/shared/hooks/useSQLite";
 import {
@@ -55,9 +56,16 @@ export function usePagedProducts() {
       new Error("The local database is unavailable.")
     : query.error);
 
+  // Keep the flat list identity stable across renders so FlatList and the
+  // memoized product rows only update when a page actually changes.
+  const products = useMemo(
+    () => query.data?.pages.flatMap((page) => page) ?? [],
+    [query.data],
+  );
+
   return {
     ...query,
-    products: query.data?.pages.flatMap((page) => page) ?? [],
+    products,
     isLoading: !ready || (databaseReady && query.isLoading),
     error,
     databaseReady,

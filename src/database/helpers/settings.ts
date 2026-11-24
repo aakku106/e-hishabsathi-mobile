@@ -13,7 +13,7 @@ export async function getSetting(key: string): Promise<string | null> {
 
 export async function setSetting(key: string, value: string): Promise<void> {
   const db = getDatabase();
-  if (!db) return;
+  if (!db) throw new Error("Database is not ready yet");
 
   await db.runAsync(
     "INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -24,7 +24,7 @@ export async function setSetting(key: string, value: string): Promise<void> {
 
 export async function removeSetting(key: string): Promise<void> {
   const db = getDatabase();
-  if (!db) return;
+  if (!db) throw new Error("Database is not ready yet");
 
   await db.runAsync("DELETE FROM app_settings WHERE key = ?", key);
 }
@@ -32,6 +32,8 @@ export async function removeSetting(key: string): Promise<void> {
 export const SETTING_KEYS = {
   authPan: "auth.pan",
   authUsername: "auth.username",
+  /** A guest session has no PAN/username but is still signed in. */
+  authGuest: "auth.guest",
   themeMode: "settings.themeMode",
   language: "settings.language",
   /** Sales may only use products that already exist in inventory. */
@@ -49,4 +51,8 @@ export const SETTING_KEYS = {
     buy: "settings.recent.buy",
     udharo: "settings.recent.udharo",
   },
+  /** The AI voice entry button on the Sales, Buy and Udharo forms. */
+  aiVoiceEntry: "settings.aiVoiceEntry",
+  /** Horizontal swipe between tab pages. */
+  tabSwipe: "settings.tabSwipe",
 } as const;

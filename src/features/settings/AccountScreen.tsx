@@ -33,6 +33,7 @@ import {
   hapticError,
   hapticWarning,
 } from "@/shared/utils/haptics";
+import { notify } from "@/shared/utils/dialogs";
 import { logger } from "@/shared/utils/logger";
 import { useAuthStore } from "@/store/auth.store";
 import { useSettingsStore } from "@/store/settings.store";
@@ -45,6 +46,7 @@ const COPY = {
     subtitle: "Manage your account and local data",
     business: "Business",
     noBusiness: "No business profile",
+    currency: "Currency",
     username: "Username",
     pan: "PAN",
     localData: "Your data stays on this device",
@@ -55,6 +57,10 @@ const COPY = {
     logoutTitle: "Log out?",
     logoutBody: "You will need to sign in again to open your local khata.",
     logoutConfirm: "Log out",
+    logoutErrorTitle: "Could not log out",
+    logoutErrorBody:
+      "Your local session could not be cleared. Please try again.",
+    loggingOut: "Logging out…",
     dangerZone: "Danger zone",
     deleteAll: "Delete all data",
     deleteHint: "Permanently erase all local account and business data",
@@ -81,6 +87,7 @@ const COPY = {
     subtitle: "आफ्नो खाता र स्थानीय डेटा व्यवस्थापन गर्नुहोस्",
     business: "व्यवसाय",
     noBusiness: "व्यवसाय प्रोफाइल छैन",
+    currency: "मुद्रा",
     username: "प्रयोगकर्ता नाम",
     pan: "PAN",
     localData: "तपाईंको डेटा यसै उपकरणमा रहन्छ",
@@ -91,6 +98,10 @@ const COPY = {
     logoutTitle: "लगआउट गर्ने?",
     logoutBody: "तपाईंको स्थानीय खाता खोल्न फेरि साइन इन गर्नुपर्नेछ।",
     logoutConfirm: "लगआउट",
+    logoutErrorTitle: "लगआउट गर्न सकिएन",
+    logoutErrorBody:
+      "तपाईंको स्थानीय सत्र हटाउन सकिएन। कृपया फेरि प्रयास गर्नुहोस्।",
+    loggingOut: "लगआउट हुँदै…",
     dangerZone: "जोखिम क्षेत्र",
     deleteAll: "सबै डेटा मेटाउनुहोस्",
     deleteHint: "यस उपकरणको सबै खाता र व्यवसाय डेटा स्थायी रूपमा मेटाउनुहोस्",
@@ -124,6 +135,7 @@ export default function AccountScreen() {
   );
   const styles = useMemo(() => createStyles(colors), [colors]);
   const language = useSettingsStore((state) => state.language);
+  const currency = useSettingsStore((state) => state.currency);
   const pan = useAuthStore((state) => state.pan);
   const username = useAuthStore((state) => state.username);
   const logout = useAuthStore((state) => state.logout);
@@ -134,6 +146,7 @@ export default function AccountScreen() {
   const [confirmationStep, setConfirmationStep] =
     useState<ConfirmationStep | null>(null);
   const [logoutVisible, setLogoutVisible] = useState(false);
+  const [logoutPending, setLogoutPending] = useState(false);
   const [typedConfirmation, setTypedConfirmation] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -163,11 +176,29 @@ export default function AccountScreen() {
     router.replace("/(auth)/login");
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (logoutPending) return;
+
     hapticDestructive();
+    setLogoutPending(true);
+    try {
+      // Do not clear the in-memory session until the guest flag is gone from
+      // disk; otherwise the next launch would sign the user back in as guest.
+      await Promise.all([
+        removeSetting(SETTING_KEYS.authPan),
+        removeSetting(SETTING_KEYS.authUsername),
+        removeSetting(SETTING_KEYS.authGuest),
+      ]);
+    } catch (cause) {
+      logger.error("Failed to clear the local session", cause);
+      hapticError();
+      notify(copy.logoutErrorTitle, copy.logoutErrorBody);
+      return;
+    } finally {
+      setLogoutPending(false);
+    }
+
     setLogoutVisible(false);
-    removeSetting(SETTING_KEYS.authPan);
-    removeSetting(SETTING_KEYS.authUsername);
     logout();
     router.replace("/(auth)/login");
   };
@@ -200,6 +231,12 @@ export default function AccountScreen() {
             <AccountDetail
               label={copy.business}
               value={business?.name ?? copy.noBusiness}
+              styles={styles}
+              colors={colors}
+            />
+            <AccountDetail
+              label={copy.currency}
+              value={currency}
               styles={styles}
               colors={colors}
             />
@@ -407,7 +444,9 @@ export default function AccountScreen() {
         animationType="fade"
         transparent
         visible={logoutVisible}
-        onRequestClose={() => setLogoutVisible(false)}>
+        onRequestClose={() => {
+          if (!logoutPending) setLogoutVisible(false);
+        }}>
         <View style={styles.modalOverlay}>
           <View accessibilityViewIsModal style={styles.confirmationCard}>
             <View style={styles.logoutConfirmIcon}>
@@ -422,19 +461,35 @@ export default function AccountScreen() {
             <View style={styles.modalActions}>
               <Pressable
                 accessibilityRole="button"
+                accessibilityState={{ disabled: logoutPending }}
+                disabled={logoutPending}
                 onPress={() => setLogoutVisible(false)}
-                style={styles.cancelButton}>
+                style={[
+                  styles.cancelButton,
+                  logoutPending && styles.disabledButton,
+                ]}>
                 <Text style={styles.cancelText}>{copy.cancel}</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
+                accessibilityState={{ busy: logoutPending }}
+                disabled={logoutPending}
                 onPress={handleLogout}
-                style={styles.logoutConfirmButton}>
-                <Text style={styles.logoutConfirmText}>
-                  {copy.logoutConfirm}
-                </Text>
+                style={[
+                  styles.logoutConfirmButton,
+                  logoutPending && styles.disabledButton,
+                ]}>
+                {logoutPending ?
+                  <ActivityIndicator color={colors.onPrimary} />
+                : <Text style={styles.logoutConfirmText}>
+                    {copy.logoutConfirm}
+                  </Text>
+                }
               </Pressable>
             </View>
+            {logoutPending && (
+              <Text style={styles.pendingText}>{copy.loggingOut}</Text>
+            )}
           </View>
         </View>
       </Modal>

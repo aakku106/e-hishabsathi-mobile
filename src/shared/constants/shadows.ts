@@ -5,6 +5,8 @@
  * don't repeat the same rgba values.
  */
 
+import type { DeviceTier } from "@/shared/utils/deviceTier";
+
 type BoxShadowOptions = {
   /** Horizontal offset in pixels. */
   x?: number;
@@ -79,4 +81,40 @@ export function boxShadow({
   if (spread) layers.push(`${spread}px`);
 
   return `${layers.join(" ")} ${withAlpha(color, opacity)}`;
+}
+
+/**
+ * Shadow budget per device tier: opacity and blur-radius multipliers. Shadows
+ * are cheap on paper but the blur is rasterized by the GPU, so older hardware
+ * gets a smaller, fainter shadow on every card.
+ */
+const TIER_SHADOW_SCALE: Record<
+  DeviceTier,
+  { opacity: number; blur: number }
+> = {
+  high: { opacity: 1, blur: 1 },
+  mid: { opacity: 0.85, blur: 0.8 },
+  low: { opacity: 0.7, blur: 0.6 },
+};
+
+/**
+ * Builds a `boxShadow` value scaled to the device tier.
+ *
+ * @example
+ * const tier = useDeviceTier();
+ * // "0px 6px 16px rgba(15, 23, 42, 0.05)" on high-end devices,
+ * // "0px 6px 10px rgba(15, 23, 42, 0.035)" on low-end ones.
+ * boxShadow: tierBoxShadow(tier, { y: 6, blur: 16, color: "#0F172A", opacity: 0.05 })
+ */
+export function tierBoxShadow(
+  tier: DeviceTier,
+  options: BoxShadowOptions,
+): string {
+  const scale = TIER_SHADOW_SCALE[tier];
+
+  return boxShadow({
+    ...options,
+    blur: Math.max(0, Math.round(options.blur * scale.blur)),
+    opacity: (options.opacity ?? 1) * scale.opacity,
+  });
 }

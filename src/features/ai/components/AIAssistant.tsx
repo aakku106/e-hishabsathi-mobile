@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { useTheme } from "@/providers/ThemeProvider";
@@ -8,9 +8,10 @@ import {
   getAccentColor,
   getAccentForegroundColor,
 } from "@/shared/constants/colors";
-import { boxShadow, withAlpha } from "@/shared/constants/shadows";
+import { tierBoxShadow, withAlpha } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontWeight } from "@/shared/constants/typography";
+import { useDeviceTier, type DeviceTier } from "@/shared/utils/deviceTier";
 import { useSettingsStore, type PageKey } from "@/store/settings.store";
 
 import AIOverlay from "./AIOverlay";
@@ -32,9 +33,11 @@ type AIAssistantProps = {
 export function AIAssistant({ page, bottomOffset = 92 }: AIAssistantProps) {
   const [open, setOpen] = useState(false);
   const { isDark } = useTheme();
+  const tier = useDeviceTier();
   const enabled = useSettingsStore((state) => state.aiAssistant[page]);
   const accent = getAccentColor(isDark);
   const foreground = getAccentForegroundColor(isDark);
+  const styles = useMemo(() => createStyles(tier), [tier]);
 
   if (!enabled) return null;
 
@@ -64,44 +67,51 @@ export function AIAssistant({ page, bottomOffset = 92 }: AIAssistantProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  // Full-screen layer for the AI button + bottom sheet so the overlay is
-  // laid out identically on every screen regardless of host container.
-  overlayRoot: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 900,
-    pointerEvents: "box-none",
-  },
-  button: {
-    position: "absolute",
-    right: Spacing.lg,
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    alignItems: "center",
-    justifyContent: "center",
-    boxShadow: boxShadow({ y: 5, blur: 10, color: "#0F172A", opacity: 0.2 }),
-    zIndex: 10,
-  },
-  glass: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 29,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.35)",
-  },
-  label: {
-    fontSize: 10,
-    fontWeight: FontWeight.bold,
-    marginTop: -2,
-  },
-});
+function createStyles(tier: DeviceTier) {
+  return StyleSheet.create({
+    // Full-screen layer for the AI button + bottom sheet so the overlay is
+    // laid out identically on every screen regardless of host container.
+    overlayRoot: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 900,
+      pointerEvents: "box-none",
+    },
+    button: {
+      position: "absolute",
+      right: Spacing.lg,
+      width: 58,
+      height: 58,
+      borderRadius: 29,
+      alignItems: "center",
+      justifyContent: "center",
+      boxShadow: tierBoxShadow(tier, {
+        y: 5,
+        blur: 10,
+        color: "#0F172A",
+        opacity: 0.2,
+      }),
+      zIndex: 10,
+    },
+    glass: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      borderRadius: 29,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.35)",
+    },
+    label: {
+      fontSize: 10,
+      fontWeight: FontWeight.bold,
+      marginTop: -2,
+    },
+  });
+}
 
 export default AIAssistant;

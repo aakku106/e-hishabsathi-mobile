@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -20,46 +20,67 @@ import {
   getThemedColors,
 } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
-import { boxShadow } from "@/shared/constants/shadows";
+import { tierBoxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
+import { useDeviceTier, type DeviceTier } from "@/shared/utils/deviceTier";
+import { confirmAction, notify } from "@/shared/utils/dialogs";
 import { formatCurrency } from "@/shared/utils/formatter";
 import {
+  hapticDestructive,
   hapticError,
   hapticImpact,
+  hapticSelection,
   hapticSuccess,
 } from "@/shared/utils/haptics";
 
+import { ProductDetailsSheet } from "./components/ProductDetailsSheet";
+import { LOW_STOCK_THRESHOLD } from "./constants";
 import {
   useAdjustProductStock,
   useCreateProduct,
+  useDeleteProduct,
   usePagedProducts,
   useProductSummary,
+  useUpdateProduct,
 } from "./hooks/useInventory";
+import type { CreateProductInput, Product } from "./types";
 import { CreateProductSchema } from "./validation";
-
-const LOW_STOCK_THRESHOLD = 10;
 
 const lowStockColors = {
   light: { bg: "#FEF3C7", border: "#FDE68A", text: "#92400E" },
   dark: { bg: "#3D2A00", border: "#854D0E", text: "#FDE68A" },
 };
 
+const keyExtractor = (product: Product) => String(product.id);
+
 export default function InventoryScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
+  const tier = useDeviceTier();
   const colors = useMemo(
     () => getThemedColors(Colors_InventoryPage, isDark),
     [isDark],
   );
   const [showForm, setShowForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [detailsProduct, setDetailsProduct] = useState<Product | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
   const [costPrice, setCostPrice] = useState("");
   const [stock, setStock] = useState("");
+  const [stockDirty, setStockDirty] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [formOffset, setFormOffset] = useState(0);
+  const [scrollToFormRequest, setScrollToFormRequest] = useState(0);
+  const listRef = useRef<FlatList<Product>>(null);
+  const handledScrollRequest = useRef(0);
+  /** Identifies the open draft so a late save cannot reset a newer one. */
+  const formSession = useRef(0);
+  const editingProductRef = useRef<Product | null>(null);
 
   const {
     products,
@@ -78,11 +99,30 @@ export default function InventoryScreen() {
   } = useProductSummary();
   const dataError = productsError ?? summaryError;
   const createProduct = useCreateProduct();
-  const adjustStock = useAdjustProductStock();
+  const updateProduct = useUpdateProduct();
+  const { mutate: adjustProductStock } = useAdjustProductStock();
+  const { mutate: deleteProductById } = useDeleteProduct();
 
-  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const styles = useMemo(
+    () => createStyles(colors, isDark, tier),
+    [colors, isDark, tier],
+  );
 
-  const handleAddProduct = () => {
+  const resetForm = useCallback(() => {
+    // Invalidate any save still in flight for the draft being closed.
+    formSession.current += 1;
+    setEditingProduct(null);
+    setName("");
+    setCategory("");
+    setPrice("");
+    setCostPrice("");
+    setStock("");
+    setStockDirty(false);
+    setErrors({});
+    setShowForm(false);
+  }, []);
+
+  const handleSubmitProduct = () => {
     const parsed = CreateProductSchema.safeParse({
       name,
       category: category || null,
@@ -103,19 +143,166 @@ export default function InventoryScreen() {
     }
 
     setErrors({});
+    const submittedSession = formSession.current;
+    const onSuccess = () => {
+      hapticSuccess();
+      // Only reset the draft that submitted. If the user closed it and opened
+      // another one while this save was pending, leave that newer draft alone.
+      if (formSession.current === submittedSession) resetForm();
+    };
+
+    if (editingProduct) {
+      // Never send the stock snapshot taken when Edit opened unless the user
+      // actually changed the field: a row +/- adjustment may have happened
+      // since then. Removing it after validation keeps the stored value.
+      const input: Partial<CreateProductInput> = { ...parsed.data };
+      if (!stockDirty) delete input.stockQuantity;
+      updateProduct.mutate(
+        { id: editingProduct.id, input },
+        { onSuccess, onError: hapticError },
+      );
+      return;
+    }
+
     createProduct.mutate(parsed.data, {
-      onSuccess: () => {
-        hapticSuccess();
-        setName("");
-        setCategory("");
-        setPrice("");
-        setCostPrice("");
-        setStock("");
-        setShowForm(false);
-      },
+      onSuccess,
       onError: hapticError,
     });
   };
+
+  /**
+   * Row tap (outside the +/- controls) opens the read-only detail sheet; the
+   * sheet's own button starts an edit.
+   */
+  const handleOpenDetails = useCallback((product: Product) => {
+    hapticSelection();
+    setDetailsProduct(product);
+    setIsDetailsOpen(true);
+  }, []);
+
+  const handleCloseDetails = useCallback(() => setIsDetailsOpen(false), []);
+
+  /** "Edit product" inside the sheet: close it and reveal the edit form. */
+  const handleEditFromDetails = useCallback((product: Product) => {
+    hapticSelection();
+    formSession.current += 1;
+    setIsDetailsOpen(false);
+    setEditingProduct(product);
+    setName(product.name);
+    setCategory(product.category ?? "");
+    setPrice(String(product.price));
+    setCostPrice(product.costPrice !== null ? String(product.costPrice) : "");
+    setStock(String(product.stockQuantity));
+    setStockDirty(false);
+    setErrors({});
+    setScrollToFormRequest((request) => request + 1);
+    setShowForm(true);
+  }, []);
+
+  /**
+   * Destructive action from the detail sheet. Sales and purchase rows store
+   * the product name as text, so deleting a product keeps past history intact.
+   */
+  const handleDeleteProduct = useCallback(
+    (product: Product) => {
+      hapticSelection();
+      confirmAction({
+        title: "Delete product",
+        message: `Delete "${product.name}"? Its stock will be removed. Past sales and purchases keep the name they were recorded with.`,
+        confirmLabel: "Delete",
+        cancelLabel: "Cancel",
+        destructive: true,
+        onConfirm: () => {
+          hapticDestructive();
+          setIsDetailsOpen(false);
+          deleteProductById(product.id, {
+            onSuccess: () => {
+              hapticSuccess();
+              setDetailsProduct((current) =>
+                current?.id === product.id ? null : current,
+              );
+              // Read the selection as it is now: the user may have opened
+              // another product's edit form while the delete was pending.
+              if (editingProductRef.current?.id === product.id) resetForm();
+            },
+            onError: () => {
+              hapticError();
+              notify(
+                "Could not delete",
+                "The product could not be deleted. Please try again.",
+              );
+            },
+          });
+        },
+      });
+    },
+    [deleteProductById, resetForm],
+  );
+
+  /**
+   * The form lives in the list header, so opening it from a scrolled list would
+   * leave it off-screen. Once it has a measured offset, bring it up to sit just
+   * below the glass header. A new request is queued on every Edit action, so it
+   * also scrolls when the form is already open.
+   */
+  useEffect(() => {
+    if (!showForm || formOffset <= 0) return;
+    if (scrollToFormRequest === handledScrollRequest.current) return;
+
+    handledScrollRequest.current = scrollToFormRequest;
+    requestAnimationFrame(() => {
+      listRef.current?.scrollToOffset({
+        offset: Math.max(0, formOffset + Spacing.lg),
+        animated: true,
+      });
+    });
+  }, [showForm, formOffset, scrollToFormRequest]);
+
+  // Keep the latest edit selection available to async mutation callbacks.
+  useEffect(() => {
+    editingProductRef.current = editingProduct;
+  }, [editingProduct]);
+
+  /** Stable so the memoized product rows keep their identity. */
+  const handleAdjustStock = useCallback(
+    (product: Product, delta: number) => {
+      adjustProductStock(
+        { id: product.id, delta },
+        {
+          onSuccess: () => hapticImpact(),
+          onError: hapticError,
+        },
+      );
+    },
+    [adjustProductStock],
+  );
+
+  const renderProduct = useCallback(
+    ({ item, index }: { item: Product; index: number }) => (
+      <ProductRow
+        product={item}
+        isFirst={index === 0}
+        isLast={index === products.length - 1 && !hasNextPage}
+        colors={colors}
+        styles={styles}
+        onOpenDetails={handleOpenDetails}
+        onAdjust={handleAdjustStock}
+      />
+    ),
+    [
+      colors,
+      styles,
+      products.length,
+      hasNextPage,
+      handleOpenDetails,
+      handleAdjustStock,
+    ],
+  );
+
+  const renderProductSeparator = useCallback(
+    () => <View style={styles.productDivider} />,
+    [styles],
+  );
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["bottom", "left", "right"]}>
@@ -135,86 +322,11 @@ export default function InventoryScreen() {
       </View>
 
       <FlatList
+        ref={listRef}
         data={products}
-        keyExtractor={(product) => String(product.id)}
-        renderItem={({ item: product, index }) => {
-          const lowStock = product.stockQuantity < LOW_STOCK_THRESHOLD;
-          return (
-            <View
-              style={[
-                styles.productRow,
-                index === 0 && styles.productRowFirst,
-                index === products.length - 1 &&
-                  !hasNextPage &&
-                  styles.productRowLast,
-              ]}>
-              <View style={styles.productIcon}>
-                <MaterialCommunityIcons
-                  name="package-variant-closed"
-                  size={18}
-                  color={colors.primary}
-                />
-              </View>
-              <View style={styles.productContent}>
-                <Text style={styles.productName}>{product.name}</Text>
-                <Text style={styles.productMeta}>
-                  {product.category ?? "No category"} ·{" "}
-                  {formatCurrency(product.price)}
-                </Text>
-                <Text
-                  style={[
-                    styles.stockText,
-                    lowStock && styles.stockTextLow,
-                  ]}>
-                  Stock: {product.stockQuantity} {lowStock ? "(low)" : ""}
-                </Text>
-              </View>
-
-              <View style={styles.stockControls}>
-                <TouchableOpacity
-                  style={styles.stockButton}
-                  activeOpacity={0.8}
-                  onPress={() =>
-                    adjustStock.mutate(
-                      { id: product.id, delta: -1 },
-                      {
-                        onSuccess: () => hapticImpact(),
-                        onError: hapticError,
-                      },
-                    )
-                  }
-                  disabled={product.stockQuantity <= 0}>
-                  <MaterialCommunityIcons
-                    name="minus"
-                    size={16}
-                    color={colors.textPrimary}
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.stockButton}
-                  activeOpacity={0.8}
-                  onPress={() =>
-                    adjustStock.mutate(
-                      { id: product.id, delta: 1 },
-                      {
-                        onSuccess: () => hapticImpact(),
-                        onError: hapticError,
-                      },
-                    )
-                  }>
-                  <MaterialCommunityIcons
-                    name="plus"
-                    size={16}
-                    color={colors.textPrimary}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-          );
-        }}
-        ItemSeparatorComponent={() => (
-          <View style={styles.productDivider} />
-        )}
+        keyExtractor={keyExtractor}
+        renderItem={renderProduct}
+        ItemSeparatorComponent={renderProductSeparator}
         contentContainerStyle={[styles.content, { paddingTop: headerHeight + Spacing.lg }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -297,7 +409,15 @@ export default function InventoryScreen() {
             <TouchableOpacity
               style={styles.toggleButton}
               activeOpacity={0.85}
-              onPress={() => setShowForm((v) => !v)}>
+              onPress={() => {
+                if (showForm) {
+                  resetForm();
+                } else {
+                  formSession.current += 1;
+                  setScrollToFormRequest((request) => request + 1);
+                  setShowForm(true);
+                }
+              }}>
               <View style={styles.toggleIcon}>
                 <MaterialCommunityIcons
                   name={showForm ? "minus" : "plus"}
@@ -306,7 +426,11 @@ export default function InventoryScreen() {
                 />
               </View>
               <Text style={styles.toggleButtonText}>
-                {showForm ? "Hide add product" : "Add product"}
+                {showForm ?
+                  editingProduct ?
+                    "Hide edit product"
+                  : "Hide add product"
+                : "Add product"}
               </Text>
               <MaterialCommunityIcons
                 name={showForm ? "chevron-up" : "chevron-down"}
@@ -316,7 +440,11 @@ export default function InventoryScreen() {
             </TouchableOpacity>
 
             {showForm && (
-              <View style={styles.formCard}>
+              <View
+                style={styles.formCard}
+                onLayout={(event) =>
+                  setFormOffset(event.nativeEvent.layout.y)
+                }>
                 <View style={styles.field}>
                   <LabeledInput
                     label="Product Name"
@@ -391,11 +519,14 @@ export default function InventoryScreen() {
 
                 <View style={styles.field}>
                   <LabeledInput
-                    label="Initial Stock"
+                    label={editingProduct ? "Stock" : "Initial Stock"}
                     placeholder="0"
                     keyboardType="number-pad"
                     value={stock}
-                    onChangeText={setStock}
+                    onChangeText={(value) => {
+                      setStock(value);
+                      setStockDirty(true);
+                    }}
                     labelColor={colors.textPrimary}
                     inputBgColor={colors.inputBG}
                     borderColor={colors.border}
@@ -412,14 +543,20 @@ export default function InventoryScreen() {
                 </View>
 
                 <PrimaryButton
-                  title="Add product"
-                  loading={createProduct.isPending}
-                  onPress={handleAddProduct}
+                  title={editingProduct ? "Save changes" : "Add product"}
+                  loading={
+                    editingProduct ?
+                      updateProduct.isPending
+                    : createProduct.isPending
+                  }
+                  onPress={handleSubmitProduct}
                   gradient={[colors.primary, colors.primaryDeep]}
                 />
-                {createProduct.isError && (
+                {(editingProduct ? updateProduct : createProduct).isError && (
                   <Text style={styles.errorText}>
-                    Could not add the product. Please try again.
+                    {editingProduct ?
+                      "Could not update the product. Please try again."
+                    : "Could not add the product. Please try again."}
                   </Text>
                 )}
               </View>
@@ -468,11 +605,105 @@ export default function InventoryScreen() {
           : undefined
         }
       />
+
+      <ProductDetailsSheet
+        product={detailsProduct}
+        isPresented={isDetailsOpen}
+        colors={colors}
+        onDismiss={handleCloseDetails}
+        onEdit={handleEditFromDetails}
+        onDelete={handleDeleteProduct}
+      />
     </SafeAreaView>
   );
 }
 
-function createStyles(colors: typeof Colors_InventoryPage, isDark: boolean) {
+type ProductRowProps = {
+  product: Product;
+  isFirst: boolean;
+  isLast: boolean;
+  colors: typeof Colors_InventoryPage;
+  styles: ReturnType<typeof createStyles>;
+  onOpenDetails: (product: Product) => void;
+  onAdjust: (product: Product, delta: number) => void;
+};
+
+/**
+ * Memoized so adjusting stock or opening the form doesn't re-render every
+ * product row. All props are stable (`colors`/`styles` are memoized by the
+ * screen and the callbacks are `useCallback`-wrapped).
+ */
+const ProductRow = memo(function ProductRow({
+  product,
+  isFirst,
+  isLast,
+  colors,
+  styles,
+  onOpenDetails,
+  onAdjust,
+}: ProductRowProps) {
+  const lowStock = product.stockQuantity < LOW_STOCK_THRESHOLD;
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.9}
+      accessibilityRole="button"
+      accessibilityLabel={`View details for ${product.name}`}
+      onPress={() => onOpenDetails(product)}
+      style={[
+        styles.productRow,
+        isFirst && styles.productRowFirst,
+        isLast && styles.productRowLast,
+      ]}>
+      <View style={styles.productIcon}>
+        <MaterialCommunityIcons
+          name="package-variant-closed"
+          size={18}
+          color={colors.primary}
+        />
+      </View>
+      <View style={styles.productContent}>
+        <Text style={styles.productName}>{product.name}</Text>
+        <Text style={styles.productMeta}>
+          {product.category ?? "No category"} · {formatCurrency(product.price)}
+        </Text>
+        <Text style={[styles.stockText, lowStock && styles.stockTextLow]}>
+          Stock: {product.stockQuantity} {lowStock ? "(low)" : ""}
+        </Text>
+      </View>
+
+      <View style={styles.stockControls}>
+        <TouchableOpacity
+          style={styles.stockButton}
+          activeOpacity={0.8}
+          onPress={() => onAdjust(product, -1)}
+          disabled={product.stockQuantity <= 0}>
+          <MaterialCommunityIcons
+            name="minus"
+            size={16}
+            color={colors.textPrimary}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.stockButton}
+          activeOpacity={0.8}
+          onPress={() => onAdjust(product, 1)}>
+          <MaterialCommunityIcons
+            name="plus"
+            size={16}
+            color={colors.textPrimary}
+          />
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
+});
+
+function createStyles(
+  colors: typeof Colors_InventoryPage,
+  isDark: boolean,
+  tier: DeviceTier,
+) {
   return StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -501,7 +732,12 @@ function createStyles(colors: typeof Colors_InventoryPage, isDark: boolean) {
       borderColor: colors.border,
       paddingVertical: Spacing.lg,
       paddingHorizontal: Spacing.sm,
-      boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
+      boxShadow: tierBoxShadow(tier, {
+        y: 6,
+        blur: 16,
+        color: "#0F172A",
+        opacity: 0.05,
+      }),
     },
     summaryItem: {
       flex: 1,
@@ -577,7 +813,12 @@ function createStyles(colors: typeof Colors_InventoryPage, isDark: boolean) {
       borderColor: colors.border,
       padding: Spacing.lg,
       gap: Spacing.lg,
-      boxShadow: boxShadow({ y: 6, blur: 16, color: "#0F172A", opacity: 0.05 }),
+      boxShadow: tierBoxShadow(tier, {
+        y: 6,
+        blur: 16,
+        color: "#0F172A",
+        opacity: 0.05,
+      }),
     },
     field: {
       gap: Spacing.xs,

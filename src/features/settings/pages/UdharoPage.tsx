@@ -1,16 +1,22 @@
 import { useMemo } from "react";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 
 import { Colors_NavBar, Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useCopy } from "@/shared/i18n";
-import { hapticSelection, hapticSuccess } from "@/shared/utils/haptics";
+import {
+  hapticError,
+  hapticSelection,
+  hapticSuccess,
+} from "@/shared/utils/haptics";
+import { confirmAction, notify } from "@/shared/utils/dialogs";
 import { persistAiAssistant, persistRecent } from "@/lib/hydration";
 import { useSettingsStore } from "@/store/settings.store";
 import { SettingsPageShell } from "@/features/settings/components/SettingsPageShell";
 import { SettingsToggleRow } from "@/features/settings/components/SettingsToggleRow";
+import { persistSetting } from "@/features/settings/utils/persistSetting";
 import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 
 export default function UdharoPage() {
@@ -23,42 +29,69 @@ export default function UdharoPage() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { aiAssistant, setAiAssistant, recent, setRecent } = useSettingsStore();
 
-  const handleAiToggle = (enabled: boolean) => {
-    hapticSelection();
-    setAiAssistant("udharo", enabled);
-    void persistAiAssistant("udharo", enabled);
+  const showSaveError = () => {
+    hapticError();
+    notify(t("Could not save the setting"), t("Please try again."));
   };
 
-  const handleRecentToggle = (enabled: boolean) => {
+  const handleAiToggle = async (enabled: boolean) => {
     hapticSelection();
-    setRecent("udharo", enabled);
-    void persistRecent("udharo", enabled);
+    const saved = await persistSetting({
+      previous: aiAssistant.udharo,
+      next: enabled,
+      apply: (value) => setAiAssistant("udharo", value),
+      persist: (value) => persistAiAssistant("udharo", value),
+    });
+    if (!saved) showSaveError();
+  };
+
+  const handleRecentToggle = async (enabled: boolean) => {
+    hapticSelection();
+    const saved = await persistSetting({
+      previous: recent.udharo,
+      next: enabled,
+      apply: (value) => setRecent("udharo", value),
+      persist: (value) => persistRecent("udharo", value),
+    });
+    if (!saved) showSaveError();
   };
 
   const handleResetToDefault = () => {
     hapticSelection();
-    Alert.alert(
-      t("Reset to default"),
-      t("This restores the default settings for this page."),
-      [
-        { text: t("Cancel"), style: "cancel" },
-        {
-          text: t("Reset"),
-          style: "destructive",
-          onPress: () => {
-            setAiAssistant("udharo", true);
-            void persistAiAssistant("udharo", true);
-            setRecent("udharo", true);
-            void persistRecent("udharo", true);
-            hapticSuccess();
-          },
-        },
-      ],
-    );
+    confirmAction({
+      title: t("Reset to default"),
+      message: t("This restores the default settings for this page"),
+      confirmLabel: t("Reset"),
+      cancelLabel: t("Cancel"),
+      destructive: true,
+      onConfirm: async () => {
+        const results = await Promise.all([
+          persistSetting({
+            previous: aiAssistant.udharo,
+            next: true,
+            apply: (value) => setAiAssistant("udharo", value),
+            persist: (value) => persistAiAssistant("udharo", value),
+          }),
+          persistSetting({
+            previous: recent.udharo,
+            next: true,
+            apply: (value) => setRecent("udharo", value),
+            persist: (value) => persistRecent("udharo", value),
+          }),
+        ]);
+        if (results.every(Boolean)) {
+          hapticSuccess();
+        } else {
+          showSaveError();
+        }
+      },
+    });
   };
 
   return (
-    <SettingsPageShell title={t("Udharo")}>
+    <SettingsPageShell
+      title={t("Udharo")}
+      accent={Colors_NavBar.selected.udharo}>
       <View style={styles.card}>
         <SettingsToggleRow
           label={t("AI assistant")}

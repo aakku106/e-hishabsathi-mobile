@@ -17,12 +17,18 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { APP } from "@/config/app";
 import { setSetting, SETTING_KEYS } from "@/database/helpers/settings";
+import { persistGuestSession } from "@/lib/hydration";
 import { Colors_LoginPage } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { boxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
-import { hapticError, hapticSuccess } from "@/shared/utils/haptics";
+import {
+  hapticError,
+  hapticSelection,
+  hapticSuccess,
+} from "@/shared/utils/haptics";
+import { logger } from "@/shared/utils/logger";
 import { useAuthStore } from "@/store/auth.store";
 
 const colors = Colors_LoginPage;
@@ -30,25 +36,63 @@ const colors = Colors_LoginPage;
 export default function LoginScreen() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
+  const loginAsGuest = useAuthStore((state) => state.loginAsGuest);
 
   const [pan, setPan] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
+    if (isSubmitting) return;
     if (!pan.trim() || !username.trim() || !password.trim()) {
       hapticError();
       setError("Please fill in all fields to sign in.");
       return;
     }
     setError(null);
+    setIsSubmitting(true);
+    try {
+      await Promise.all([
+        setSetting(SETTING_KEYS.authPan, pan.trim()),
+        setSetting(SETTING_KEYS.authUsername, username.trim()),
+        persistGuestSession(false),
+      ]);
+    } catch (cause) {
+      logger.error("Failed to persist the sign-in session", cause);
+      hapticError();
+      setError("Could not save your sign-in. Please try again.");
+      return;
+    } finally {
+      setIsSubmitting(false);
+    }
+
     hapticSuccess();
     login({ pan: pan.trim(), username: username.trim() });
-    setSetting(SETTING_KEYS.authPan, pan.trim());
-    setSetting(SETTING_KEYS.authUsername, username.trim());
     router.replace("/(auth)/onboarding");
+  };
+
+  /** Skip credentials entirely; the guest session persists across launches. */
+  const handleGuest = async () => {
+    if (isSubmitting) return;
+    hapticSelection();
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await persistGuestSession(true);
+    } catch (cause) {
+      logger.error("Failed to persist the guest session", cause);
+      hapticError();
+      setError("Could not start a guest session. Please try again.");
+      return;
+    } finally {
+      setIsSubmitting(false);
+    }
+
+    loginAsGuest();
+    router.replace("/(tabs)/04-dashboard");
   };
 
   return (
@@ -132,7 +176,11 @@ export default function LoginScreen() {
 
             <TouchableOpacity
               activeOpacity={0.85}
-              style={styles.signInButton}
+              disabled={isSubmitting}
+              style={[
+                styles.signInButton,
+                isSubmitting && styles.submitDisabled,
+              ]}
               onPress={handleSignIn}
             >
               <LinearGradient
@@ -165,6 +213,29 @@ export default function LoginScreen() {
                 <Text style={styles.registerAction}>Create your account</Text>
               </Text>
             </TouchableOpacity>
+
+            <View style={styles.guestDivider} />
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Continue as guest"
+              disabled={isSubmitting}
+              onPress={handleGuest}
+              style={[
+                styles.guestButton,
+                isSubmitting && styles.submitDisabled,
+              ]}>
+              <MaterialCommunityIcons
+                name="account-outline"
+                size={20}
+                color={colors.primary}
+              />
+              <Text style={styles.guestText}>Continue as guest</Text>
+            </TouchableOpacity>
+            <Text style={styles.guestHint}>
+              Try the app without an account.
+            </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -345,6 +416,9 @@ const styles = StyleSheet.create({
     marginTop: Spacing["3xl"],
     boxShadow: boxShadow({ y: 8, blur: 16, color: colors.primaryDeep, opacity: 0.3 }),
   },
+  submitDisabled: {
+    opacity: 0.6,
+  },
   signInGradient: {
     minHeight: 64,
     borderRadius: Radius.lg,
@@ -392,5 +466,32 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
+  },
+  guestDivider: {
+    height: BorderWidth.thin,
+    backgroundColor: colors.border,
+    marginVertical: Spacing.xl,
+  },
+  guestButton: {
+    minHeight: 56,
+    borderRadius: Radius.lg,
+    borderWidth: BorderWidth.thin,
+    borderColor: colors.primarySoft,
+    backgroundColor: colors.surfaceAlt,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: Spacing.sm,
+  },
+  guestText: {
+    color: colors.primary,
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.semibold,
+  },
+  guestHint: {
+    marginTop: Spacing.sm,
+    textAlign: "center",
+    color: colors.textMuted,
+    fontSize: FontSize.sm,
   },
 });

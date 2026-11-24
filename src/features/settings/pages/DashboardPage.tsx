@@ -1,16 +1,22 @@
 import { useMemo } from "react";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 
 import { Colors_NavBar, Colors_SettingsPage, getThemedColors } from "@/shared/constants/colors";
 import { BorderWidth, Radius } from "@/shared/constants/radius";
 import { Spacing } from "@/shared/constants/spacing";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useCopy } from "@/shared/i18n";
-import { hapticSelection, hapticSuccess } from "@/shared/utils/haptics";
+import {
+  hapticError,
+  hapticSelection,
+  hapticSuccess,
+} from "@/shared/utils/haptics";
+import { confirmAction, notify } from "@/shared/utils/dialogs";
 import { persistAiAssistant } from "@/lib/hydration";
 import { useSettingsStore } from "@/store/settings.store";
 import { SettingsPageShell } from "@/features/settings/components/SettingsPageShell";
 import { SettingsToggleRow } from "@/features/settings/components/SettingsToggleRow";
+import { persistSetting } from "@/features/settings/utils/persistSetting";
 import { PrimaryButton } from "@/shared/components/Button/PrimaryButton";
 
 export default function DashboardPage() {
@@ -23,34 +29,49 @@ export default function DashboardPage() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { aiAssistant, setAiAssistant } = useSettingsStore();
 
-  const handleAiToggle = (enabled: boolean) => {
+  const handleAiToggle = async (enabled: boolean) => {
     hapticSelection();
-    setAiAssistant("dashboard", enabled);
-    void persistAiAssistant("dashboard", enabled);
+    const saved = await persistSetting({
+      previous: aiAssistant.dashboard,
+      next: enabled,
+      apply: (value) => setAiAssistant("dashboard", value),
+      persist: (value) => persistAiAssistant("dashboard", value),
+    });
+    if (!saved) {
+      hapticError();
+      notify(t("Could not save the setting"), t("Please try again."));
+    }
   };
 
   const handleResetToDefault = () => {
     hapticSelection();
-    Alert.alert(
-      t("Reset to default"),
-      t("This restores the default settings for this page."),
-      [
-        { text: t("Cancel"), style: "cancel" },
-        {
-          text: t("Reset"),
-          style: "destructive",
-          onPress: () => {
-            setAiAssistant("dashboard", true);
-            void persistAiAssistant("dashboard", true);
-            hapticSuccess();
-          },
-        },
-      ],
-    );
+    confirmAction({
+      title: t("Reset to default"),
+      message: t("This restores the default settings for this page"),
+      confirmLabel: t("Reset"),
+      cancelLabel: t("Cancel"),
+      destructive: true,
+      onConfirm: async () => {
+        const saved = await persistSetting({
+          previous: aiAssistant.dashboard,
+          next: true,
+          apply: (value) => setAiAssistant("dashboard", value),
+          persist: (value) => persistAiAssistant("dashboard", value),
+        });
+        if (saved) {
+          hapticSuccess();
+        } else {
+          hapticError();
+          notify(t("Could not save the setting"), t("Please try again."));
+        }
+      },
+    });
   };
 
   return (
-    <SettingsPageShell title={t("Dashboard")}>
+    <SettingsPageShell
+      title={t("Dashboard")}
+      accent={Colors_NavBar.selected.dashBoard}>
       <View style={styles.card}>
         <SettingsToggleRow
           label={t("AI assistant")}

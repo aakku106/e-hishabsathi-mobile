@@ -12,6 +12,8 @@ import { useTheme } from "@/providers/ThemeProvider";
 type SettingsPageShellProps = {
   /** Page title shown in the shared app header. */
   title: string;
+  /** Page accent for the header title/pill; defaults to the settings primary. */
+  accent?: string;
   colors?: typeof Colors_SettingsPage;
   children: ReactNode;
 };
@@ -53,6 +55,7 @@ function createStyles(colors: typeof Colors_SettingsPage) {
  */
 export function SettingsPageShell({
   title,
+  accent,
   colors: colorsProp,
   children,
 }: SettingsPageShellProps) {
@@ -74,6 +77,7 @@ export function SettingsPageShell({
         <AppHeader
           title={title}
           colors={themedColors}
+          accentColor={accent}
           onBack={() => {
             if (router.canGoBack()) {
               router.back();
