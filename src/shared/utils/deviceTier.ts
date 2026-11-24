@@ -68,7 +68,7 @@ export function resolveDeviceTier(reduceTransparency: boolean): DeviceTier {
     if (api >= ANDROID_HIGH_API && ram >= HIGH_RAM_BYTES) {
       return "high";
     }
-    if (api < ANDROID_MID_API || (ram > 0 && ram < LOW_RAM_BYTES)) {
+    if (api < ANDROID_MID_API || (ram > 0 && ram <= LOW_RAM_BYTES)) {
       return "low";
     }
     return "mid";
@@ -239,8 +239,8 @@ function describeTier({
     if (api < ANDROID_MID_API) {
       return `Android API ${api} is below 30.`;
     }
-    if (totalMemory !== null && totalMemory > 0 && totalMemory < LOW_RAM_BYTES) {
-      return "Under 3 GB RAM.";
+    if (totalMemory !== null && totalMemory > 0 && totalMemory <= LOW_RAM_BYTES) {
+      return "3 GB RAM or less.";
     }
     if (api >= ANDROID_HIGH_API) {
       return "Android 13+, but under 5 GB RAM.";

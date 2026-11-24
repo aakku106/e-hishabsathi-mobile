@@ -3,7 +3,6 @@ import { useRouter } from "expo-router";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   StyleSheet,
   Text,
@@ -25,6 +24,7 @@ import { tierBoxShadow } from "@/shared/constants/shadows";
 import { Spacing } from "@/shared/constants/spacing";
 import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { useDeviceTier, type DeviceTier } from "@/shared/utils/deviceTier";
+import { confirmAction, notify } from "@/shared/utils/dialogs";
 import { formatCurrency } from "@/shared/utils/formatter";
 import {
   hapticDestructive,
@@ -44,7 +44,7 @@ import {
   useProductSummary,
   useUpdateProduct,
 } from "./hooks/useInventory";
-import type { Product } from "./types";
+import type { CreateProductInput, Product } from "./types";
 import { CreateProductSchema } from "./validation";
 
 const lowStockColors = {
@@ -71,11 +71,16 @@ export default function InventoryScreen() {
   const [price, setPrice] = useState("");
   const [costPrice, setCostPrice] = useState("");
   const [stock, setStock] = useState("");
+  const [stockDirty, setStockDirty] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [headerHeight, setHeaderHeight] = useState(0);
   const [formOffset, setFormOffset] = useState(0);
+  const [scrollToFormRequest, setScrollToFormRequest] = useState(0);
   const listRef = useRef<FlatList<Product>>(null);
-  const shouldScrollToForm = useRef(false);
+  const handledScrollRequest = useRef(0);
+  /** Identifies the open draft so a late save cannot reset a newer one. */
+  const formSession = useRef(0);
+  const editingProductRef = useRef<Product | null>(null);
 
   const {
     products,
@@ -104,12 +109,15 @@ export default function InventoryScreen() {
   );
 
   const resetForm = useCallback(() => {
+    // Invalidate any save still in flight for the draft being closed.
+    formSession.current += 1;
     setEditingProduct(null);
     setName("");
     setCategory("");
     setPrice("");
     setCostPrice("");
     setStock("");
+    setStockDirty(false);
     setErrors({});
     setShowForm(false);
   }, []);
@@ -135,14 +143,22 @@ export default function InventoryScreen() {
     }
 
     setErrors({});
+    const submittedSession = formSession.current;
     const onSuccess = () => {
       hapticSuccess();
-      resetForm();
+      // Only reset the draft that submitted. If the user closed it and opened
+      // another one while this save was pending, leave that newer draft alone.
+      if (formSession.current === submittedSession) resetForm();
     };
 
     if (editingProduct) {
+      // Never send the stock snapshot taken when Edit opened unless the user
+      // actually changed the field: a row +/- adjustment may have happened
+      // since then. Removing it after validation keeps the stored value.
+      const input: Partial<CreateProductInput> = { ...parsed.data };
+      if (!stockDirty) delete input.stockQuantity;
       updateProduct.mutate(
-        { id: editingProduct.id, input: parsed.data },
+        { id: editingProduct.id, input },
         { onSuccess, onError: hapticError },
       );
       return;
@@ -169,6 +185,7 @@ export default function InventoryScreen() {
   /** "Edit product" inside the sheet: close it and reveal the edit form. */
   const handleEditFromDetails = useCallback((product: Product) => {
     hapticSelection();
+    formSession.current += 1;
     setIsDetailsOpen(false);
     setEditingProduct(product);
     setName(product.name);
@@ -176,8 +193,9 @@ export default function InventoryScreen() {
     setPrice(String(product.price));
     setCostPrice(product.costPrice !== null ? String(product.costPrice) : "");
     setStock(String(product.stockQuantity));
+    setStockDirty(false);
     setErrors({});
-    shouldScrollToForm.current = true;
+    setScrollToFormRequest((request) => request + 1);
     setShowForm(true);
   }, []);
 
@@ -188,58 +206,62 @@ export default function InventoryScreen() {
   const handleDeleteProduct = useCallback(
     (product: Product) => {
       hapticSelection();
-      Alert.alert(
-        "Delete product",
-        `Delete "${product.name}"? Its stock will be removed. Past sales and purchases keep the name they were recorded with.`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: () => {
-              hapticDestructive();
-              setIsDetailsOpen(false);
-              deleteProductById(product.id, {
-                onSuccess: () => {
-                  hapticSuccess();
-                  setDetailsProduct((current) =>
-                    current?.id === product.id ? null : current,
-                  );
-                  // The edit form may still hold the deleted product.
-                  if (editingProduct?.id === product.id) resetForm();
-                },
-                onError: () => {
-                  hapticError();
-                  Alert.alert(
-                    "Could not delete",
-                    "The product could not be deleted. Please try again.",
-                  );
-                },
-              });
+      confirmAction({
+        title: "Delete product",
+        message: `Delete "${product.name}"? Its stock will be removed. Past sales and purchases keep the name they were recorded with.`,
+        confirmLabel: "Delete",
+        cancelLabel: "Cancel",
+        destructive: true,
+        onConfirm: () => {
+          hapticDestructive();
+          setIsDetailsOpen(false);
+          deleteProductById(product.id, {
+            onSuccess: () => {
+              hapticSuccess();
+              setDetailsProduct((current) =>
+                current?.id === product.id ? null : current,
+              );
+              // Read the selection as it is now: the user may have opened
+              // another product's edit form while the delete was pending.
+              if (editingProductRef.current?.id === product.id) resetForm();
             },
-          },
-        ],
-      );
+            onError: () => {
+              hapticError();
+              notify(
+                "Could not delete",
+                "The product could not be deleted. Please try again.",
+              );
+            },
+          });
+        },
+      });
     },
-    [deleteProductById, editingProduct, resetForm],
+    [deleteProductById, resetForm],
   );
 
   /**
    * The form lives in the list header, so opening it from a scrolled list would
    * leave it off-screen. Once it has a measured offset, bring it up to sit just
-   * below the glass header.
+   * below the glass header. A new request is queued on every Edit action, so it
+   * also scrolls when the form is already open.
    */
   useEffect(() => {
-    if (!showForm || formOffset <= 0 || !shouldScrollToForm.current) return;
+    if (!showForm || formOffset <= 0) return;
+    if (scrollToFormRequest === handledScrollRequest.current) return;
 
+    handledScrollRequest.current = scrollToFormRequest;
     requestAnimationFrame(() => {
-      shouldScrollToForm.current = false;
       listRef.current?.scrollToOffset({
         offset: Math.max(0, formOffset + Spacing.lg),
         animated: true,
       });
     });
-  }, [showForm, formOffset]);
+  }, [showForm, formOffset, scrollToFormRequest]);
+
+  // Keep the latest edit selection available to async mutation callbacks.
+  useEffect(() => {
+    editingProductRef.current = editingProduct;
+  }, [editingProduct]);
 
   /** Stable so the memoized product rows keep their identity. */
   const handleAdjustStock = useCallback(
@@ -391,7 +413,8 @@ export default function InventoryScreen() {
                 if (showForm) {
                   resetForm();
                 } else {
-                  shouldScrollToForm.current = true;
+                  formSession.current += 1;
+                  setScrollToFormRequest((request) => request + 1);
                   setShowForm(true);
                 }
               }}>
@@ -500,7 +523,10 @@ export default function InventoryScreen() {
                     placeholder="0"
                     keyboardType="number-pad"
                     value={stock}
-                    onChangeText={setStock}
+                    onChangeText={(value) => {
+                      setStock(value);
+                      setStockDirty(true);
+                    }}
                     labelColor={colors.textPrimary}
                     inputBgColor={colors.inputBG}
                     borderColor={colors.border}

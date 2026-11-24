@@ -31,8 +31,9 @@ type SwipeableTabScreenProps = {
   /** Switches to the adjacent tab; receives a route name from the tab order. */
   onNavigate: (routeName: TabRouteName) => void;
   /**
-   * When false the gesture is not attached at all (the Settings toggle turns
-   * this off by default on low-tier devices). Defaults to true.
+   * When false the pan gesture is disabled but the wrapper stays mounted, so
+   * toggling the setting never remounts the tab screen (and never discards an
+   * unsaved draft). Defaults to true.
    */
   enabled?: boolean;
 };
@@ -64,6 +65,7 @@ export function SwipeableTabScreen({
 
   const gesture = Gesture.Pan()
     // Navigation and haptics are JS APIs; keep the callbacks off the UI thread.
+    .enabled(enabled && index >= 0)
     .runOnJS(true)
     .activeOffsetX([-ACTIVATION_OFFSET, ACTIVATION_OFFSET])
     .failOffsetY([-ACTIVATION_OFFSET, ACTIVATION_OFFSET])
@@ -82,10 +84,8 @@ export function SwipeableTabScreen({
       }
     });
 
-  if (!enabled || index < 0) {
-    return <>{children}</>;
-  }
-
+  // Keep the same wrapper/child structure whether the gesture is enabled or
+  // not; replacing the root element would reset every screen below it.
   return (
     <GestureDetector gesture={gesture}>
       <View style={styles.container}>{children}</View>

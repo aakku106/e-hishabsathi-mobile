@@ -29,6 +29,7 @@ Wraps a tab screen in a horizontal `Gesture.Pan()`:
 - `activeOffsetX` / `failOffsetY` are both `12px`, so vertical scrolling wins as soon as the drag is clearly vertical.
 - A page change commits after `56px` of travel or a `500px/s` fling, and fires `hapticSelection()`.
 - The first and last tabs simply do nothing when swiped past the end.
+- The `enabled` prop (wired to `tabSwipeEnabled`) disables only the pan gesture. The wrapper stays mounted either way, so changing the setting never remounts a tab screen or discards an unsaved draft.
 
 `TAB_ROUTE_ORDER` defines the page order. Keep it in sync with the `<Tabs.Screen>` order in `src/app/(tabs)/_layout.tsx`.
 
