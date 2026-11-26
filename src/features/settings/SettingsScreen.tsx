@@ -58,7 +58,6 @@ const COPY = {
     tax: "Tax / VAT",
     vat: "Monthly VAT summary",
     pages: "Pages",
-    allPages: "All pages",
     sales: "Sales",
     buy: "Buy",
     udharo: "Udharo",
@@ -113,7 +112,6 @@ const COPY = {
     tax: "कर / VAT",
     vat: "मासिक VAT सारांश",
     pages: "पृष्ठहरू",
-    allPages: "सबै पृष्ठहरू",
     sales: "बिक्री",
     buy: "खरिद",
     udharo: "उधारो",
@@ -593,16 +591,6 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{copy.pages}</Text>
           <View style={styles.card}>
-            <SettingsLink
-              icon="apps"
-              label={copy.allPages}
-              colors={colors}
-              styles={styles}
-              accent={colors.primary}
-              onPress={() => router.push("/settings/pages/all-pages")}
-            />
-            <View style={styles.rowDivider} />
-
             <SettingsLink
               icon="cash-register"
               label={copy.sales}

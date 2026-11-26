@@ -12,7 +12,11 @@ import {
   hapticSuccess,
 } from "@/shared/utils/haptics";
 import { confirmAction, notify } from "@/shared/utils/dialogs";
-import { persistAiAssistant, persistRecent } from "@/lib/hydration";
+import {
+  persistAiAssistant,
+  persistAiVoiceEntry,
+  persistRecent,
+} from "@/lib/hydration";
 import { useSettingsStore } from "@/store/settings.store";
 import { SettingsPageShell } from "@/features/settings/components/SettingsPageShell";
 import { SettingsToggleRow } from "@/features/settings/components/SettingsToggleRow";
@@ -27,7 +31,14 @@ export default function BuyPage() {
     [isDark],
   );
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { aiAssistant, setAiAssistant, recent, setRecent } = useSettingsStore();
+  const {
+    aiAssistant,
+    setAiAssistant,
+    aiVoiceEntry,
+    setAiVoiceEntry,
+    recent,
+    setRecent,
+  } = useSettingsStore();
 
   const showSaveError = () => {
     hapticError();
@@ -56,6 +67,17 @@ export default function BuyPage() {
     if (!saved) showSaveError();
   };
 
+  const handleVoiceEntryToggle = async (enabled: boolean) => {
+    hapticSelection();
+    const saved = await persistSetting({
+      previous: aiVoiceEntry.buy,
+      next: enabled,
+      apply: (value) => setAiVoiceEntry("buy", value),
+      persist: (value) => persistAiVoiceEntry("buy", value),
+    });
+    if (!saved) showSaveError();
+  };
+
   const handleResetToDefault = () => {
     hapticSelection();
     confirmAction({
@@ -71,6 +93,12 @@ export default function BuyPage() {
             next: true,
             apply: (value) => setAiAssistant("buy", value),
             persist: (value) => persistAiAssistant("buy", value),
+          }),
+          persistSetting({
+            previous: aiVoiceEntry.buy,
+            next: true,
+            apply: (value) => setAiVoiceEntry("buy", value),
+            persist: (value) => persistAiVoiceEntry("buy", value),
           }),
           persistSetting({
             previous: recent.buy,
@@ -98,6 +126,15 @@ export default function BuyPage() {
           hint={t("Show the floating AI button on this page")}
           value={aiAssistant.buy}
           onValueChange={handleAiToggle}
+          colors={colors}
+          accent={Colors_NavBar.selected.buy}
+        />
+        <View style={styles.rowDivider} />
+        <SettingsToggleRow
+          label={t("AI voice entry")}
+          hint={t("Show the AI Voice button on this form")}
+          value={aiVoiceEntry.buy}
+          onValueChange={handleVoiceEntryToggle}
           colors={colors}
           accent={Colors_NavBar.selected.buy}
         />

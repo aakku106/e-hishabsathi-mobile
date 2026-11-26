@@ -51,8 +51,18 @@ export const SETTING_KEYS = {
     buy: "settings.recent.buy",
     udharo: "settings.recent.udharo",
   },
-  /** The AI voice entry button on the Sales, Buy and Udharo forms. */
-  aiVoiceEntry: "settings.aiVoiceEntry",
+  /** Per-page visibility of the AI voice-entry button on the entry forms. */
+  aiVoiceEntry: {
+    sales: "settings.aiVoiceEntry.sales",
+    buy: "settings.aiVoiceEntry.buy",
+    udharo: "settings.aiVoiceEntry.udharo",
+  },
+  /**
+   * Legacy shared key from before the toggle moved onto each entry page.
+   * Read as a fallback so existing installs keep their choice; new writes
+   * always go to the per-page keys above.
+   */
+  legacyAiVoiceEntry: "settings.aiVoiceEntry",
   /** Horizontal swipe between tab pages. */
   tabSwipe: "settings.tabSwipe",
 } as const;
