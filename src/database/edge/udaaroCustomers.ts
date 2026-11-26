@@ -103,16 +103,32 @@ export async function updateCustomer(
   const db = getDatabase();
   if (!db) return;
 
+  // Only assign the fields that were actually provided. An omitted field
+  // keeps its stored value; an explicit `null` still clears it.
+  const assignments: string[] = [];
+  const params: (string | null)[] = [];
+
+  if (input.fullName !== undefined) {
+    assignments.push("full_name = ?");
+    params.push(input.fullName);
+  }
+  if (input.phoneNumber !== undefined) {
+    assignments.push("phone_number = ?");
+    params.push(input.phoneNumber);
+  }
+  if (input.address !== undefined) {
+    assignments.push("address = ?");
+    params.push(input.address);
+  }
+
+  if (assignments.length === 0) return;
+
+  params.push(id);
   await db.runAsync(
     `UPDATE local_udaaro_customers
-     SET full_name = COALESCE(?, full_name),
-         phone_number = ?,
-         address = ?
+     SET ${assignments.join(", ")}
      WHERE id = ?`,
-    input.fullName ?? null,
-    input.phoneNumber ?? null,
-    input.address ?? null,
-    id,
+    ...params,
   );
 }
 
