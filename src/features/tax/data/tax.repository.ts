@@ -18,8 +18,14 @@ export function taxMonthOptions(count = 12): { label: string; value: string }[] 
 
 export async function fetchTaxSummary(month: string): Promise<TaxSummary> {
   const db = getDatabase();
-  const monthStart = `${month}-01T00:00:00`;
-  const monthEnd = dayjs(`${month}-01`).add(1, "month").format("YYYY-MM-01T00:00:00");
+  // `sold_at` / `purchased_at` use SQLite's `datetime()` text format
+  // (`YYYY-MM-DD HH:MM:SS`, with a space). SQLite compares these values
+  // lexicographically, and a space sorts before `T`, so both bounds must use
+  // the same separator or the first day of each month lands in the wrong one.
+  const monthStart = dayjs(`${month}-01`).format("YYYY-MM-DD HH:mm:ss");
+  const monthEnd = dayjs(`${month}-01`)
+    .add(1, "month")
+    .format("YYYY-MM-DD HH:mm:ss");
 
   if (!db) {
     return {
