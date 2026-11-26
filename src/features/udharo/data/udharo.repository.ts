@@ -25,12 +25,28 @@ function toStatus(value: string): UdharoStatus {
   return "on_track";
 }
 
+/**
+ * Single definition of an entry's effective status, shared by the list query
+ * and the summary aggregate so the badge and the counts cannot disagree.
+ *
+ * A stored `paid` is authoritative. Otherwise overdue is derived from the
+ * date-only `due_date`: `<` (not `<=`) keeps an entry due today on track, and
+ * paid entries are never overdue.
+ */
+const EFFECTIVE_STATUS_SQL = `CASE
+    WHEN status = 'paid' THEN 'paid'
+    WHEN due_date IS NOT NULL AND due_date < date('now') THEN 'overdue'
+    ELSE 'on_track'
+  END`;
+
 export async function fetchUdharoEntries(): Promise<UdharoEntry[]> {
   const db = getDatabase();
   if (!db) return [];
 
   const rows = await db.getAllAsync<UdharoRow>(
-    `SELECT u.id, u.name, u.amount, u.due_date, u.status, u.customer_id, u.created_at,
+    `SELECT u.id, u.name, u.amount, u.due_date,
+            ${EFFECTIVE_STATUS_SQL} AS status,
+            u.customer_id, u.created_at,
             c.phone_number
      FROM udharo_entries u
      LEFT JOIN local_udaaro_customers c ON c.id = u.customer_id
@@ -115,9 +131,16 @@ export async function fetchUdharoSummary(): Promise<UdharoSummary> {
     entryCount: number;
     overdueCount: number;
   }>(
-    `SELECT COALESCE(SUM(amount), 0) as totalAmount,
-            COUNT(*) as entryCount,
-            SUM(CASE WHEN status = 'overdue' OR (due_date IS NOT NULL AND due_date < datetime('now')) THEN 1 ELSE 0 END) as overdueCount
+    `SELECT
+       COALESCE(
+         SUM(CASE WHEN ${EFFECTIVE_STATUS_SQL} = 'paid' THEN 0 ELSE amount END),
+         0
+       ) as totalAmount,
+       COUNT(*) as entryCount,
+       COALESCE(
+         SUM(CASE WHEN ${EFFECTIVE_STATUS_SQL} = 'overdue' THEN 1 ELSE 0 END),
+         0
+       ) as overdueCount
      FROM udharo_entries`,
   );
 
