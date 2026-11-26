@@ -16,6 +16,19 @@ export function startOfDay(date: string | Date | number = new Date()): string {
   return dayjs(date).startOf("day").toISOString();
 }
 
+/**
+ * Local calendar date in SQLite's `YYYY-MM-DD` form.
+ *
+ * `toISOString()` is UTC, so using it for a calendar date shifts the day for
+ * part of every day in non-UTC timezones. Use this for due dates, sync-queue
+ * entry dates, and ledger transaction dates.
+ */
+export function formatLocalDate(
+  date: string | Date | number = new Date(),
+): string {
+  return dayjs(date).format("YYYY-MM-DD");
+}
+
 export function startOfWeek(date: string | Date | number = new Date()): string {
   return dayjs(date).startOf("week").toISOString();
 }

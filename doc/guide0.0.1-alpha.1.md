@@ -520,7 +520,7 @@ Local Edge Database (`database/edge/`)
 
 Device-bound tables that keep the app fully offline-first and privacy-compliant. These are separate from the regular business tables:
 
-- `local_sync_queue` — outbox pattern table tracking pending uploads to the cloud backend. Every locally created record carries a client-generated UUID used as the backend idempotency key. Sync state machine: `NOT_SYNCED → SYNCING → SYNCED` (plus `FAILED`). A row is deleted only once it is both `SYNCED` and past its 7-day edit window (see `purgeSyncedOlderThan`).
+- `local_sync_queue` — outbox pattern table tracking pending uploads to the cloud backend. Every locally created record carries a client-generated UUID used as the backend idempotency key. Sync state machine: `NOT_SYNCED → SYNCING → SYNCED` (plus `FAILED`). A row is deleted only once it is both `SYNCED` and past its 7-day edit window, evaluated with local calendar dates (see `purgeSyncedOlderThan`).
 - `local_udaaro_customers` — the merchant's private address book. Never leaves the device.
 - `local_udaaro_ledger` — credit given / payment received events per customer. Customer-level detail is never sent to the cloud; only opt-in daily aggregates are.
 - `local_udaaro_backup_log` — manual, opt-in backup of Udaaro tables to cloud storage.

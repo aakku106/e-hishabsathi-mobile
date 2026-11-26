@@ -11,6 +11,7 @@ import {
   findOrCreateProduct,
   findProductIdByName,
 } from "@/database/products";
+import { formatLocalDate } from "@/shared/utils/date";
 import { generateUuid } from "@/shared/utils/uuid";
 
 import type {
@@ -70,7 +71,7 @@ export async function createSalesBatch(
   }
 
   const batchId = generateUuid();
-  const entryDate = new Date().toISOString().slice(0, 10);
+  const entryDate = formatLocalDate();
 
   await db.withTransactionAsync(async () => {
     let batchTotal = 0;

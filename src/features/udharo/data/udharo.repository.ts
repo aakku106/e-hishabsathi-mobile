@@ -1,6 +1,7 @@
 import { getDatabase } from "@/database/sqlite";
 import { mapCamelCase } from "@/database/helpers";
 import { createLedgerEntry, findOrCreateCustomer } from "@/database/edge";
+import { formatLocalDate } from "@/shared/utils/date";
 
 import type {
   CreateUdharoEntryInput,
@@ -30,12 +31,12 @@ function toStatus(value: string): UdharoStatus {
  * and the summary aggregate so the badge and the counts cannot disagree.
  *
  * A stored `paid` is authoritative. Otherwise overdue is derived from the
- * date-only `due_date`: `<` (not `<=`) keeps an entry due today on track, and
- * paid entries are never overdue.
+ * date-only `due_date` compared with the local date: `<` (not `<=`) keeps an
+ * entry due today on track, and paid entries are never overdue.
  */
 const EFFECTIVE_STATUS_SQL = `CASE
     WHEN status = 'paid' THEN 'paid'
-    WHEN due_date IS NOT NULL AND due_date < date('now') THEN 'overdue'
+    WHEN due_date IS NOT NULL AND due_date < date('now', 'localtime') THEN 'overdue'
     ELSE 'on_track'
   END`;
 
@@ -67,7 +68,7 @@ export async function createUdharoEntry(
   const db = getDatabase();
   if (!db) throw new Error("Database is not ready yet");
 
-  const entryDate = new Date().toISOString().slice(0, 10);
+  const entryDate = formatLocalDate();
 
   await db.withTransactionAsync(async () => {
     // One customer row per name, shared with credit sales.
