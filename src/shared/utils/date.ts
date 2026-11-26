@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import dayjs, { type Dayjs } from "dayjs";
 
 export function formatDate(date: string | Date | number): string {
   return dayjs(date).format("MMM D, YYYY");
@@ -27,6 +27,16 @@ export function formatLocalDate(
   date: string | Date | number = new Date(),
 ): string {
   return dayjs(date).format("YYYY-MM-DD");
+}
+
+/**
+ * Converts a local instant to SQLite's UTC `YYYY-MM-DD HH:MM:SS` form.
+ *
+ * `datetime('now')` stores UTC, so local calendar boundaries must be converted
+ * before comparing with columns such as `sold_at` / `purchased_at`.
+ */
+export function toSqliteTimestamp(date: Dayjs): string {
+  return date.toISOString().replace("T", " ").replace("Z", "").slice(0, 19);
 }
 
 export function startOfWeek(date: string | Date | number = new Date()): string {

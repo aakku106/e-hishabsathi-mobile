@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 
 import { getDatabase } from "@/database/sqlite";
+import { toSqliteTimestamp } from "@/shared/utils/date";
 
 import { VAT_RATE, type TaxSummary } from "../types";
 
@@ -18,14 +19,12 @@ export function taxMonthOptions(count = 12): { label: string; value: string }[] 
 
 export async function fetchTaxSummary(month: string): Promise<TaxSummary> {
   const db = getDatabase();
-  // `sold_at` / `purchased_at` use SQLite's `datetime()` text format
-  // (`YYYY-MM-DD HH:MM:SS`, with a space). SQLite compares these values
-  // lexicographically, and a space sorts before `T`, so both bounds must use
-  // the same separator or the first day of each month lands in the wrong one.
-  const monthStart = dayjs(`${month}-01`).format("YYYY-MM-DD HH:mm:ss");
-  const monthEnd = dayjs(`${month}-01`)
-    .add(1, "month")
-    .format("YYYY-MM-DD HH:mm:ss");
+  // `sold_at` / `purchased_at` are stored in UTC by `datetime('now')`, while
+  // the selected month is a local calendar month. Convert both local
+  // boundaries to SQLite's UTC text form before comparing; the helper also
+  // keeps the space separator SQLite uses.
+  const monthStart = toSqliteTimestamp(dayjs(`${month}-01`));
+  const monthEnd = toSqliteTimestamp(dayjs(`${month}-01`).add(1, "month"));
 
   if (!db) {
     return {

@@ -3,7 +3,11 @@ import dayjs, { type Dayjs } from "dayjs";
 import { PRODUCT_STOCK_VALUE_EXPRESSION } from "@/database/products";
 import { getDatabase } from "@/database/sqlite";
 import { profit as calculateProfit } from "@/shared/utils/calculations";
-import { lastMonths, lastWeekdayLabels } from "@/shared/utils/date";
+import {
+  lastMonths,
+  lastWeekdayLabels,
+  toSqliteTimestamp,
+} from "@/shared/utils/date";
 import { formatCurrency } from "@/shared/utils/formatter";
 
 import type {
@@ -44,11 +48,6 @@ function periodStart(period: DashboardPeriod): Dayjs {
   if (period === "week") return now.subtract(6, "day").startOf("day");
   if (period === "year") return now.startOf("year");
   return now.startOf("month");
-}
-
-/** Converts a local instant to SQLite's UTC `YYYY-MM-DD HH:MM:SS` form. */
-function toSqliteTimestamp(date: Dayjs): string {
-  return date.toISOString().replace("T", " ").replace("Z", "").slice(0, 19);
 }
 
 export type ProfitSummary = {

@@ -100,7 +100,12 @@ export async function createSalesBatch(
         "SELECT cost_price FROM products WHERE id = ?",
         productId,
       );
-      const costPrice = item.costPrice ?? product?.cost_price ?? null;
+      if (product == null) {
+        // The exclusive connection runs without foreign-key enforcement, so a
+        // stale productId would otherwise commit a sale that moves no stock.
+        throw new Error(`"${item.product}" is no longer in inventory`);
+      }
+      const costPrice = item.costPrice ?? product.cost_price ?? null;
       const clientUuid = generateUuid();
 
       await txn.runAsync(
