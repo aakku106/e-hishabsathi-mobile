@@ -58,7 +58,11 @@ export async function findOrCreateProduct(
 
 /**
  * Moves stock by `delta` (positive for purchases, negative for sales).
- * Stock is clamped at zero so a mistyped sale can't leave negative inventory.
+ *
+ * Negative stock is allowed on purpose. Deleting a purchase whose units were
+ * already sold must leave the product at `stock_quantity - sold`, otherwise
+ * the inventory silently stops matching the sales/purchase entries and the
+ * drift is hidden. The inventory UI shows the negative figure.
  */
 export async function applyStockDelta(
   db: SQLiteDatabase,
@@ -68,7 +72,7 @@ export async function applyStockDelta(
   if (!delta) return;
 
   await db.runAsync(
-    "UPDATE products SET stock_quantity = MAX(0, stock_quantity + ?), updated_at = datetime('now') WHERE id = ?",
+    "UPDATE products SET stock_quantity = stock_quantity + ?, updated_at = datetime('now') WHERE id = ?",
     delta,
     productId,
   );
