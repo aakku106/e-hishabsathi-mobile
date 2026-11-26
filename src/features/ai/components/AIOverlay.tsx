@@ -28,6 +28,7 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated";
 
+import { useProfitSummary } from "@/features/dashboard/hooks/useDashboardData";
 import { useProductSummary } from "@/features/inventory/hooks/useInventory";
 import { usePurchaseSummary } from "@/features/purchase/hooks/usePurchaseEntries";
 import { useSalesSummary } from "@/features/sales/hooks/useSalesEntries";
@@ -104,6 +105,7 @@ export default function AIOverlay({
   const { data: purchaseSummary } = usePurchaseSummary();
   const { data: udharoSummary } = useUdharoSummary();
   const { data: productSummary } = useProductSummary();
+  const { data: profitSummary } = useProfitSummary();
   const language = useSettingsStore((state) => state.language);
 
   // Keep the latest callback without restarting the animation whenever the
@@ -200,11 +202,11 @@ export default function AIOverlay({
       "I can answer questions about your sales, purchases, Udhaaro, inventory, profit, and dashboard totals.";
 
     if (asksForOverview) {
-      const profit = (salesSummary?.totalAmount ?? 0) - (purchaseSummary?.totalAmount ?? 0);
-      answer = `Overview: ${salesSummary?.entryCount ?? 0} sales worth Rs.${(salesSummary?.totalAmount ?? 0).toLocaleString("en-IN")}, ${purchaseSummary?.entryCount ?? 0} purchases worth Rs.${(purchaseSummary?.totalAmount ?? 0).toLocaleString("en-IN")}, ${udharoSummary?.entryCount ?? 0} Udhaaro records, and estimated profit of Rs.${profit.toLocaleString("en-IN")}.`;
+      const profit = profitSummary?.profit ?? 0;
+      answer = `Overview: ${salesSummary?.entryCount ?? 0} sales worth Rs.${(salesSummary?.totalAmount ?? 0).toLocaleString("en-IN")}, ${purchaseSummary?.entryCount ?? 0} purchases worth Rs.${(purchaseSummary?.totalAmount ?? 0).toLocaleString("en-IN")}, ${udharoSummary?.entryCount ?? 0} Udhaaro records, and an all-time estimated profit of Rs.${profit.toLocaleString("en-IN")}.`;
     } else if (asksAboutProfit) {
-      const profit = (salesSummary?.totalAmount ?? 0) - (purchaseSummary?.totalAmount ?? 0);
-      answer = `Your estimated profit is Rs.${profit.toLocaleString("en-IN")}. This is sales total minus purchase total.`;
+      const profit = profitSummary?.profit ?? 0;
+      answer = `Your all-time estimated profit is Rs.${profit.toLocaleString("en-IN")}. This is total sales minus the cost of goods sold.`;
     } else if (asksAboutSales && (salesSummary?.entryCount ?? 0) === 0) {
       answer = language === "np" ? "तपाईंले अहिलेसम्म केही बिक्री गर्नुभएको छैन।" : "You haven't sold anything yet.";
     } else if (asksAboutSales) {

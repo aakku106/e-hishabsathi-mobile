@@ -2,6 +2,7 @@ import dayjs, { type Dayjs } from "dayjs";
 
 import { PRODUCT_STOCK_VALUE_EXPRESSION } from "@/database/products";
 import { getDatabase } from "@/database/sqlite";
+import { profit as calculateProfit } from "@/shared/utils/calculations";
 import { lastMonths, lastWeekdayLabels } from "@/shared/utils/date";
 import { formatCurrency } from "@/shared/utils/formatter";
 
@@ -12,6 +13,13 @@ import type {
 } from "../types";
 
 export type DashboardPeriod = "today" | "week" | "month" | "year";
+
+/**
+ * COGS for one sale line. Shared by the dashboard cards and the AI assistant
+ * so both quote the same "Total Profit" definition (`sales − COGS`), not
+ * sales minus purchases.
+ */
+export const SALES_COST_EXPRESSION = "COALESCE(cost_price, 0) * quantity";
 
 type DashboardQueryRow = {
   rowType: "stats" | "income" | "trend";
@@ -25,6 +33,11 @@ type DashboardQueryRow = {
   month: string | null;
 };
 
+/**
+ * Local calendar boundaries for the selected period. `toSqliteTimestamp`
+ * converts them to UTC so they compare directly with `sold_at`, which SQLite
+ * stores in UTC.
+ */
 function periodStart(period: DashboardPeriod): Dayjs {
   const now = dayjs();
   if (period === "today") return now.startOf("day");
@@ -33,8 +46,42 @@ function periodStart(period: DashboardPeriod): Dayjs {
   return now.startOf("month");
 }
 
+/** Converts a local instant to SQLite's UTC `YYYY-MM-DD HH:MM:SS` form. */
 function toSqliteTimestamp(date: Dayjs): string {
   return date.toISOString().replace("T", " ").replace("Z", "").slice(0, 19);
+}
+
+export type ProfitSummary = {
+  totalSales: number;
+  totalCost: number;
+  profit: number;
+};
+
+/**
+ * All-time profit using the dashboard's formula (`sales − cost_price ×
+ * quantity`). The AI assistant reads this so "profit" means the same thing in
+ * both places; subtracting purchases is a different figure.
+ */
+export async function fetchProfitSummary(): Promise<ProfitSummary> {
+  const db = getDatabase();
+  if (!db) return { totalSales: 0, totalCost: 0, profit: 0 };
+
+  const row = await db.getFirstAsync<{
+    totalSales: number | null;
+    totalCost: number | null;
+  }>(
+    `SELECT COALESCE(SUM(amount), 0) AS totalSales,
+            COALESCE(SUM(${SALES_COST_EXPRESSION}), 0) AS totalCost
+     FROM sales_entries`,
+  );
+  const totalSales = row?.totalSales ?? 0;
+  const totalCost = row?.totalCost ?? 0;
+
+  return {
+    totalSales,
+    totalCost,
+    profit: calculateProfit(totalSales, totalCost),
+  };
 }
 
 export async function fetchDashboardData(
@@ -51,11 +98,15 @@ export async function fetchDashboardData(
   const monthTrendStart = toSqliteTimestamp(
     dayjs().subtract(6, "month").startOf("month"),
   );
+  // `sold_at` is stored in UTC. The bounds above are local period starts
+  // converted to UTC, which filters correctly, but the chart buckets must be
+  // converted back to local time too. Otherwise a sale just after local
+  // midnight is grouped under the previous UTC weekday or month.
   const rows = await db.getAllAsync<DashboardQueryRow>(
     `SELECT
        'stats' AS rowType,
        (SELECT COALESCE(SUM(amount), 0) FROM sales_entries WHERE sold_at >= ?) AS totalSales,
-       (SELECT COALESCE(SUM(COALESCE(cost_price, 0) * quantity), 0) FROM sales_entries WHERE sold_at >= ?) AS totalCost,
+       (SELECT COALESCE(SUM(${SALES_COST_EXPRESSION}), 0) FROM sales_entries WHERE sold_at >= ?) AS totalCost,
        (SELECT COALESCE(SUM(amount), 0) FROM udharo_entries WHERE created_at >= ?) AS totalUdharo,
        (SELECT COALESCE(SUM(${PRODUCT_STOCK_VALUE_EXPRESSION}), 0) FROM products) AS stockValue,
        (SELECT COUNT(*) FROM products WHERE stock_quantity < 10) AS lowStockCount,
@@ -66,7 +117,7 @@ export async function fetchDashboardData(
      SELECT
        'income',
        NULL, NULL, NULL, NULL, NULL,
-       CAST(strftime('%w', sold_at) AS INTEGER) AS weekday,
+       CAST(strftime('%w', sold_at, 'localtime') AS INTEGER) AS weekday,
        COALESCE(SUM(amount), 0),
        NULL
      FROM sales_entries
@@ -78,7 +129,7 @@ export async function fetchDashboardData(
        NULL, NULL, NULL, NULL, NULL,
        NULL,
        COALESCE(SUM(amount), 0),
-       strftime('%Y-%m', sold_at) AS month
+       strftime('%Y-%m', sold_at, 'localtime') AS month
      FROM sales_entries
      WHERE sold_at >= ?
      GROUP BY month`,
