@@ -527,6 +527,7 @@ Device-bound tables that keep the app fully offline-first and privacy-compliant.
 
 Rules enforced by the edge layer:
 
+- Foreign-key enforcement is explicitly enabled per connection (`PRAGMA foreign_keys = ON`, verified by `initDatabase()`), because SQLite defaults it off. The schema depends on it for `ON DELETE SET NULL` (deleting a product keeps sales/purchase history) and `ON DELETE CASCADE` (deleting a customer removes their private ledger rows).
 - Udaaro detail never syncs: udhaaro records are written to the ledger but **not** enqueued into `local_sync_queue`.
 - Idempotency is enforced by the DB constraint (`ON CONFLICT (client_entry_id) DO NOTHING`), not app logic.
 - The dashboard "Total Profit" figure (`total sales − total cost`, where cost is `cost_price × quantity`) is computed entirely on-device from `sales_entries` — no backend round-trip. It is not a cash-in-hand figure and does not subtract Udharo outstanding.
