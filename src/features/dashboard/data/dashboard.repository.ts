@@ -165,22 +165,16 @@ export async function fetchDashboardData(
     {
       label: "Total Sales",
       value: formatCurrency(statsRow.totalSales ?? 0),
-      change: "0%",
-      changeType: "up",
     },
     {
       label: "Total Profit",
       value: formatCurrency(
         (statsRow.totalSales ?? 0) - (statsRow.totalCost ?? 0),
       ),
-      change: "0%",
-      changeType: "up",
     },
     {
       label: "Total Udharo",
       value: formatCurrency(statsRow.totalUdharo ?? 0),
-      change: "0%",
-      changeType: "down",
     },
     {
       label: "Stock Value",
