@@ -1,3 +1,5 @@
+import type { SQLiteDatabase } from "expo-sqlite";
+
 import { getDatabase } from "@/database/sqlite";
 import { mapCamelCase } from "@/database/helpers";
 import { generateUuid } from "@/shared/utils/uuid";
@@ -20,8 +22,9 @@ export type CreateCustomerInput = {
 
 export async function createCustomer(
   input: CreateCustomerInput,
+  database?: SQLiteDatabase,
 ): Promise<string> {
-  const db = getDatabase();
+  const db = database ?? getDatabase();
   if (!db) throw new Error("Database is not ready yet");
 
   const id = generateUuid();
@@ -43,8 +46,9 @@ export async function createCustomer(
  */
 export async function findOrCreateCustomer(
   input: CreateCustomerInput,
+  database?: SQLiteDatabase,
 ): Promise<string> {
-  const db = getDatabase();
+  const db = database ?? getDatabase();
   if (!db) throw new Error("Database is not ready yet");
 
   const existing = await db.getFirstAsync<{ id: string }>(
@@ -63,7 +67,7 @@ export async function findOrCreateCustomer(
     return existing.id;
   }
 
-  return createCustomer({ ...input, fullName: input.fullName.trim() });
+  return createCustomer({ ...input, fullName: input.fullName.trim() }, db);
 }
 
 export async function fetchCustomers(): Promise<LocalUdaaroCustomer[]> {

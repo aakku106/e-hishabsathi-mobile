@@ -1,4 +1,5 @@
 import dayjs from "dayjs";
+import type { SQLiteDatabase } from "expo-sqlite";
 
 import { getDatabase } from "@/database/sqlite";
 import { mapCamelCase } from "@/database/helpers";
@@ -31,8 +32,9 @@ type SyncQueueRow = {
 
 export async function enqueueRecord(
   input: EnqueueInput,
+  database?: SQLiteDatabase,
 ): Promise<void> {
-  const db = getDatabase();
+  const db = database ?? getDatabase();
   if (!db) throw new Error("Database is not ready yet");
 
   await db.runAsync(

@@ -1,3 +1,5 @@
+import type { SQLiteDatabase } from "expo-sqlite";
+
 import { getDatabase } from "@/database/sqlite";
 import { generateUuid } from "@/shared/utils/uuid";
 
@@ -42,8 +44,9 @@ function mapLedgerRow(row: LedgerRow): LocalUdaaroLedgerEntry {
 
 export async function createLedgerEntry(
   input: CreateLedgerEntryInput,
+  database?: SQLiteDatabase,
 ): Promise<string> {
-  const db = getDatabase();
+  const db = database ?? getDatabase();
   if (!db) throw new Error("Database is not ready yet");
 
   const id = generateUuid();

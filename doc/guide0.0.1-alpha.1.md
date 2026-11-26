@@ -73,7 +73,7 @@ Business records that must sync later are written atomically with an outbox entr
 Feature Data Layer
       │
       ▼
-SQLite (business table + local_sync_queue in one transaction)
+SQLite (business table + local_sync_queue in one exclusive transaction)
 ```
 
 Udaaro records are written to the local ledger only — never enqueued for sync (privacy rule).
