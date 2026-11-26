@@ -4,6 +4,7 @@ import { FontSize, FontWeight } from "@/shared/constants/typography";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Dimensions,
   KeyboardAvoidingView,
@@ -28,6 +29,7 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated";
 
+import { useProfitSummary } from "@/features/dashboard/hooks/useDashboardData";
 import { useProductSummary } from "@/features/inventory/hooks/useInventory";
 import { usePurchaseSummary } from "@/features/purchase/hooks/usePurchaseEntries";
 import { useSalesSummary } from "@/features/sales/hooks/useSalesEntries";
@@ -67,6 +69,8 @@ type AssistantMessage = {
   id: string;
   type: "bot" | "user";
   text: string;
+  /** Question to re-run when the user taps Retry on an error bubble. */
+  retryQuestion?: string;
 };
 
 export default function AIOverlay({
@@ -88,6 +92,7 @@ export default function AIOverlay({
 
   // Local state
   const [question, setQuestion] = useState(initialQuestion);
+  const [isAnswering, setIsAnswering] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const inputRef = useRef<TextInputInstance>(null);
@@ -104,6 +109,7 @@ export default function AIOverlay({
   const { data: purchaseSummary } = usePurchaseSummary();
   const { data: udharoSummary } = useUdharoSummary();
   const { data: productSummary } = useProductSummary();
+  const { data: profitSummary, refetch: refetchProfit } = useProfitSummary();
   const language = useSettingsStore((state) => state.language);
 
   // Keep the latest callback without restarting the animation whenever the
@@ -180,9 +186,46 @@ export default function AIOverlay({
     }
   };
 
-  const handleAsk = () => {
-    const trimmedQuestion = question.trim();
-    if (!trimmedQuestion) return;
+  const appendAnswerError = (questionText: string) => {
+    hapticError();
+    setMessages((current) => {
+      const messageId = Date.now();
+      return [
+        ...current,
+        { id: `${messageId}-question`, type: "user", text: questionText },
+        {
+          id: `${messageId}-error`,
+          type: "bot",
+          text: "I couldn't load your profit right now. Please try again.",
+          retryQuestion: questionText,
+        },
+      ];
+    });
+    setQuestion((current) => (current.trim() === questionText ? "" : current));
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
+  /**
+   * Returns all-time profit, waiting for the query when it has no cached value
+   * yet. A confirmed zero is still a number; `null` means loading failed.
+   */
+  const resolveProfit = async (): Promise<number | null> => {
+    if (profitSummary) return profitSummary.profit;
+
+    setIsAnswering(true);
+    try {
+      const result = await refetchProfit();
+      return result.data?.profit ?? null;
+    } catch {
+      return null;
+    } finally {
+      setIsAnswering(false);
+    }
+  };
+
+  const handleAsk = async (questionOverride?: string) => {
+    const trimmedQuestion = (questionOverride ?? question).trim();
+    if (!trimmedQuestion || isAnswering) return;
 
     const normalizedQuestion = trimmedQuestion.toLowerCase();
     const asksAboutSales =
@@ -199,12 +242,18 @@ export default function AIOverlay({
     let answer =
       "I can answer questions about your sales, purchases, Udhaaro, inventory, profit, and dashboard totals.";
 
-    if (asksForOverview) {
-      const profit = (salesSummary?.totalAmount ?? 0) - (purchaseSummary?.totalAmount ?? 0);
-      answer = `Overview: ${salesSummary?.entryCount ?? 0} sales worth Rs.${(salesSummary?.totalAmount ?? 0).toLocaleString("en-IN")}, ${purchaseSummary?.entryCount ?? 0} purchases worth Rs.${(purchaseSummary?.totalAmount ?? 0).toLocaleString("en-IN")}, ${udharoSummary?.entryCount ?? 0} Udhaaro records, and estimated profit of Rs.${profit.toLocaleString("en-IN")}.`;
-    } else if (asksAboutProfit) {
-      const profit = (salesSummary?.totalAmount ?? 0) - (purchaseSummary?.totalAmount ?? 0);
-      answer = `Your estimated profit is Rs.${profit.toLocaleString("en-IN")}. This is sales total minus purchase total.`;
+    if (asksForOverview || asksAboutProfit) {
+      const profit = await resolveProfit();
+      if (profit === null) {
+        appendAnswerError(trimmedQuestion);
+        return;
+      }
+
+      if (asksForOverview) {
+        answer = `Overview: ${salesSummary?.entryCount ?? 0} sales worth Rs.${(salesSummary?.totalAmount ?? 0).toLocaleString("en-IN")}, ${purchaseSummary?.entryCount ?? 0} purchases worth Rs.${(purchaseSummary?.totalAmount ?? 0).toLocaleString("en-IN")}, ${udharoSummary?.entryCount ?? 0} Udhaaro records, and an all-time estimated profit of Rs.${profit.toLocaleString("en-IN")}.`;
+      } else {
+        answer = `Your all-time estimated profit is Rs.${profit.toLocaleString("en-IN")}. This is total sales minus the cost of goods sold.`;
+      }
     } else if (asksAboutSales && (salesSummary?.entryCount ?? 0) === 0) {
       answer = language === "np" ? "तपाईंले अहिलेसम्म केही बिक्री गर्नुभएको छैन।" : "You haven't sold anything yet.";
     } else if (asksAboutSales) {
@@ -228,7 +277,7 @@ export default function AIOverlay({
       { id: `${Date.now()}-question`, type: "user", text: trimmedQuestion },
       { id: `${Date.now()}-answer`, type: "bot", text: answer },
     ]);
-    setQuestion("");
+    setQuestion((current) => (current.trim() === trimmedQuestion ? "" : current));
     requestAnimationFrame(() => inputRef.current?.focus());
   };
 
@@ -339,6 +388,19 @@ export default function AIOverlay({
                     ]}>
                     {m.text}
                   </Text>
+                  {m.retryQuestion ? (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel="Retry loading the answer"
+                      onPress={() => {
+                        void handleAsk(m.retryQuestion);
+                      }}
+                      style={[styles.retryBtn, { borderColor: colors.primary }]}>
+                      <Text style={[styles.retryText, { color: colors.primary }]}>
+                        Retry
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
                 </View>
               ))}
             </ScrollView>
@@ -355,9 +417,11 @@ export default function AIOverlay({
                   placeholderTextColor={colors.textMuted}
                   value={question}
                   onChangeText={setQuestion}
-                  onSubmitEditing={handleAsk}
+                  onSubmitEditing={() => {
+                    void handleAsk();
+                  }}
                   returnKeyType="send"
-                  editable
+                  editable={!isAnswering}
                   blurOnSubmit={false}
                   autoFocus
                 />
@@ -370,8 +434,21 @@ export default function AIOverlay({
                     color={isListening ? colors.danger : colors.primary}
                   />
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.sendBtn, { backgroundColor: colors.primary }]} onPress={handleAsk}>
-                  <MaterialCommunityIcons name="arrow-up" size={18} color="#fff" />
+                <TouchableOpacity
+                  style={[
+                    styles.sendBtn,
+                    { backgroundColor: isAnswering ? colors.textMuted : colors.primary },
+                  ]}
+                  onPress={() => {
+                    void handleAsk();
+                  }}
+                  disabled={isAnswering}
+                  accessibilityState={{ disabled: isAnswering, busy: isAnswering }}>
+                  {isAnswering ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <MaterialCommunityIcons name="arrow-up" size={18} color="#fff" />
+                  )}
                 </TouchableOpacity>
               </View>
             </KeyboardAvoidingView>
@@ -466,6 +543,18 @@ const styles = StyleSheet.create({
   messageText: {
     fontSize: FontSize.md,
     lineHeight: 22,
+  },
+  retryBtn: {
+    alignSelf: "flex-start",
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  retryText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
   },
 
   // Input row

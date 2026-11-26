@@ -12,7 +12,12 @@ import {
   hapticSuccess,
 } from "@/shared/utils/haptics";
 import { confirmAction, notify } from "@/shared/utils/dialogs";
-import { persistAiAssistant, persistRecent, persistSalesStrictInventory } from "@/lib/hydration";
+import {
+  persistAiAssistant,
+  persistAiVoiceEntry,
+  persistRecent,
+  persistSalesStrictInventory,
+} from "@/lib/hydration";
 import { useSettingsStore } from "@/store/settings.store";
 import { SettingsPageShell } from "@/features/settings/components/SettingsPageShell";
 import { SettingsToggleRow } from "@/features/settings/components/SettingsToggleRow";
@@ -30,6 +35,8 @@ export default function SalesPage() {
   const {
     aiAssistant,
     setAiAssistant,
+    aiVoiceEntry,
+    setAiVoiceEntry,
     recent,
     setRecent,
     salesStrictInventory,
@@ -48,6 +55,17 @@ export default function SalesPage() {
       next: enabled,
       apply: (value) => setAiAssistant("sales", value),
       persist: (value) => persistAiAssistant("sales", value),
+    });
+    if (!saved) showSaveError();
+  };
+
+  const handleVoiceEntryToggle = async (enabled: boolean) => {
+    hapticSelection();
+    const saved = await persistSetting({
+      previous: aiVoiceEntry.sales,
+      next: enabled,
+      apply: (value) => setAiVoiceEntry("sales", value),
+      persist: (value) => persistAiVoiceEntry("sales", value),
     });
     if (!saved) showSaveError();
   };
@@ -97,6 +115,12 @@ export default function SalesPage() {
             persist: (value) => persistAiAssistant("sales", value),
           }),
           persistSetting({
+            previous: aiVoiceEntry.sales,
+            next: true,
+            apply: (value) => setAiVoiceEntry("sales", value),
+            persist: (value) => persistAiVoiceEntry("sales", value),
+          }),
+          persistSetting({
             previous: recent.sales,
             next: true,
             apply: (value) => setRecent("sales", value),
@@ -122,6 +146,15 @@ export default function SalesPage() {
           hint={t("Show the floating AI button on this page")}
           value={aiAssistant.sales}
           onValueChange={handleAiToggle}
+          colors={colors}
+          accent={Colors_NavBar.selected.sales}
+        />
+        <View style={styles.rowDivider} />
+        <SettingsToggleRow
+          label={t("AI voice entry")}
+          hint={t("Show the AI Voice button on this form")}
+          value={aiVoiceEntry.sales}
+          onValueChange={handleVoiceEntryToggle}
           colors={colors}
           accent={Colors_NavBar.selected.sales}
         />

@@ -6,9 +6,12 @@ import {
 import { useAuthStore } from "@/store/auth.store";
 import {
   DEFAULT_AI_ASSISTANT,
+  DEFAULT_AI_VOICE_ENTRY,
   DEFAULT_RECENT_ENTRIES,
   useSettingsStore,
   type AiAssistantSettings,
+  type AiVoiceEntryPage,
+  type AiVoiceEntrySettings,
   type PageKey,
   type RecentEntriesSettings,
 } from "@/store/settings.store";
@@ -35,7 +38,10 @@ export async function hydrateStores(): Promise<void> {
     recentSales,
     recentBuy,
     recentUdharo,
-    aiVoiceEntry,
+    aiVoiceSales,
+    aiVoiceBuy,
+    aiVoiceUdharo,
+    legacyAiVoiceEntry,
     tabSwipe,
     guest,
     tier,
@@ -52,7 +58,10 @@ export async function hydrateStores(): Promise<void> {
     getSetting(SETTING_KEYS.recent.sales),
     getSetting(SETTING_KEYS.recent.buy),
     getSetting(SETTING_KEYS.recent.udharo),
-    getSetting(SETTING_KEYS.aiVoiceEntry),
+    getSetting(SETTING_KEYS.aiVoiceEntry.sales),
+    getSetting(SETTING_KEYS.aiVoiceEntry.buy),
+    getSetting(SETTING_KEYS.aiVoiceEntry.udharo),
+    getSetting(SETTING_KEYS.legacyAiVoiceEntry),
     getSetting(SETTING_KEYS.tabSwipe),
     getSetting(SETTING_KEYS.authGuest),
     resolveDeviceTierForDefaults(),
@@ -77,6 +86,18 @@ export async function hydrateStores(): Promise<void> {
     udharo: parseFlag(recentUdharo, DEFAULT_RECENT_ENTRIES.udharo),
   };
 
+  // Installs from before the toggle moved onto each page stored one shared
+  // flag. Use it as the fallback until a page gets its own value.
+  const legacyVoiceEntry = parseFlag(
+    legacyAiVoiceEntry,
+    DEFAULT_AI_VOICE_ENTRY.sales,
+  );
+  const aiVoiceEntry: AiVoiceEntrySettings = {
+    sales: parseFlag(aiVoiceSales, legacyVoiceEntry),
+    buy: parseFlag(aiVoiceBuy, legacyVoiceEntry),
+    udharo: parseFlag(aiVoiceUdharo, legacyVoiceEntry),
+  };
+
   useSettingsStore.getState().hydrate(
     storedTheme,
     language === "np" ? "np" : "en",
@@ -84,7 +105,7 @@ export async function hydrateStores(): Promise<void> {
       salesStrictInventory: parseFlag(strictInventory, true),
       aiAssistant,
       recent,
-      aiVoiceEntry: parseFlag(aiVoiceEntry, true),
+      aiVoiceEntry,
       tabSwipeEnabled: parseFlag(tabSwipe, tier !== "low"),
     },
   );
@@ -124,8 +145,11 @@ export async function persistTabSwipe(enabled: boolean): Promise<void> {
   await setSetting(SETTING_KEYS.tabSwipe, String(enabled));
 }
 
-export async function persistAiVoiceEntry(enabled: boolean): Promise<void> {
-  await setSetting(SETTING_KEYS.aiVoiceEntry, String(enabled));
+export async function persistAiVoiceEntry(
+  page: AiVoiceEntryPage,
+  enabled: boolean,
+): Promise<void> {
+  await setSetting(SETTING_KEYS.aiVoiceEntry[page], String(enabled));
 }
 
 export async function persistGuestSession(isGuest: boolean): Promise<void> {

@@ -2,8 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 
 import { useSQLite } from "@/shared/hooks/useSQLite";
 
-import { fetchDashboardData } from "../data/dashboard.repository";
-import type { DashboardPeriod } from "../data/dashboard.repository";
+import {
+  fetchDashboardData,
+  fetchProfitSummary,
+} from "../data/dashboard.repository";
+import type {
+  DashboardPeriod,
+  ProfitSummary,
+} from "../data/dashboard.repository";
 import type { DashboardBar, DashboardStat, DashboardTrendPoint } from "../types";
 
 type DashboardData = {
@@ -39,4 +45,16 @@ export function useDashboardData(period: DashboardPeriod = "today") {
     databaseReady,
     refetch: query.refetch,
   };
+}
+
+/**
+ * All-time profit for the AI assistant. Shares the dashboard's COGS formula
+ * so both screens quote the same definition of profit.
+ */
+export function useProfitSummary() {
+  return useQuery<ProfitSummary>({
+    queryKey: ["dashboard", "profit"],
+    queryFn: fetchProfitSummary,
+    staleTime: 0,
+  });
 }

@@ -82,7 +82,7 @@ export default function PurchaseScreen() {
   const { data: inventory = [] } = useProducts();
   const createEntry = useCreatePurchaseEntry();
   const recentBuys = useSettingsStore((state) => state.recent.buy);
-  const aiVoiceEntry = useSettingsStore((state) => state.aiVoiceEntry);
+  const aiVoiceEntry = useSettingsStore((state) => state.aiVoiceEntry.buy);
   const currentAmount =
     Number.parseFloat(quantity || "0") * Number.parseFloat(price || "0");
 

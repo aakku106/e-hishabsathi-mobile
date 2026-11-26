@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 
 import { getDatabase } from "@/database/sqlite";
+import { toSqliteTimestamp } from "@/shared/utils/date";
 
 import { VAT_RATE, type TaxSummary } from "../types";
 
@@ -18,8 +19,12 @@ export function taxMonthOptions(count = 12): { label: string; value: string }[] 
 
 export async function fetchTaxSummary(month: string): Promise<TaxSummary> {
   const db = getDatabase();
-  const monthStart = `${month}-01T00:00:00`;
-  const monthEnd = dayjs(`${month}-01`).add(1, "month").format("YYYY-MM-01T00:00:00");
+  // `sold_at` / `purchased_at` are stored in UTC by `datetime('now')`, while
+  // the selected month is a local calendar month. Convert both local
+  // boundaries to SQLite's UTC text form before comparing; the helper also
+  // keeps the space separator SQLite uses.
+  const monthStart = toSqliteTimestamp(dayjs(`${month}-01`));
+  const monthEnd = toSqliteTimestamp(dayjs(`${month}-01`).add(1, "month"));
 
   if (!db) {
     return {

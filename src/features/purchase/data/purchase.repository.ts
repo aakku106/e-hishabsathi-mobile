@@ -2,6 +2,7 @@ import { getDatabase } from "@/database/sqlite";
 import { mapCamelCase } from "@/database/helpers";
 import { ENTITY_TYPE, enqueueRecord } from "@/database/edge";
 import { applyStockDelta, findOrCreateProduct } from "@/database/products";
+import { formatLocalDate } from "@/shared/utils/date";
 import { generateUuid } from "@/shared/utils/uuid";
 
 import type {
@@ -86,7 +87,7 @@ export async function createPurchaseEntry(
         price: input.price,
         amount: input.amount,
       }),
-      entryDate: new Date().toISOString().slice(0, 10),
+      entryDate: formatLocalDate(),
     });
   });
 }

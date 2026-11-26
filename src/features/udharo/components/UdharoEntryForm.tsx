@@ -87,7 +87,7 @@ export default function UdharoEntryForm({ contentPaddingTop = 0 }: UdharoEntryFo
   const { data: summary } = useUdharoSummary();
   const createEntry = useCreateUdharoEntry();
   const recentUdharo = useSettingsStore((state) => state.recent.udharo);
-  const aiVoiceEntry = useSettingsStore((state) => state.aiVoiceEntry);
+  const aiVoiceEntry = useSettingsStore((state) => state.aiVoiceEntry.udharo);
 
   const handleVoiceInput = () => {
     if (Platform.OS !== "web") {

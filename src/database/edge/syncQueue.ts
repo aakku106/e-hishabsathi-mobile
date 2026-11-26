@@ -1,3 +1,6 @@
+import dayjs from "dayjs";
+import type { SQLiteDatabase } from "expo-sqlite";
+
 import { getDatabase } from "@/database/sqlite";
 import { mapCamelCase } from "@/database/helpers";
 import { generateUuid } from "@/shared/utils/uuid";
@@ -29,8 +32,9 @@ type SyncQueueRow = {
 
 export async function enqueueRecord(
   input: EnqueueInput,
+  database?: SQLiteDatabase,
 ): Promise<void> {
-  const db = getDatabase();
+  const db = database ?? getDatabase();
   if (!db) throw new Error("Database is not ready yet");
 
   await db.runAsync(
@@ -107,17 +111,21 @@ export async function markFailed(ids: string[]): Promise<void> {
 
 /**
  * Retention rule: a local row is deleted only once it is BOTH `SYNCED`
- * AND past its 7-day edit window (evaluated per entry_date).
+ * AND older than its 7-day edit window. `entry_date` is a local calendar date
+ * (`YYYY-MM-DD`), so the cutoff is computed in local time too. Comparing a
+ * local date with a UTC `date('now')` shifts the window by up to a day in
+ * non-UTC timezones.
  */
 export async function purgeSyncedOlderThan(days = 7): Promise<number> {
   const db = getDatabase();
   if (!db) return 0;
 
+  const cutoff = dayjs().subtract(days, "day").format("YYYY-MM-DD");
   const result = await db.runAsync(
     `DELETE FROM local_sync_queue
      WHERE sync_status = 'SYNCED'
-       AND entry_date < date('now', ?)`,
-    `-${days} days`,
+       AND entry_date < ?`,
+    cutoff,
   );
   return result.changes ?? 0;
 }

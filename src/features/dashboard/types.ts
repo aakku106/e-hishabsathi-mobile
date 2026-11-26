@@ -1,8 +1,13 @@
 export type DashboardStat = {
   label: string;
   value: string;
-  change: string;
-  changeType: "up" | "down";
+  /**
+   * Optional badge for a real, non-placeholder signal (currently the
+   * low-stock count). Percentage trends are omitted until they are computed
+   * from actual period-over-period data.
+   */
+  change?: string;
+  changeType?: "up" | "down";
 };
 
 export type DashboardBar = {

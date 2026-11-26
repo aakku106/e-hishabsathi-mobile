@@ -55,6 +55,22 @@ async function openDatabase(): Promise<SQLiteDatabase> {
   }
 }
 
+/**
+ * SQLite disables foreign key enforcement on every new connection, so the
+ * schema's `ON DELETE SET NULL` / `ON DELETE CASCADE` rules only work after
+ * this runs. `PRAGMA foreign_keys` is a no-op inside a transaction, which is
+ * why it must happen before `migrateDatabase()` opens one.
+ */
+async function enableForeignKeys(db: SQLiteDatabase): Promise<void> {
+  await db.execAsync("PRAGMA foreign_keys = ON;");
+  const row = await db.getFirstAsync<{ foreign_keys: number }>(
+    "PRAGMA foreign_keys",
+  );
+  if (row?.foreign_keys !== 1) {
+    throw new Error("SQLite foreign key enforcement could not be enabled.");
+  }
+}
+
 export function getDatabase(): SQLiteDatabase | null {
   return database;
 }
@@ -67,6 +83,7 @@ export async function initDatabase(): Promise<SQLiteDatabase> {
     const db = await openDatabase();
 
     try {
+      await enableForeignKeys(db);
       await migrateDatabase(db);
       await seedDatabase(db);
     } catch (error) {

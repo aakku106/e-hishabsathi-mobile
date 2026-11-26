@@ -1,4 +1,7 @@
-import { PRODUCT_STOCK_VALUE_EXPRESSION } from "@/database/products";
+import {
+  PRODUCT_STOCK_VALUE_EXPRESSION,
+  applyStockDelta,
+} from "@/database/products";
 import { getDatabase } from "@/database/sqlite";
 
 import type {
@@ -133,9 +136,7 @@ export async function adjustProductStock(
   const db = getDatabase();
   if (!db) throw new Error("Database is not ready yet");
 
-  await db.runAsync(
-    "UPDATE products SET stock_quantity = MAX(0, stock_quantity + ?), updated_at = datetime('now') WHERE id = ?",
-    delta,
-    id,
-  );
+  // Same stock rule as sales/purchases: never clamp, so entries and stock
+  // cannot drift apart.
+  await applyStockDelta(db, id, delta);
 }

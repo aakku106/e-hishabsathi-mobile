@@ -184,7 +184,7 @@ export default function SalesEntryForm() {
     (state) => state.salesStrictInventory,
   );
   const recentSales = useSettingsStore((state) => state.recent.sales);
-  const aiVoiceEntry = useSettingsStore((state) => state.aiVoiceEntry);
+  const aiVoiceEntry = useSettingsStore((state) => state.aiVoiceEntry.sales);
 
   const handleExtraDetailSelect = (
     id: string,

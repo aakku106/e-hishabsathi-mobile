@@ -73,7 +73,7 @@ Business records that must sync later are written atomically with an outbox entr
 Feature Data Layer
       │
       ▼
-SQLite (business table + local_sync_queue in one transaction)
+SQLite (business table + local_sync_queue in one exclusive transaction)
 ```
 
 Udaaro records are written to the local ledger only — never enqueued for sync (privacy rule).
@@ -520,13 +520,14 @@ Local Edge Database (`database/edge/`)
 
 Device-bound tables that keep the app fully offline-first and privacy-compliant. These are separate from the regular business tables:
 
-- `local_sync_queue` — outbox pattern table tracking pending uploads to the cloud backend. Every locally created record carries a client-generated UUID used as the backend idempotency key. Sync state machine: `NOT_SYNCED → SYNCING → SYNCED` (plus `FAILED`). A row is deleted only once it is both `SYNCED` and past its 7-day edit window (see `purgeSyncedOlderThan`).
+- `local_sync_queue` — outbox pattern table tracking pending uploads to the cloud backend. Every locally created record carries a client-generated UUID used as the backend idempotency key. Sync state machine: `NOT_SYNCED → SYNCING → SYNCED` (plus `FAILED`). A row is deleted only once it is both `SYNCED` and past its 7-day edit window, evaluated with local calendar dates (see `purgeSyncedOlderThan`).
 - `local_udaaro_customers` — the merchant's private address book. Never leaves the device.
 - `local_udaaro_ledger` — credit given / payment received events per customer. Customer-level detail is never sent to the cloud; only opt-in daily aggregates are.
 - `local_udaaro_backup_log` — manual, opt-in backup of Udaaro tables to cloud storage.
 
 Rules enforced by the edge layer:
 
+- Foreign-key enforcement is explicitly enabled per connection (`PRAGMA foreign_keys = ON`, verified by `initDatabase()`), because SQLite defaults it off. The schema depends on it for `ON DELETE SET NULL` (deleting a product keeps sales/purchase history) and `ON DELETE CASCADE` (deleting a customer removes their private ledger rows).
 - Udaaro detail never syncs: udhaaro records are written to the ledger but **not** enqueued into `local_sync_queue`.
 - Idempotency is enforced by the DB constraint (`ON CONFLICT (client_entry_id) DO NOTHING`), not app logic.
 - The dashboard "Total Profit" figure (`total sales − total cost`, where cost is `cost_price × quantity`) is computed entirely on-device from `sales_entries` — no backend round-trip. It is not a cash-in-hand figure and does not subtract Udharo outstanding.

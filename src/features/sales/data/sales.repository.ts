@@ -1,5 +1,5 @@
 import { getDatabase } from "@/database/sqlite";
-import { mapCamelCase } from "@/database/helpers";
+import { mapCamelCase, withExclusiveTransaction } from "@/database/helpers";
 import {
   ENTITY_TYPE,
   createLedgerEntry,
@@ -11,6 +11,7 @@ import {
   findOrCreateProduct,
   findProductIdByName,
 } from "@/database/products";
+import { formatLocalDate } from "@/shared/utils/date";
 import { generateUuid } from "@/shared/utils/uuid";
 
 import type {
@@ -70,9 +71,9 @@ export async function createSalesBatch(
   }
 
   const batchId = generateUuid();
-  const entryDate = new Date().toISOString().slice(0, 10);
+  const entryDate = formatLocalDate();
 
-  await db.withTransactionAsync(async () => {
+  await withExclusiveTransaction(db, async (txn) => {
     let batchTotal = 0;
 
     for (const item of input.items) {
@@ -83,26 +84,31 @@ export async function createSalesBatch(
       // The Sales page setting can forbid selling anything that isn't already
       // in inventory, in which case an unknown name aborts the batch.
       if (productId == null && input.requireInventory) {
-        productId = await findProductIdByName(db, item.product);
+        productId = await findProductIdByName(txn, item.product);
         if (productId == null) {
           throw new Error(`"${item.product}" is not in inventory`);
         }
       }
 
       if (productId == null) {
-        productId = await findOrCreateProduct(db, item.product, {
+        productId = await findOrCreateProduct(txn, item.product, {
           price: item.price,
         });
       }
 
-      const product = await db.getFirstAsync<{ cost_price: number | null }>(
+      const product = await txn.getFirstAsync<{ cost_price: number | null }>(
         "SELECT cost_price FROM products WHERE id = ?",
         productId,
       );
-      const costPrice = item.costPrice ?? product?.cost_price ?? null;
+      if (product == null) {
+        // The exclusive connection runs without foreign-key enforcement, so a
+        // stale productId would otherwise commit a sale that moves no stock.
+        throw new Error(`"${item.product}" is no longer in inventory`);
+      }
+      const costPrice = item.costPrice ?? product.cost_price ?? null;
       const clientUuid = generateUuid();
 
-      await db.runAsync(
+      await txn.runAsync(
         `INSERT INTO sales_entries (product, product_id, quantity, price, amount, customer, cost_price, extra_detail, extra_value, color, client_uuid, client_batch_id, sold_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
         item.product,
@@ -119,34 +125,40 @@ export async function createSalesBatch(
         batchId,
       );
 
-      await applyStockDelta(db, productId, -item.quantity);
+      await applyStockDelta(txn, productId, -item.quantity);
 
-      await enqueueRecord({
-        clientEntryId: clientUuid,
-        entityType: ENTITY_TYPE.BATCH_SALE_ITEM,
-        payloadJson: JSON.stringify({
-          product: item.product,
-          productId,
-          quantity: item.quantity,
-          price: item.price,
-          amount: item.amount,
-          customer: customerName,
-          costPrice,
-          extraDetail: item.extraDetail ?? null,
-          extraValue: item.extraValue ?? null,
-          color: item.color ?? null,
-          clientBatchId: batchId,
-        }),
-        entryDate,
-      });
+      await enqueueRecord(
+        {
+          clientEntryId: clientUuid,
+          entityType: ENTITY_TYPE.BATCH_SALE_ITEM,
+          payloadJson: JSON.stringify({
+            product: item.product,
+            productId,
+            quantity: item.quantity,
+            price: item.price,
+            amount: item.amount,
+            customer: customerName,
+            costPrice,
+            extraDetail: item.extraDetail ?? null,
+            extraValue: item.extraValue ?? null,
+            color: item.color ?? null,
+            clientBatchId: batchId,
+          }),
+          entryDate,
+        },
+        txn,
+      );
 
       batchTotal += item.amount;
     }
 
     if (input.paymentType === "udharo" && customerName) {
-      const customerId = await findOrCreateCustomer({ fullName: customerName });
+      const customerId = await findOrCreateCustomer(
+        { fullName: customerName },
+        txn,
+      );
 
-      const receivable = await db.runAsync(
+      const receivable = await txn.runAsync(
         `INSERT INTO udharo_entries (name, amount, due_date, status, customer_id, client_batch_id, created_at)
          VALUES (?, ?, ?, 'on_track', ?, ?, datetime('now'))`,
         customerName,
@@ -156,13 +168,16 @@ export async function createSalesBatch(
         batchId,
       );
 
-      await createLedgerEntry({
-        customerId,
-        transactionType: "CREDIT_GIVEN",
-        amount: batchTotal,
-        transactionDate: entryDate,
-        udharoEntryId: receivable.lastInsertRowId,
-      });
+      await createLedgerEntry(
+        {
+          customerId,
+          transactionType: "CREDIT_GIVEN",
+          amount: batchTotal,
+          transactionDate: entryDate,
+          udharoEntryId: receivable.lastInsertRowId,
+        },
+        txn,
+      );
     }
   });
 }
